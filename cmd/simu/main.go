@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	s := simulation.NewSimulation(3, -1, 600*time.Second)
-	go simulation.StartAPI(s)
+	s := simulation.NewSimulation(30, -1, 600*time.Second)
+	//go simulation.StartAPI(s)
 	s.Run()
 }

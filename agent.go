@@ -2,7 +2,7 @@ package simulation
 
 import (
 	//"container/heap"
-	"fmt"
+	//"fmt"
 	"log"
 	"math/rand"
 	"time"
@@ -46,6 +46,7 @@ type Behavior interface {
 type UsagerLambda struct{}
 
 func (ul *UsagerLambda) Percept(ag *Agent, env *Environment) {
+	// TODO: Essayer un nouveau chemin quand l'agent est bloqué
 }
 
 func (ul *UsagerLambda) Deliberate(ag *Agent) {
@@ -61,20 +62,22 @@ func (ul *UsagerLambda) Act(ag *Agent, env *Environment) {
 	if ag.decision == Move {
 		start := ag.coordBasOccupation
 		end := ag.destination
-
 		path := findPathBFS(ag.env.station, start, end)
-		if len(path) > 0 && env.station[path[0][0]][path[0][1]] != "A" {
-			fmt.Println(ag.id, path)
+		if len(path) > 0 && env.station[path[0][0]][path[0][1]] != "A" { // TODO: Pas ouf les conditions je trouve
 			ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = ag.isOn
 			ag.isOn = ag.env.station[path[0][0]][path[0][1]]
 			ag.coordBasOccupation[0] = path[0][0]
 			ag.coordBasOccupation[1] = path[0][1]
 			ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = "A"
 		}
-		vitesseInSeconds := int(ag.vitesse)
+		//vitesseInSeconds := int(ag.vitesse)
 		// Multiply the vitesse by time.Second
-		sleepDuration := time.Duration(vitesseInSeconds) * time.Second
-		time.Sleep(sleepDuration)
+		//sleepDuration := time.Duration(vitesseInSeconds) * time.Second
+		time.Sleep(200 * time.Millisecond)
+	}
+	if ag.decision == Wait {
+		n := rand.Intn(1) // n will be between 0 and 10
+		time.Sleep(time.Duration(n) * time.Second)
 	}
 
 }
@@ -128,6 +131,40 @@ func (ag *Agent) Act(env *Environment) {
  *
  *
  */
+/*
+func findPathBFS(matrix [20][20]string, start, end Coord) []Coord {
+	queue := []Coord{start}
+	visited := make(map[Coord]bool)
+	parents := make(map[Coord]Coord)
+
+	for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
+
+		if current == end {
+			// Construire le chemin à partir des parents
+			path := []Coord{current}
+			for parent, ok := parents[current]; ok; parent, ok = parents[parent] {
+				path = append([]Coord{parent}, path...)
+			}
+			return path[1:]
+		}
+
+		visited[current] = true
+
+		neighbors := getNeighborsBFS(matrix, current)
+		for _, neighbor := range neighbors {
+			if !visited[neighbor] {
+				parents[neighbor] = current
+				queue = append(queue, neighbor)
+			}
+		}
+	}
+
+	return nil // Aucun chemin trouvé
+}
+*/
+
 func findPathBFS(matrix [20][20]string, start, end Coord) []Coord {
 	queue := []Coord{start}
 	visited := make(map[Coord]bool)
@@ -170,7 +207,7 @@ func getNeighborsBFS(matrix [20][20]string, current Coord) []Coord {
 		newRow, newCol := current[0]+move[0], current[1]+move[1]
 
 		// Vérifier si la nouvelle position est valide et non visitée
-		if newRow >= 0 && newRow < len(matrix) && newCol >= 0 && newCol < len(matrix[0]) && (matrix[newRow][newCol] == "_" || matrix[newRow][newCol] == "B") {
+		if newRow >= 0 && newRow < len(matrix) && newCol >= 0 && newCol < len(matrix[0]) && (matrix[newRow][newCol] != "Q" && matrix[newRow][newCol] != "X") {
 			neighbors = append(neighbors, Coord{newRow, newCol})
 		}
 	}
