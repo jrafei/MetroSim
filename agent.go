@@ -2,8 +2,9 @@ package simulation
 
 import (
 	//"container/heap"
-	//"fmt"
+	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"time"
 )
@@ -34,6 +35,7 @@ type Agent struct {
 	syncChan            chan int
 	decision            int
 	isOn                string // Contenu de la case sur laquelle il se trouve
+	stuck               bool
 }
 
 type Behavior interface {
@@ -47,10 +49,36 @@ type UsagerLambda struct{}
 
 func (ul *UsagerLambda) Percept(ag *Agent, env *Environment) {
 	// TODO: Essayer un nouveau chemin quand l'agent est bloqué
+
+	// Perception des éléments autour de l'agent pour déterminer si bloqué
+	s := 0 // nombre de cases indisponibles autour de l'agent
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			ord := (ag.coordBasOccupation[0] - 1) + i
+			abs := (ag.coordBasOccupation[1] - 1) + j
+	
+			if(ord!=ag.coordBasOccupation[0] && abs !=ag.coordBasOccupation[1]){
+				if ord < 0 || abs < 0 || ord > 19 || abs > 19 {
+					s++
+				} else if env.station[ord][abs] == "X" || env.station[ord][abs] == "Q" || env.station[ord][abs] == "A" {
+					s++
+				}
+			}
+		}
+	}
+	// Si pas de case disponible autour de lui, il est bloqué
+	// (ag.env.station[ag.departure[0]][ag.departure[1]] == "A" && ag.coordBasOccupation[0] == ag.departure[0] && ag.coordBasOccupation[1] == ag.departure[1])
+	if s == 8  {
+		ag.stuck = true
+		fmt.Println(ag.id, ag.stuck, ag.coordBasOccupation, s)
+	} else {
+		ag.stuck = false
+	}
 }
 
 func (ul *UsagerLambda) Deliberate(ag *Agent) {
-	if ag.env.station[ag.departure[0]][ag.departure[1]] == "A" {
+	// Si l'agent est bloqué, il doit attendre qu'une case se libère autour de lui
+	if ag.stuck {
 		ag.decision = Wait
 	} else {
 		ag.decision = Move
@@ -58,11 +86,12 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 }
 
 func (ul *UsagerLambda) Act(ag *Agent, env *Environment) {
-	// TODO: Je crois que la construction d'un chemin s'arrête s'il y a déjà un agent sur destination. Il faudrait donc faire en sorte de s'approcher le plus possible
 	if ag.decision == Move {
+
 		start := ag.coordBasOccupation
 		end := ag.destination
-		path := findPathBFS(ag.env.station, start, end)
+		_, path := findClosestPointBFS(ag.env.station, start, end)
+
 		if len(path) > 0 && env.station[path[0][0]][path[0][1]] != "A" { // TODO: Pas ouf les conditions je trouve
 			ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = ag.isOn
 			ag.isOn = ag.env.station[path[0][0]][path[0][1]]
@@ -71,19 +100,18 @@ func (ul *UsagerLambda) Act(ag *Agent, env *Environment) {
 			ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = "A"
 		}
 		//vitesseInSeconds := int(ag.vitesse)
-		// Multiply the vitesse by time.Second
 		//sleepDuration := time.Duration(vitesseInSeconds) * time.Second
 		time.Sleep(200 * time.Millisecond)
 	}
 	if ag.decision == Wait {
-		n := rand.Intn(1) // n will be between 0 and 10
+		n := rand.Intn(2) // temps d'attente aléatoire
 		time.Sleep(time.Duration(n) * time.Second)
 	}
 
 }
 
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse int, force int, politesse bool, UpCoord Coord, DownCoord Coord, behavior Behavior, departure, destination Coord) *Agent {
-	return &Agent{AgentID(id), vitesse, force, politesse, UpCoord, DownCoord, departure, destination, behavior, env, syncChan, Noop, env.station[UpCoord[0]][UpCoord[1]]}
+	return &Agent{AgentID(id), vitesse, force, politesse, UpCoord, DownCoord, departure, destination, behavior, env, syncChan, Noop, env.station[UpCoord[0]][UpCoord[1]], false}
 }
 
 func (ag *Agent) ID() AgentID {
@@ -165,39 +193,66 @@ func findPathBFS(matrix [20][20]string, start, end Coord) []Coord {
 }
 */
 
-func findPathBFS(matrix [20][20]string, start, end Coord) []Coord {
+func distance(coord1, coord2 Coord) float64 {
+	dx := float64(coord1[0] - coord2[0])
+	dy := float64(coord1[1] - coord2[1])
+	return math.Sqrt(dx*dx + dy*dy)
+}
+
+func findClosestPointBFS(matrix [20][20]string, start, end Coord) (Coord, []Coord) {
 	queue := []Coord{start}
 	visited := make(map[Coord]bool)
 	parents := make(map[Coord]Coord)
+	closestPoint := start // Initialisez avec le point de départ
+	closestDistance := distance(start, end)
+	foundPath := false
 
 	for len(queue) > 0 {
 		current := queue[0]
 		queue = queue[1:]
 
+		// Mettez à jour le point le plus proche si le point actuel est plus proche
+		currentDistance := distance(current, end)
+		if currentDistance < closestDistance {
+			closestPoint = current
+			closestDistance = currentDistance
+		}
+
 		if current == end {
-			// Construire le chemin à partir des parents
-			path := []Coord{current}
-			for parent, ok := parents[current]; ok; parent, ok = parents[parent] {
+			// Construire le chemin du point le plus proche à la destination
+			path := []Coord{closestPoint}
+			for parent, ok := parents[closestPoint]; ok; parent, ok = parents[parent] {
 				path = append([]Coord{parent}, path...)
 			}
-			return path[1:]
+			return closestPoint, path[1:]
 		}
 
 		visited[current] = true
 
-		neighbors := getNeighborsBFS(matrix, current)
+		neighbors := getNeighborsBFS(matrix, current, end)
 		for _, neighbor := range neighbors {
 			if !visited[neighbor] {
 				parents[neighbor] = current
 				queue = append(queue, neighbor)
 			}
 		}
+
+		foundPath = true
 	}
 
-	return nil // Aucun chemin trouvé
+	if foundPath {
+		// Retourner le chemin le plus proche même si la destination n'a pas été atteinte
+		path := []Coord{closestPoint}
+		for parent, ok := parents[closestPoint]; ok; parent, ok = parents[parent] {
+			path = append([]Coord{parent}, path...)
+		}
+		return closestPoint, path[1:]
+	}
+
+	return closestPoint, nil // Aucun chemin trouvé
 }
 
-func getNeighborsBFS(matrix [20][20]string, current Coord) []Coord {
+func getNeighborsBFS(matrix [20][20]string, current Coord, end Coord) []Coord {
 	neighbors := make([]Coord, 0)
 
 	// Déplacements possibles : haut, bas, gauche, droite
@@ -208,7 +263,11 @@ func getNeighborsBFS(matrix [20][20]string, current Coord) []Coord {
 
 		// Vérifier si la nouvelle position est valide et non visitée
 		if newRow >= 0 && newRow < len(matrix) && newCol >= 0 && newCol < len(matrix[0]) && (matrix[newRow][newCol] != "Q" && matrix[newRow][newCol] != "X") {
-			neighbors = append(neighbors, Coord{newRow, newCol})
+			if !(matrix[newRow][newCol] == "A" && newRow != end[0] && newCol != end[1]) {
+				// Si la case du chemin ne comporte pas d'agent et que ce n'est pas la case d'arrivée, on peut l'ajouter
+				neighbors = append(neighbors, Coord{newRow, newCol})
+			}
+
 		}
 	}
 
