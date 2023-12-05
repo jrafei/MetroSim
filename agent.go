@@ -2,6 +2,7 @@ package simulation
 
 import (
 	//"fmt"
+
 	"log"
 	"math/rand"
 	"time"
@@ -37,19 +38,22 @@ type Agent struct {
 }
 
 type Behavior interface {
-	Percept(*Agent, *Environment)
+	Percept(*Agent)
 	Deliberate(*Agent)
-	Act(*Agent, *Environment)
+	Act(*Agent)
 }
 
 type UsagerLambda struct{}
 
-func (ul *UsagerLambda) Percept(ag *Agent, env *Environment) {
+func (ul *UsagerLambda) Percept(ag *Agent) {
 	ag.stuck = ag.isStuck()
+	if ag.stuck {
+		return
+	}
+
 }
 
 func (ul *UsagerLambda) Deliberate(ag *Agent) {
-	// Si l'agent est bloqué, il doit attendre qu'une case se libère autour de lui
 	if ag.stuck {
 		ag.decision = Wait
 	} else {
@@ -57,11 +61,10 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 	}
 }
 
-func (ul *UsagerLambda) Act(ag *Agent, env *Environment) {
+func (ul *UsagerLambda) Act(ag *Agent) {
 	if ag.decision == Move {
 		ag.MoveAgent()
-	}
-	if ag.decision == Wait {
+	} else if ag.decision == Wait {
 		n := rand.Intn(2) // temps d'attente aléatoire
 		time.Sleep(time.Duration(n) * time.Second)
 	}
@@ -80,13 +83,12 @@ func (ag *Agent) Start() {
 	log.Printf("%s starting...\n", ag.id)
 
 	go func() {
-		env := ag.env
 		var step int
 		for {
 			step = <-ag.syncChan
-			ag.behavior.Percept(ag, env)
+			ag.behavior.Percept(ag)
 			ag.behavior.Deliberate(ag)
-			ag.behavior.Act(ag, env)
+			ag.behavior.Act(ag)
 			ag.syncChan <- step
 		}
 	}()
@@ -130,15 +132,26 @@ func (ag *Agent) isStuck() bool {
 }
 
 func (ag *Agent) MoveAgent() {
+	// TODO: Gérer les moments où les agents font du quasi-sur place car il ne peuvent plus bouger
+	// TODO: Parfois, certains agents ne bougent plus,
+	// TODO: Il arrive encore que certains agents soient bloqués, mais c'est quand il n'y a aucun mouvement possible.
+	// Il faudrait faire en sorte que les agents bougent et laisse passer les autres
 
 	// ============ Initialisation des noeuds de départ ======================
 	start := Node{ag.coordBasOccupation[0], ag.coordBasOccupation[1], 0, 0}
 	end := Node{ag.destination[0], ag.destination[1], 0, 0}
 
-	// ================== 1ère tentative de calcul du chemin =======================
+	// ================== Tentative de calcul du chemin =======================
 	path := findPath(ag.env.station, start, end, Node{})
 
 	// ================== Etude de faisabilité =======================
+	if IsAgentBlocking(path, ag.env) {
+		// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit un chemin en évitant la position
+		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
+		path = findPath(ag.env.station, start, end, path[0])
+		time.Sleep(time.Second)
+	}
+
 	if IsMovementSafe(path, ag.env) {
 		ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = ag.isOn
 		ag.isOn = ag.env.station[path[0].row][path[0].col]
@@ -146,19 +159,8 @@ func (ag *Agent) MoveAgent() {
 		ag.coordBasOccupation[1] = path[0].col
 		ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = "A"
 
-	} else if IsAgentBlocking(path, ag.env) {
-		// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit un chemin en évitant la position
-		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
-		path := findPath(ag.env.station, start, end, path[0])
-
-		if len(path) > 0 && (ag.env.station[path[0].row][path[0].col] == "B" || ag.env.station[path[0].row][path[0].col] == "_") {
-			ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = ag.isOn
-			ag.isOn = ag.env.station[path[0].row][path[0].col]
-			ag.coordBasOccupation[0] = path[0].row
-			ag.coordBasOccupation[1] = path[0].col
-			ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = "A"
-		}
+		// ============ Prise en compte de la vitesse de déplacement ======================
+		time.Sleep(ag.vitesse)
 	}
-	// ============ Prise en compte de la vitesse de déplacement ======================
-	time.Sleep(ag.vitesse)
+
 }

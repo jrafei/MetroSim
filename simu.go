@@ -91,7 +91,7 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		// création de l'agent
 		id := fmt.Sprintf("Agent #%d", i)
 		syncChan := make(chan int)
-		ag := NewAgent(id, &simu.env, syncChan, time.Duration(200*time.Millisecond), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
+		ag := NewAgent(id, &simu.env, syncChan, time.Duration(time.Second), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
 
 		//ag := NewAgent(id, &simu.env, syncChan, 1, 0, true, Coord{4,10}, Coord{4,10}, &UsagerLambda{}, Coord{4,10}, Coord{0, 0})
 
