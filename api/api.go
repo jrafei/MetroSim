@@ -1,4 +1,4 @@
-package simulation
+package api
 
 import (
 	"encoding/json"
@@ -6,13 +6,14 @@ import (
 	"log"
 	"net/http"
 	"time"
+	sim "metrosim/internal/simulation"
 )
 
-func StartAPI(sim *Simulation) {
+func StartAPI(sim *sim.Simulation) {
 	mux := http.NewServeMux()
 
 	pi := func(w http.ResponseWriter, r *http.Request) {
-		msg, _ := json.Marshal(sim.env.PI())
+		msg, _ := json.Marshal(sim.Env().PI())
 		fmt.Fprintf(w, "%s", msg)
 	}
 

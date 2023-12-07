@@ -1,4 +1,4 @@
-package simulation
+package algorithms
 
 import (
 	"container/heap"
@@ -11,6 +11,18 @@ import (
  */
 type Node struct {
 	row, col, cost, heuristic int
+}
+
+func NewNode(row, col, cost, heuristic int) *Node{
+	return &Node{row, col ,cost , heuristic}
+}
+
+func (nd *Node) Row() int{
+	return nd.row
+}
+
+func (nd *Node) Col() int{
+	return nd.col
 }
 
 type PriorityQueue []*Node
@@ -38,7 +50,7 @@ func (pq *PriorityQueue) Pop() interface{} {
 	return item
 }
 
-func findPath(matrix [20][20]string, start, end Node, forbidenCell Node) []Node {
+func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node) []Node {
 	pq := make(PriorityQueue, 0)
 	heap.Init(&pq)
 

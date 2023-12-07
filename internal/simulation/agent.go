@@ -3,8 +3,10 @@ package simulation
 import (
 	//"fmt"
 
+	//"fmt"
 	"log"
 	"math/rand"
+	alg "metrosim/internal/algorithms"
 	"time"
 )
 
@@ -43,33 +45,6 @@ type Behavior interface {
 	Act(*Agent)
 }
 
-type UsagerLambda struct{}
-
-func (ul *UsagerLambda) Percept(ag *Agent) {
-	ag.stuck = ag.isStuck()
-	if ag.stuck {
-		return
-	}
-
-}
-
-func (ul *UsagerLambda) Deliberate(ag *Agent) {
-	if ag.stuck {
-		ag.decision = Wait
-	} else {
-		ag.decision = Move
-	}
-}
-
-func (ul *UsagerLambda) Act(ag *Agent) {
-	if ag.decision == Move {
-		ag.MoveAgent()
-	} else if ag.decision == Wait {
-		n := rand.Intn(2) // temps d'attente aléatoire
-		time.Sleep(time.Duration(n) * time.Second)
-	}
-
-}
 
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, UpCoord Coord, DownCoord Coord, behavior Behavior, departure, destination Coord) *Agent {
 	return &Agent{AgentID(id), vitesse, force, politesse, UpCoord, DownCoord, departure, destination, behavior, env, syncChan, Noop, env.station[UpCoord[0]][UpCoord[1]], false}
@@ -100,14 +75,14 @@ func (ag *Agent) Act(env *Environment) {
 	}
 }
 
-func IsMovementSafe(path []Node, env *Environment) bool {
+func IsMovementSafe(path []alg.Node, env *Environment) bool {
 	// Détermine si le movement est faisable
-	return len(path) > 0 && (env.station[path[0].row][path[0].col] == "B" || env.station[path[0].row][path[0].col] == "_")
+	return len(path) > 0 && (env.station[path[0].Row()][path[0].Col()] == "B" || env.station[path[0].Row()][path[0].Col()] == "_")
 }
 
-func IsAgentBlocking(path []Node, env *Environment) bool {
+func IsAgentBlocking(path []alg.Node, env *Environment) bool {
 	// Détermine si un agent se trouve sur la case à visiter
-	return len(path) > 0 && env.station[path[0].row][path[0].col] == "A"
+	return len(path) > 0 && env.station[path[0].Row()][path[0].Col()] == "A"
 }
 
 func (ag *Agent) isStuck() bool {
@@ -138,27 +113,26 @@ func (ag *Agent) MoveAgent() {
 	// Il faudrait faire en sorte que les agents bougent et laisse passer les autres
 
 	// ============ Initialisation des noeuds de départ ======================
-	start := Node{ag.coordBasOccupation[0], ag.coordBasOccupation[1], 0, 0}
-	end := Node{ag.destination[0], ag.destination[1], 0, 0}
+	start := *alg.NewNode(ag.coordBasOccupation[0], ag.coordBasOccupation[1], 0, 0)
+	end := *alg.NewNode(ag.destination[0], ag.destination[1], 0, 0)
 
 	// ================== Tentative de calcul du chemin =======================
-	path := findPath(ag.env.station, start, end, Node{})
-
+	path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1,-1,0,0))
+	
 	// ================== Etude de faisabilité =======================
 	if IsAgentBlocking(path, ag.env) {
 		// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit un chemin en évitant la position
 		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
-		path = findPath(ag.env.station, start, end, path[0])
+		path = alg.FindPath(ag.env.station, start, end, path[0])
 		time.Sleep(time.Second)
 	}
 
 	if IsMovementSafe(path, ag.env) {
 		ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = ag.isOn
-		ag.isOn = ag.env.station[path[0].row][path[0].col]
-		ag.coordBasOccupation[0] = path[0].row
-		ag.coordBasOccupation[1] = path[0].col
+		ag.isOn = ag.env.station[path[0].Row()][path[0].Col()]
+		ag.coordBasOccupation[0] = path[0].Row()
+		ag.coordBasOccupation[1] = path[0].Col()
 		ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = "A"
-
 		// ============ Prise en compte de la vitesse de déplacement ======================
 		time.Sleep(ag.vitesse)
 	}

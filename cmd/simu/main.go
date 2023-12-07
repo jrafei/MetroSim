@@ -1,7 +1,7 @@
 package main
 
 import (
-	simulation "metrosim"
+	simulation "metrosim/internal/simulation"
 	"time"
 )
 

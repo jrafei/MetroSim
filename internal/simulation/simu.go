@@ -75,6 +75,10 @@ type Simulation struct {
 	syncChans   sync.Map
 }
 
+func (sim *Simulation) Env() (*Environment){
+	return &sim.env
+}
+
 func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu *Simulation) {
 	simu = &Simulation{}
 	simu.agents = make([]Agent, 0, agentCount)
