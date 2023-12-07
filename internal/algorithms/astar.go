@@ -6,22 +6,22 @@ import (
 
 /*
  * Utilisation de l'algorithme A* pour les déplacements
- *
+ * //TODO: Peut-être gérer un passage par référence et non par copie
  *
  */
 type Node struct {
 	row, col, cost, heuristic int
 }
 
-func NewNode(row, col, cost, heuristic int) *Node{
-	return &Node{row, col ,cost , heuristic}
+func NewNode(row, col, cost, heuristic int) *Node {
+	return &Node{row, col, cost, heuristic}
 }
 
-func (nd *Node) Row() int{
+func (nd *Node) Row() int {
 	return nd.row
 }
 
-func (nd *Node) Col() int{
+func (nd *Node) Col() int {
 	return nd.col
 }
 
