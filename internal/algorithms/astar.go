@@ -7,7 +7,7 @@ import (
 /*
  * Utilisation de l'algorithme A* pour les déplacements
  * //TODO: Peut-être gérer un passage par référence et non par copie
- *
+ * //TODO: Prise en compte des dimensions des agents
  */
 type Node struct {
 	row, col, cost, heuristic int

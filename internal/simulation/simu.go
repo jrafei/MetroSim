@@ -75,7 +75,7 @@ type Simulation struct {
 	syncChans   sync.Map
 }
 
-func (sim *Simulation) Env() (*Environment){
+func (sim *Simulation) Env() *Environment {
 	return &sim.env
 }
 
@@ -87,17 +87,17 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 
 	// Communication entre agents
 	mapChan := make(map[AgentID]chan AgentID)
-	simu.env = *NewEnvironment([]Agent{}, carte, mapChan)
-	//simu.env = *NewEnvironment([]Agent{}, playground)
+	//simu.env = *NewEnvironment([]Agent{}, carte, mapChan)
+	simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
 
 	// création des agents et des channels
 	for i := 0; i < agentCount; i++ {
 		// création de l'agent
 		id := fmt.Sprintf("Agent #%d", i)
 		syncChan := make(chan int)
-		ag := NewAgent(id, &simu.env, syncChan, time.Duration(time.Second), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
+		//ag := NewAgent(id, &simu.env, syncChan, time.Duration(time.Second), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
 
-		//ag := NewAgent(id, &simu.env, syncChan, 1, 0, true, Coord{4,10}, Coord{4,10}, &UsagerLambda{}, Coord{4,10}, Coord{0, 0})
+		ag := NewAgent(id, &simu.env, syncChan, 1, 0, true, Coord{4, 10}, Coord{4, 10}, &UsagerLambda{}, Coord{4, 10}, Coord{0, 0})
 
 		// ajout de l'agent à la simulation
 		simu.agents = append(simu.agents, *ag)
