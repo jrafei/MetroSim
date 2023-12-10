@@ -2,19 +2,21 @@ package algorithms
 
 import (
 	"container/heap"
+	"fmt"
 )
 
 /*
  * Utilisation de l'algorithme A* pour les déplacements
  * //TODO: Peut-être gérer un passage par référence et non par copie
- * //TODO: Prise en compte des dimensions des agents
+ * 
  */
 type Node struct {
-	row, col, cost, heuristic int
+	row, col, cost, heuristic, width, height, orientation int
 }
 
-func NewNode(row, col, cost, heuristic int) *Node {
-	return &Node{row, col, cost, heuristic}
+func NewNode(row, col, cost, heuristic, width, height int) *Node {
+	//fmt.Println()
+	return &Node{row, col, cost, heuristic, width , height, 0}
 }
 
 func (nd *Node) Row() int {
@@ -107,18 +109,27 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node) []Node 
 	return nil // Aucun chemin trouvé
 }
 
-func getNeighbors(matrix [20][20]string, current, end Node, forbidenCell Node) []*Node {
+func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node) []*Node {
+	fmt.Println("okkk")
 	neighbors := make([]*Node, 0)
 
-	// Déplacements possibles : haut, bas, gauche, droite
+	// Possible moves: up, down, left, right, rotate (clockwise)
 	possibleMoves := [][]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
 
 	for _, move := range possibleMoves {
 		newRow, newCol := current.row+move[0], current.col+move[1]
 
-		// Vérifier si la nouvelle position est valide
-		if (forbidenCell.row != newRow || forbidenCell.col != newCol) && newRow >= 0 && newRow < len(matrix) && newCol >= 0 && newCol < len(matrix[0]) && (matrix[newRow][newCol] != "Q" && matrix[newRow][newCol] != "X") {
-			neighbors = append(neighbors, &Node{newRow, newCol, current.cost + 1, heuristic(newRow, newCol, end)})
+		// Check if the new position is valid, considering agent dimensions and rotation
+		if isValidMove(matrix, current, forbiddenCell, newRow, newCol) {
+			neighbors = append(neighbors, &Node{
+				row:         newRow,
+				col:         newCol,
+				cost:        current.cost + 1,
+				heuristic:   heuristic(newRow, newCol, end),
+				width:       current.width,
+				height:      current.height,
+				orientation: current.orientation,
+			})
 		}
 	}
 
@@ -135,4 +146,62 @@ func abs(x int) int {
 		return -x
 	}
 	return x
+}
+
+func isValidMove(matrix [20][20]string, current Node, forbiddenCell Node, newRow, newCol int) bool {
+	// Check if the new position is within the bounds of the matrix
+	if newRow < 0 || newRow >= len(matrix) || newCol < 0 || newCol >= len(matrix[0]) {
+		return false
+	}
+
+	// Check if the new position overlaps with forbidden cells or obstacles
+	if forbiddenCell.row == newRow && forbiddenCell.col == newCol {
+		return false
+	}
+
+	// Check if the agent fits in the new position, considering its dimensions and rotation
+	for i := 0; i < current.height; i++ {
+		for j := 0; j < current.width; j++ {
+			// Calculate the rotated coordinates based on the agent's orientation
+			rotatedI, rotatedJ := rotateCoordinates(i, j, current.orientation)
+
+			// Calculate the absolute coordinates in the matrix
+			absRow, absCol := newRow+rotatedI, newCol+rotatedJ
+
+			// Check if the absolute coordinates are within the bounds of the matrix
+			if absRow < 0 || absRow >= len(matrix) || absCol < 0 || absCol >= len(matrix[0]) {
+				return false
+			}
+
+			// Check if the absolute coordinates overlap with forbidden cells or obstacles
+			if forbiddenCell.row == absRow && forbiddenCell.col == absCol {
+				return false
+			}
+
+			// Check if the absolute coordinates overlap with obstacles in the matrix
+			if matrix[absRow][absCol] == "Q" || matrix[absRow][absCol] == "X" {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func rotateCoordinates(i, j, orientation int) (rotatedI, rotatedJ int) {
+	// Rotate the coordinates based on the agent's orientation
+	// You need to implement the logic for rotation based on your specific rules
+	// This is a simple example that assumes the agent can rotate in all directions
+	switch orientation {
+	case 0: // No rotation
+		rotatedI, rotatedJ = i, j
+	case 1: // 90-degree rotation
+		rotatedI, rotatedJ = j, -i
+	case 2: // 180-degree rotation
+		rotatedI, rotatedJ = -i, -j
+	case 3: // 270-degree rotation
+		rotatedI, rotatedJ = -j, i
+	}
+
+	return rotatedI, rotatedJ
 }

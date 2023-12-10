@@ -1,6 +1,6 @@
 package simulation
 
-import(
+import (
 	"math/rand"
 	"time"
 )
@@ -11,6 +11,7 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 	ag.stuck = ag.isStuck()
 	if ag.stuck {
 		return
+
 	}
 
 }
