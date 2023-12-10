@@ -97,7 +97,8 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		syncChan := make(chan int)
 		//ag := NewAgent(id, &simu.env, syncChan, time.Duration(time.Second), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
 
-		ag := NewAgent(id, &simu.env, syncChan, 1, 0, true, Coord{4, 10}, Coord{4, 10}, &UsagerLambda{}, Coord{4, 10}, Coord{0, 0})
+		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{5, 8}, Coord{7, 15}, 2, 1)
+		ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{5, 8}, Coord{0, 0}, 2, 1)
 
 		// ajout de l'agent à la simulation
 		simu.agents = append(simu.agents, *ag)
