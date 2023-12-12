@@ -6,15 +6,15 @@ package simulation
  *			// TODO: Gérer les moments où les agents font du quasi-sur place car ils ne peuvent plus bouger
  *			// TODO: Il arrive encore que certains agents soient bloqués, mais c'est quand il n'y a aucun mouvement possible.
  *			// Il faudrait faire en sorte que les agents bougent et laisse passer les autres
- *
+ *			// TODO: vérifier map playground, destination en (0,0)
  */
 
 import (
+	//"fmt"
 	"log"
 	"math/rand"
 	alg "metrosim/internal/algorithms"
 	"time"
-	//"fmt"
 )
 
 type Action int64
@@ -30,23 +30,24 @@ type Coord [2]int
 type AgentID string
 
 type Agent struct {
-	id          AgentID
-	vitesse     time.Duration
-	force       int
-	politesse   bool
-	position    Coord // Coordonnées de référence, width et height on compte width et height à partir de cette position
-	departure   Coord
-	destination Coord
-	behavior    Behavior
-	env         *Environment
-	syncChan    chan int
-	decision    int
-	isOn        map[Coord]string // Contenu de la case sur laquelle il se trouve
-	stuck       bool
-	width       int
-	height      int
-	orientation int
-	path        []alg.Node
+	id              AgentID
+	vitesse         time.Duration
+	force           int
+	politesse       bool
+	position        Coord // Coordonnées de référence, width et height on compte width et height à partir de cette position
+	departure       Coord
+	destination     Coord
+	behavior        Behavior
+	env             *Environment
+	syncChan        chan int
+	decision        int
+	isOn            map[Coord]string // Contenu de la case sur laquelle il se trouve
+	stuck           bool
+	width           int
+	height          int
+	orientation     int
+	path            []alg.Node
+	visitedPanneaux map[Coord]bool
 }
 
 type Behavior interface {
@@ -58,7 +59,11 @@ type Behavior interface {
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int) *Agent {
 	isOn := make(map[Coord]string)
 	saveCells(&env.station, isOn, departure, width, height, 0)
-	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 0, make([]alg.Node, 0)}
+	visitedPanneaux := make(map[Coord]bool, len(env.panneaux[env.zones[destination]]))
+	for _, panneau := range env.panneaux[env.zones[destination]] {
+		visitedPanneaux[panneau] = false
+	}
+	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 0, make([]alg.Node, 0), visitedPanneaux}
 }
 
 func (ag *Agent) ID() AgentID {
@@ -177,18 +182,18 @@ func (ag *Agent) isStuck() bool {
 func (ag *Agent) MoveAgent() {
 
 	// ============ Initialisation des noeuds de départ ======================
-	start := *alg.NewNode(ag.position[0], ag.position[1], 0, 0, ag.width, ag.height)
-	end := *alg.NewNode(ag.destination[0], ag.destination[1], 0, 0, ag.width, ag.height)
+
 	// ================== Tentative de calcul du chemin =======================
 	if len(ag.path) == 0 {
+		start, end := ag.generatePathExtremities()
 		// Recherche d'un chemin si inexistant
 		path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0))
 		ag.path = path
 	}
-
 	// ================== Etude de faisabilité =======================
 	// fmt.Println(ag.position,path[0])
 	if IsAgentBlocking(ag.path, ag, ag.env) {
+		start, end := ag.generatePathExtremities()
 		// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit un chemin en évitant la position
 		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
 		path := alg.FindPath(ag.env.station, start, end, ag.path[0])
@@ -215,6 +220,13 @@ func (ag *Agent) MoveAgent() {
 		//fmt.Println(ag.position)
 	}
 
+}
+
+func (ag *Agent) generatePathExtremities() (alg.Node, alg.Node) {
+	start := *alg.NewNode(ag.position[0], ag.position[1], 0, 0, ag.width, ag.height)
+	destination := ag.findDestination()
+	end := *alg.NewNode(destination[0], destination[1], 0, 0, ag.width, ag.height)
+	return start, end
 }
 
 func removeAgent(matrix *[20][20]string, agt *Agent) {
@@ -259,14 +271,38 @@ func saveCells(matrix *[20][20]string, savedCells map[Coord]string, position Coo
 func removeCoord(to_remove Coord, mapping map[Coord]string) {
 	// Suppression d'une clé dans une map
 	for coord, _ := range mapping {
-		if coord[0] == to_remove[0] && coord[1] == to_remove[1] {
+		if equalCoord(&coord, &to_remove) {
 			delete(mapping, coord)
 		}
 	}
 }
 
+func equalCoord(coord1, coord2 *Coord) bool {
+	return coord1[0] == coord2[0] && coord1[1] == coord2[1]
+}
+
 func rotateAgent(agt *Agent, orientation int) {
 	agt.orientation = orientation
+}
+
+func (ag *Agent) findDestination() Coord {
+	destinationZone := ag.env.zones[ag.destination]
+	if destinationZone != ag.env.zones[ag.position] {
+		// Si on n'est pas dans la zone de la destination , on va s'orienter par un panneau
+		//estimDistPos := alg.Heuristic(ag.position[0], ag.position[1], *alg.NewNode(ag.destination[0], ag.destination[1], 0, 0, 0, 0))
+		for _, panneau := range ag.env.panneaux[destinationZone] {
+			// On se rapproche du panneau menant à la zone
+			//estimDistPan := alg.Heuristic(panneau[0], panneau[1], *alg.NewNode(ag.destination[0], ag.destination[1], 0, 0, 0, 0))
+			if !ag.visitedPanneaux[panneau] {
+				//TODO:revoir la mise à jour, peut-être à faire lorsqu'on se situe au niveau de panneau, pas avant
+				//TODO:trouver une meilleure heuristique
+				ag.visitedPanneaux[panneau] = true
+				return panneau
+			}
+		}
+	}
+	// Sinon, on tente d'aller directement à la destination
+	return ag.destination
 }
 
 func calculateBounds(position Coord, width, height, orientation int) (infRow, supRow, infCol, supCol int) {

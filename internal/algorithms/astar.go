@@ -54,6 +54,8 @@ func (pq *PriorityQueue) Pop() interface{} {
 	*pq = old[0 : n-1]
 	return item
 }
+type  ZoneID int
+type Coord [2]int
 
 func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node) []Node {
 	pq := make(PriorityQueue, 0)
@@ -64,7 +66,7 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node) []Node 
 	parents := make(map[Node]Node)
 
 	closestPoint := start // Initialisation avec le point de départ
-	closestDistance := heuristic(start.row, start.col, end)
+	closestDistance := Heuristic(start.row, start.col, end)
 
 	foundPath := false
 
@@ -72,7 +74,7 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node) []Node 
 		current := heap.Pop(&pq).(*Node)
 
 		// Mise à jour du point le plus proche si le point actuel est plus proche
-		currentDistance := heuristic(current.row, current.col, end)
+		currentDistance := Heuristic(current.row, current.col, end)
 		if currentDistance < closestDistance {
 			closestPoint = *current
 			closestDistance = currentDistance
@@ -116,7 +118,7 @@ func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node) 
 	//fmt.Println("okk")
 	neighbors := make([]*Node, 0)
 
-	// Possible moves: up, down, left, right, rotate (clockwise)
+	// Possible moves: up, down, left, right
 	possibleMoves := [][]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
 
 	for _, move := range possibleMoves {
@@ -130,7 +132,7 @@ func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node) 
 					row:         newRow,
 					col:         newCol,
 					cost:        current.cost + 1,
-					heuristic:   heuristic(newRow, newCol, end),
+					heuristic:   Heuristic(newRow, newCol, end),
 					width:       current.width,
 					height:      current.height,
 					orientation: current.orientation,
@@ -143,7 +145,7 @@ func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node) 
 	return neighbors
 }
 
-func heuristic(row, col int, end Node) int {
+func Heuristic(row, col int, end Node) int {
 	// Heuristique simple : distance de Manhattan
 	return abs(row-end.row) + abs(col-end.col)
 }
