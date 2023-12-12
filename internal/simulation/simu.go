@@ -3,6 +3,7 @@ package simulation
 import (
 	"fmt"
 	"log"
+
 	//"math/rand"
 	"sync"
 	"time"
@@ -15,16 +16,16 @@ import (
  * S : Sortie
  * W : Entrée et Sortie
  * Q : Voie
- * _ : Couloir, zon
+ * _ : Couloir, case libre
  * B: Bridge/Pont, zone accessible
  */
 var carte [20][20]string = [20][20]string{
 	{"X", "X", "X", "X", "X", "X", "X", "X", "W", "W", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X"},
 	{"X", "X", "X", "X", "X", "X", "X", "X", "_", "_", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X"},
 	{"X", "X", "X", "X", "X", "X", "X", "X", "_", "_", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X"},
-	{"X", "X", "_", "_", "_", "_", "_", "_", "_", "_", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X"},
-	{"X", "X", "_", "X", "X", "X", "X", "X", "_", "_", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X"},
-	{"X", "X", "_", "X", "X", "X", "X", "X", "_", "_", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X"},
+	{"X", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "X", "X"},
+	{"X", "X", "_", "X", "X", "X", "X", "X", "_", "_", "X", "X", "X", "X", "X", "X", "X", "_", "X", "X"},
+	{"X", "X", "_", "X", "X", "X", "X", "X", "_", "_", "X", "X", "X", "X", "X", "X", "X", "_", "X", "X"},
 	{"X", "X", "_", "X", "X", "X", "X", "X", "_", "_", "X", "X", "X", "X", "X", "X", "_", "_", "_", "X"},
 	{"_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
 	{"_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "X", "_"},
@@ -74,23 +75,30 @@ type Simulation struct {
 	syncChans   sync.Map
 }
 
+func (sim *Simulation) Env() *Environment {
+	return &sim.env
+}
+
 func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu *Simulation) {
 	simu = &Simulation{}
 	simu.agents = make([]Agent, 0, agentCount)
 	simu.maxStep = maxStep
 	simu.maxDuration = maxDuration
 
-	simu.env = *NewEnvironment([]Agent{}, carte)
-	//simu.env = *NewEnvironment([]Agent{}, playground)
+	// Communication entre agents
+	mapChan := make(map[AgentID]chan AgentID)
+	simu.env = *NewEnvironment([]Agent{}, carte, mapChan)
+	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
 
 	// création des agents et des channels
 	for i := 0; i < agentCount; i++ {
 		// création de l'agent
 		id := fmt.Sprintf("Agent #%d", i)
 		syncChan := make(chan int)
-		ag := NewAgent(id, &simu.env, syncChan, 1, 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{},Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
+		//ag := NewAgent(id, &simu.env, syncChan, time.Duration(time.Second), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
 
-		//ag := NewAgent(id, &simu.env, syncChan, 1, 0, true, Coord{4,10}, Coord{4,10}, &UsagerLambda{}, Coord{4,10}, Coord{0, 0})
+		ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{2, 8}, Coord{13, 15}, 2, 1)
+		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{5, 8}, Coord{0, 0}, 2, 1)
 
 		// ajout de l'agent à la simulation
 		simu.agents = append(simu.agents, *ag)
@@ -100,6 +108,9 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 
 		// ajout de l'agent à l'environnement
 		ag.env.AddAgent(*ag)
+
+		// ajout
+		simu.env.agentsChan[ag.id] = make(chan AgentID)
 	}
 
 	return simu
@@ -114,7 +125,7 @@ func (simu *Simulation) Run() {
 	go simu.Print()
 
 	// Démarrage des agents
-	
+
 	var wg sync.WaitGroup
 	for _, agt := range simu.agents {
 		wg.Add(1)
@@ -123,7 +134,7 @@ func (simu *Simulation) Run() {
 			agent.Start()
 		}(agt)
 	}
-	
+
 	// On sauvegarde la date du début de la simulation
 	simu.start = time.Now()
 
@@ -153,7 +164,7 @@ func (simu *Simulation) Print() {
 			fmt.Println(simu.env.station[i])
 		}
 		//time.Sleep(time.Second / 4) // 60 fps !
-		time.Sleep(time.Second)    // 1 fps !
+		time.Sleep(500 * time.Millisecond) // 1 fps !
 		//fmt.Print("\033[H\033[2J") // effacement du terminal
 	}
 }

@@ -5,16 +5,16 @@ import (
 	"sync"
 )
 
-
 type Environment struct {
 	sync.RWMutex
 	ags        []Agent
 	agentCount int
-	station [20][20]string
+	station    [20][20]string
+	agentsChan map[AgentID]chan AgentID
 }
 
-func NewEnvironment(ags []Agent, carte [20][20]string) (env *Environment) {
-	return &Environment{ags: ags, agentCount: len(ags),station : carte}
+func NewEnvironment(ags []Agent, carte [20][20]string, agentsCh map[AgentID]chan AgentID) (env *Environment) {
+	return &Environment{ags: ags, agentCount: len(ags), station: carte, agentsChan: agentsCh}
 }
 
 func (env *Environment) AddAgent(agt Agent) {
@@ -45,7 +45,7 @@ func (env *Environment) PI() float64 {
 	env.RLock()
 	defer env.RUnlock()
 
-	return 4 
+	return 4
 }
 
 func (env *Environment) Rect() Coord {
