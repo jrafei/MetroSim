@@ -10,12 +10,16 @@ type Environment struct {
 	ags        []Agent
 	agentCount int
 	station    [20][20]string
-	agentsChan map[AgentID]chan AgentID
+	agentsChan map[AgentID]chan Request
 }
 
-func NewEnvironment(ags []Agent, carte [20][20]string, agentsCh map[AgentID]chan AgentID) (env *Environment) {
+
+
+
+func NewEnvironment(ags []Agent, carte [20][20]string, agentsCh map[AgentID]chan Request) (env *Environment) {
 	return &Environment{ags: ags, agentCount: len(ags), station: carte, agentsChan: agentsCh}
 }
+
 
 func (env *Environment) AddAgent(agt Agent) {
 	env.ags = append(env.ags, agt)
@@ -50,4 +54,9 @@ func (env *Environment) PI() float64 {
 
 func (env *Environment) Rect() Coord {
 	return Coord{0, 0}
+}
+
+
+func (env *Environment) GetAgentChan(agt_id AgentID) chan Request {
+	return env.agentsChan[agt_id]
 }

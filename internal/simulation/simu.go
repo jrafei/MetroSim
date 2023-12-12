@@ -18,6 +18,7 @@ import (
  * Q : Voie
  * _ : Couloir, case libre
  * B: Bridge/Pont, zone accessible
+ * valeur de AgentID : Agent
  */
 var carte [20][20]string = [20][20]string{
 	{"X", "X", "X", "X", "X", "X", "X", "X", "W", "W", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X"},
@@ -110,13 +111,14 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		ag.env.AddAgent(*ag)
 
 		// ajout
-		simu.env.agentsChan[ag.id] = make(chan AgentID)
+		simu.env.agentsChan[ag.id] = make(chan Requete)
 	}
 
 	return simu
 }
 
 func (simu *Simulation) Run() {
+	// A REVOIR si nécessaire de faire appeler simu.env.pi() 
 	log.Printf("Démarrage de la simulation [step: %d, π: %f]", simu.step, simu.env.PI())
 
 	// Démarrage du micro-service de Log
@@ -145,7 +147,7 @@ func (simu *Simulation) Run() {
 			step := 0
 			for {
 				step++
-				c, _ := simu.syncChans.Load(agt.ID())
+				c, _ := simu.syncChans.Load(agt.ID()) // communiquer les steps aux agents
 				c.(chan int) <- step             // /!\ utilisation d'un "Type Assertion"
 				time.Sleep(1 * time.Millisecond) // "cool down"
 				<-c.(chan int)
@@ -163,6 +165,8 @@ func (simu *Simulation) Print() {
 		for i := 0; i < 20; i++ {
 			fmt.Println(simu.env.station[i])
 		}
+		fmt.Println()
+		fmt.Println()
 		//time.Sleep(time.Second / 4) // 60 fps !
 		time.Sleep(500 * time.Millisecond) // 1 fps !
 		//fmt.Print("\033[H\033[2J") // effacement du terminal
