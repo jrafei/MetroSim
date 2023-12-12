@@ -11,7 +11,11 @@ type Environment struct {
 	agentCount int
 	station    [20][20]string
 	agentsChan map[AgentID]chan AgentID
+	//zones      map[ZoneID][]Coord // Zones de la station
+	//panneaux   map[ZoneID][]Coord // Les panneaux de la station, permettant d'aller vers la zone
 }
+
+type ZoneID int
 
 func NewEnvironment(ags []Agent, carte [20][20]string, agentsCh map[AgentID]chan AgentID) (env *Environment) {
 	return &Environment{ags: ags, agentCount: len(ags), station: carte, agentsChan: agentsCh}

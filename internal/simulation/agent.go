@@ -14,7 +14,7 @@ import (
 	"math/rand"
 	alg "metrosim/internal/algorithms"
 	"time"
-	"fmt"
+	//"fmt"
 )
 
 type Action int64
@@ -46,6 +46,7 @@ type Agent struct {
 	width       int
 	height      int
 	orientation int
+	path        []alg.Node
 }
 
 type Behavior interface {
@@ -57,7 +58,7 @@ type Behavior interface {
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int) *Agent {
 	isOn := make(map[Coord]string)
 	saveCells(&env.station, isOn, departure, width, height, 0)
-	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 0}
+	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 0, make([]alg.Node, 0)}
 }
 
 func (ag *Agent) ID() AgentID {
@@ -179,23 +180,32 @@ func (ag *Agent) MoveAgent() {
 	start := *alg.NewNode(ag.position[0], ag.position[1], 0, 0, ag.width, ag.height)
 	end := *alg.NewNode(ag.destination[0], ag.destination[1], 0, 0, ag.width, ag.height)
 	// ================== Tentative de calcul du chemin =======================
-	timea := time.Now()
-	path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0))
-	fmt.Println(time.Since(timea))
+	if len(ag.path) == 0 {
+		// Recherche d'un chemin si inexistant
+		path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0))
+		ag.path = path
+	}
+
 	// ================== Etude de faisabilité =======================
 	// fmt.Println(ag.position,path[0])
-	if IsAgentBlocking(path, ag, ag.env) {
+	if IsAgentBlocking(ag.path, ag, ag.env) {
 		// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit un chemin en évitant la position
 		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
-		path = alg.FindPath(ag.env.station, start, end, path[0])
+		path := alg.FindPath(ag.env.station, start, end, ag.path[0])
 		time.Sleep(time.Second)
+		ag.path = path
 	}
-	if IsMovementSafe(path, ag, ag.env) {
+	if IsMovementSafe(ag.path, ag, ag.env) {
 		removeAgent(&ag.env.station, ag)
-		rotateAgent(ag, path[0].Or())
+		rotateAgent(ag, ag.path[0].Or())
 		//ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = ag.isOn
-		ag.position[0] = path[0].Row()
-		ag.position[1] = path[0].Col()
+		ag.position[0] = ag.path[0].Row()
+		ag.position[1] = ag.path[0].Col()
+		if len(ag.path) > 1 {
+			ag.path = ag.path[1:]
+		} else {
+			ag.path = nil
+		}
 		saveCells(&ag.env.station, ag.isOn, ag.position, ag.width, ag.height, ag.orientation)
 		//ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = "A"
 		writeAgent(&ag.env.station, ag)
