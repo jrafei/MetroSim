@@ -87,8 +87,8 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 
 	// Communication entre agents
 	mapChan := make(map[AgentID]chan AgentID)
-	//simu.env = *NewEnvironment([]Agent{}, carte, mapChan)
-	simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
+	simu.env = *NewEnvironment([]Agent{}, carte, mapChan)
+	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
 
 	// création des agents et des channels
 	for i := 0; i < agentCount; i++ {
@@ -97,8 +97,8 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		syncChan := make(chan int)
 		//ag := NewAgent(id, &simu.env, syncChan, time.Duration(time.Second), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
 
-		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{5, 8}, Coord{7, 15}, 2, 1)
-		ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{5, 8}, Coord{0, 0}, 2, 1)
+		ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{2, 8}, Coord{13, 15}, 2, 1)
+		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{5, 8}, Coord{0, 0}, 2, 1)
 
 		// ajout de l'agent à la simulation
 		simu.agents = append(simu.agents, *ag)
@@ -164,7 +164,7 @@ func (simu *Simulation) Print() {
 			fmt.Println(simu.env.station[i])
 		}
 		//time.Sleep(time.Second / 4) // 60 fps !
-		time.Sleep(time.Second) // 1 fps !
+		time.Sleep(500 * time.Millisecond) // 1 fps !
 		//fmt.Print("\033[H\033[2J") // effacement du terminal
 	}
 }

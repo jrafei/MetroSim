@@ -2,13 +2,12 @@ package algorithms
 
 import (
 	"container/heap"
-	"fmt"
 )
 
 /*
  * Utilisation de l'algorithme A* pour les déplacements
  * //TODO: Peut-être gérer un passage par référence et non par copie
- * 
+ * //TODO: faire des points de repère
  */
 type Node struct {
 	row, col, cost, heuristic, width, height, orientation int
@@ -16,7 +15,7 @@ type Node struct {
 
 func NewNode(row, col, cost, heuristic, width, height int) *Node {
 	//fmt.Println()
-	return &Node{row, col, cost, heuristic, width , height, 0}
+	return &Node{row, col, cost, heuristic, width, height, 0}
 }
 
 func (nd *Node) Row() int {
@@ -25,6 +24,10 @@ func (nd *Node) Row() int {
 
 func (nd *Node) Col() int {
 	return nd.col
+}
+
+func (nd *Node) Or() int {
+	return nd.orientation
 }
 
 type PriorityQueue []*Node
@@ -110,7 +113,7 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node) []Node 
 }
 
 func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node) []*Node {
-	fmt.Println("okkk")
+	//fmt.Println("okk")
 	neighbors := make([]*Node, 0)
 
 	// Possible moves: up, down, left, right, rotate (clockwise)
@@ -118,19 +121,23 @@ func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node) 
 
 	for _, move := range possibleMoves {
 		newRow, newCol := current.row+move[0], current.col+move[1]
-
-		// Check if the new position is valid, considering agent dimensions and rotation
-		if isValidMove(matrix, current, forbiddenCell, newRow, newCol) {
-			neighbors = append(neighbors, &Node{
-				row:         newRow,
-				col:         newCol,
-				cost:        current.cost + 1,
-				heuristic:   heuristic(newRow, newCol, end),
-				width:       current.width,
-				height:      current.height,
-				orientation: current.orientation,
-			})
+		for orientation := 0; orientation < 4; orientation++ {
+			current.orientation = orientation
+			// fmt.Println(orientation)
+			// Check if the new position is valid, considering agent dimensions and rotation
+			if isValidMove(matrix, current, forbiddenCell, newRow, newCol) {
+				neighbors = append(neighbors, &Node{
+					row:         newRow,
+					col:         newCol,
+					cost:        current.cost + 1,
+					heuristic:   heuristic(newRow, newCol, end),
+					width:       current.width,
+					height:      current.height,
+					orientation: current.orientation,
+				})
+			}
 		}
+
 	}
 
 	return neighbors
@@ -160,13 +167,13 @@ func isValidMove(matrix [20][20]string, current Node, forbiddenCell Node, newRow
 	}
 
 	// Check if the agent fits in the new position, considering its dimensions and rotation
-	for i := 0; i < current.height; i++ {
-		for j := 0; j < current.width; j++ {
-			// Calculate the rotated coordinates based on the agent's orientation
-			rotatedI, rotatedJ := rotateCoordinates(i, j, current.orientation)
+	lRowBound, uRowBound, lColBound, uColBound := calculateBounds(newRow, newCol, current.width, current.height, current.orientation)
+
+	for i := lRowBound; i < uRowBound; i++ {
+		for j := lColBound; j < uColBound; j++ {
 
 			// Calculate the absolute coordinates in the matrix
-			absRow, absCol := newRow+rotatedI, newCol+rotatedJ
+			absRow, absCol := i, j
 
 			// Check if the absolute coordinates are within the bounds of the matrix
 			if absRow < 0 || absRow >= len(matrix) || absCol < 0 || absCol >= len(matrix[0]) {
@@ -189,9 +196,7 @@ func isValidMove(matrix [20][20]string, current Node, forbiddenCell Node, newRow
 }
 
 func rotateCoordinates(i, j, orientation int) (rotatedI, rotatedJ int) {
-	// Rotate the coordinates based on the agent's orientation
-	// You need to implement the logic for rotation based on your specific rules
-	// This is a simple example that assumes the agent can rotate in all directions
+
 	switch orientation {
 	case 0: // No rotation
 		rotatedI, rotatedJ = i, j
@@ -204,4 +209,37 @@ func rotateCoordinates(i, j, orientation int) (rotatedI, rotatedJ int) {
 	}
 
 	return rotatedI, rotatedJ
+}
+
+func calculateBounds(row, col, width, height, orientation int) (infRow, supRow, infCol, supCol int) {
+	borneInfRow := 0
+	borneSupRow := 0
+	borneInfCol := 0
+	borneSupCol := 0
+
+	// Calcul des bornes de position de l'agent après mouvement
+	switch orientation {
+	case 0:
+		borneInfRow = row - width + 1
+		borneSupRow = row + 1
+		borneInfCol = col
+		borneSupCol = col + height
+	case 1:
+		borneInfRow = row
+		borneSupRow = row + height
+		borneInfCol = col
+		borneSupCol = col + width
+	case 2:
+		borneInfRow = row
+		borneSupRow = row + width
+		borneInfCol = col
+		borneSupCol = col + height
+	case 3:
+		borneInfRow = row
+		borneSupRow = row + height
+		borneInfCol = col - width + 1
+		borneSupCol = col + 1
+
+	}
+	return borneInfRow, borneSupRow, borneInfCol, borneSupCol
 }
