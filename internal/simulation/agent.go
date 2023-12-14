@@ -13,6 +13,7 @@ import (
 	//"fmt"
 	//"fmt"
 	"log"
+	"math/rand"
 
 	//"math"
 	//"math/rand"
@@ -216,12 +217,12 @@ func (ag *Agent) MoveAgent() {
 	// ================== Etude de faisabilité =======================
 	if IsAgentBlocking(ag.path, ag, ag.env) {
 		// TODO:voir comment gérer les situations de blocage
-		// start, end := ag.generatePathExtremities()
-		// // Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit un chemin en évitant la position
-		// time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
-		// path := alg.FindPath(ag.env.station, start, end, ag.path[0], false)
-		// time.Sleep(time.Second)
-		// ag.path = path
+		start, end := ag.generatePathExtremities()
+		// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit un chemin en évitant la position
+		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
+		path := alg.FindPath(ag.env.station, start, end, ag.path[0], false)
+		time.Sleep(time.Second)
+		ag.path = path
 	}
 	safe, or := IsMovementSafe(ag.path, ag, ag.env)
 	if safe {
