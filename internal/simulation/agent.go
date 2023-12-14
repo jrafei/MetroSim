@@ -6,11 +6,9 @@ package simulation
  *			// TODO: Gérer les moments où les agents font du quasi-sur place car ils ne peuvent plus bouger
  *			// TODO: Il arrive encore que certains agents soient bloqués, mais c'est quand il n'y a aucun mouvement possible.
  *			// Il faudrait faire en sorte que les agents bougent et laisse passer les autres
- *			// TODO: vérifier map playground, destination en (0,0) (normalement résolu si ajout de panneaux et zones)
  */
 
 import (
-	//"fmt"
 	//"fmt"
 	"log"
 	"math/rand"
@@ -28,6 +26,7 @@ const (
 	Mark
 	Wait
 	Move
+	Disapear
 )
 
 type Coord [2]int
@@ -88,6 +87,10 @@ func (ag *Agent) Start() {
 			ag.behavior.Deliberate(ag)
 			ag.behavior.Act(ag)
 			ag.syncChan <- step
+			if ag.decision == Disapear{
+				ag.env.RemoveAgent(*ag)
+				return
+			}
 		}
 	}()
 }
@@ -120,7 +123,7 @@ func IsMovementSafe(path []alg.Node, agt *Agent, env *Environment) (bool, int) {
 		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > 20 || borneSupCol > 20) {
 			for i := borneInfRow; i < borneSupRow; i++ {
 				for j := borneInfCol; j < borneSupCol; j++ {
-					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && (env.station[i][j] != "B" && env.station[i][j] != "_") {
+					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && (env.station[i][j] != "B" && env.station[i][j] != "_" && env.station[i][j] != "W" && env.station[i][j] != "S") {
 						// Si on n'est pas sur une case atteignable, en dehors de la zone qu'occupe l'agent avant déplacement, on est bloqué
 						safe = false
 					}
@@ -205,8 +208,6 @@ func (ag *Agent) isStuck() bool {
 
 func (ag *Agent) MoveAgent() {
 
-	// ============ Initialisation des noeuds de départ ======================
-
 	// ================== Tentative de calcul du chemin =======================
 	if len(ag.path) == 0 {
 		start, end := ag.generatePathExtremities()
@@ -217,16 +218,18 @@ func (ag *Agent) MoveAgent() {
 	// ================== Etude de faisabilité =======================
 	if IsAgentBlocking(ag.path, ag, ag.env) {
 		// TODO:voir comment gérer les situations de blocage
-		start, end := ag.generatePathExtremities()
+		//start, end := ag.generatePathExtremities()
 		// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit un chemin en évitant la position
 		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
-		path := alg.FindPath(ag.env.station, start, end, ag.path[0], false)
+		//path := alg.FindPath(ag.env.station, start, end, ag.path[0], false)
 		time.Sleep(time.Second)
-		ag.path = path
+		//ag.path = path
+		return
 	}
+	// ================== Déplacement si aucun problème =======================
 	safe, or := IsMovementSafe(ag.path, ag, ag.env)
 	if safe {
-		removeAgent(&ag.env.station, ag)
+		RemoveAgent(&ag.env.station, ag)
 		rotateAgent(ag, or)
 		//ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = ag.isOn
 		ag.position[0] = ag.path[0].Row()
@@ -253,7 +256,7 @@ func (ag *Agent) generatePathExtremities() (alg.Node, alg.Node) {
 	return start, end
 }
 
-func removeAgent(matrix *[20][20]string, agt *Agent) {
+func RemoveAgent(matrix *[20][20]string, agt *Agent) {
 	// Supprime l'agent de la matrice
 
 	// Calcul des bornes de position de l'agent

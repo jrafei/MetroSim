@@ -2,12 +2,12 @@ package algorithms
 
 import (
 	"container/heap"
+	"math/rand"
 )
 
 /*
  * Utilisation de l'algorithme A* pour les déplacements
  * //TODO: Peut-être gérer un passage par référence et non par copie
- * //TODO: faire des points de repère
  */
 type Node struct {
 	row, col, cost, heuristic, width, height, orientation int
@@ -167,7 +167,9 @@ func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, 
 
 func Heuristic(row, col int, end Node) int {
 	// Heuristique simple : distance de Manhattan
-	return abs(row-end.row) + abs(col-end.col)
+	// On introduit de l'aléatoire pour ajouter de la diversité dans la construction des chemins
+	// On évite d'avoir tout le temps le même chemin pour un même point de départ et d'arrivé
+	return abs(row-end.row) + abs(col-end.col) + rand.Intn(3)
 }
 
 func abs(x int) int {

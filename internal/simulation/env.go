@@ -26,6 +26,18 @@ func (env *Environment) AddAgent(agt Agent) {
 	env.agentCount++
 }
 
+func (env *Environment) RemoveAgent(agt Agent) {
+	for i := 0; i < len(env.station); i++ {
+		if env.ags[i].id == agt.id{
+			// Utiliser la syntaxe de découpage pour supprimer l'élément
+			env.ags = append(env.ags[:i], env.ags[i+1:]...)
+			// Sortir de la boucle après avoir trouvé et supprimé l'élément
+			break
+		}
+	}
+	env.agentCount--
+}
+
 func (env *Environment) Do(a Action, c Coord) (err error) {
 	env.Lock()
 	defer env.Unlock()
