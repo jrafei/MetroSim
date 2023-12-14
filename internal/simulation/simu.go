@@ -5,6 +5,7 @@ import (
 	"log"
 
 	//"math/rand"
+	alg "metrosim/internal/algorithms"
 	"sync"
 	"time"
 )
@@ -85,12 +86,13 @@ var zonesCarte map[Coord]ZoneID = map[Coord]ZoneID{
 	{19, 10}: 4, {19, 11}: 4, {19, 12}: 4, {19, 13}: 4, {19, 14}: 4, {19, 15}: 4, {19, 16}: 4, {19, 17}: 4, {19, 18}: 4, {19, 19}: 4,
 }
 
-var panneauxCarte map[ZoneID][]Coord = map[ZoneID][]Coord{
+var panneauxCarte map[ZoneID][]alg.Node = map[ZoneID][]alg.Node{
 	// Placement des panneaux d'orientation
-	1: {Coord{7, 11}, Coord{14, 11}, Coord{10, 19}},
-	2: {Coord{14, 11}, Coord{10, 19}},
-	3: {Coord{7, 11}, Coord{10, 19}, Coord{14, 11}},
-	4: {Coord{7, 11}, Coord{10, 19}},
+	// Besoin des coordonnées et de l'heuristique de départ (pour choisir vers quel panneau aller (exemple, la distance jusqu'à la dest))
+	1: {*alg.NewNode(7, 11, 0, 1, 0, 0), *alg.NewNode(14, 11, 0, 10, 0, 0), *alg.NewNode(9, 5, 0, 7, 0, 0), *alg.NewNode(14, 15, 0, 15, 0, 0)},
+	2: {*alg.NewNode(14, 11, 0, 5, 0, 0), *alg.NewNode(10, 19, 0, 1, 0, 0), *alg.NewNode(14, 15, 0, 7, 0, 0)},
+	3: {*alg.NewNode(7, 11, 0, 10, 0, 0), *alg.NewNode(10, 19, 0, 5, 0, 0), *alg.NewNode(4, 11, 0, 15, 0, 0)},
+	4: {*alg.NewNode(7, 11, 0, 10, 0, 0), *alg.NewNode(10, 19, 0, 5, 0, 0)},
 }
 
 var playground [20][20]string = [20][20]string{
@@ -138,8 +140,8 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 
 	// Communication entre agents
 	mapChan := make(map[AgentID]chan AgentID)
-	simu.env = *NewEnvironment([]Agent{}, carte, mapChan, zonesCarte, panneauxCarte)
-	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
+	simu.env = *NewEnvironment([]Agent{}, carte, mapChan)
+	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan,zonesCarte, panneauxCarte)
 
 	// création des agents et des channels
 	for i := 0; i < agentCount; i++ {
@@ -148,8 +150,9 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		syncChan := make(chan int)
 		//ag := NewAgent(id, &simu.env, syncChan, time.Duration(time.Second), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
 
-		ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{2, 8}, Coord{13, 0}, 2, 1)
-		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{5, 8}, Coord{0, 0}, 2, 1)
+		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{3, 4}, Coord{18, 12}, 2, 1)
+		ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{18, 4}, Coord{1, 8}, 2, 1)
+		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{1, 17}, Coord{0, 0}, 2, 1)
 
 		// ajout de l'agent à la simulation
 		simu.agents = append(simu.agents, *ag)

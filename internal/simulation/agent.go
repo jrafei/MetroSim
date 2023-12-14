@@ -6,13 +6,16 @@ package simulation
  *			// TODO: Gérer les moments où les agents font du quasi-sur place car ils ne peuvent plus bouger
  *			// TODO: Il arrive encore que certains agents soient bloqués, mais c'est quand il n'y a aucun mouvement possible.
  *			// Il faudrait faire en sorte que les agents bougent et laisse passer les autres
- *			// TODO: vérifier map playground, destination en (0,0)
+ *			// TODO: vérifier map playground, destination en (0,0) (normalement résolu si ajout de panneaux et zones)
  */
 
 import (
 	//"fmt"
+	//"fmt"
 	"log"
-	"math/rand"
+
+	//"math"
+	//"math/rand"
 	alg "metrosim/internal/algorithms"
 	"time"
 )
@@ -30,24 +33,25 @@ type Coord [2]int
 type AgentID string
 
 type Agent struct {
-	id              AgentID
-	vitesse         time.Duration
-	force           int
-	politesse       bool
-	position        Coord // Coordonnées de référence, width et height on compte width et height à partir de cette position
-	departure       Coord
-	destination     Coord
-	behavior        Behavior
-	env             *Environment
-	syncChan        chan int
-	decision        int
-	isOn            map[Coord]string // Contenu de la case sur laquelle il se trouve
-	stuck           bool
-	width           int
-	height          int
-	orientation     int
-	path            []alg.Node
-	visitedPanneaux map[Coord]bool
+	id          AgentID
+	vitesse     time.Duration
+	force       int
+	politesse   bool
+	position    Coord // Coordonnées de référence, width et height on compte width et height à partir de cette position
+	departure   Coord
+	destination Coord
+	behavior    Behavior
+	env         *Environment
+	syncChan    chan int
+	decision    int
+	isOn        map[Coord]string // Contenu de la case sur laquelle il se trouve
+	stuck       bool
+	width       int
+	height      int
+	orientation int
+	path        []alg.Node
+	// visitedPanneaux map[alg.Node]bool
+	// visiting        *alg.Node
 }
 
 type Behavior interface {
@@ -59,11 +63,13 @@ type Behavior interface {
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int) *Agent {
 	isOn := make(map[Coord]string)
 	saveCells(&env.station, isOn, departure, width, height, 0)
-	visitedPanneaux := make(map[Coord]bool, len(env.panneaux[env.zones[destination]]))
-	for _, panneau := range env.panneaux[env.zones[destination]] {
-		visitedPanneaux[panneau] = false
-	}
-	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 0, make([]alg.Node, 0), visitedPanneaux}
+	// Enregistrement des panneaux menant à la zone
+	// visitedPanneaux := make(map[alg.Node]bool, len(env.panneaux[env.zones[destination]]))
+	// for _, panneau := range env.panneaux[env.zones[destination]] {
+	// 	visitedPanneaux[panneau] = false
+	// }
+	// visiting := alg.NewNode(destination[0], destination[1], 0, HeuristicWithObstacles(departure, destination, env), 0, 0)
+	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 0, make([]alg.Node, 0)}
 }
 
 func (ag *Agent) ID() AgentID {
@@ -91,62 +97,79 @@ func (ag *Agent) Act(env *Environment) {
 	}
 }
 
-func IsMovementSafe(path []alg.Node, agt *Agent, env *Environment) bool {
+func IsMovementSafe(path []alg.Node, agt *Agent, env *Environment) (bool, int) {
+	// Détermine si le movement est faisable
+
+	if len(path) <= 0 {
+		return false, agt.orientation
+	}
+	// Calcul des bornes de position de l'agent avant mouvement
+	infRow, supRow, infCol, supCol := calculateBounds(agt.position, agt.width, agt.height, agt.orientation)
+
+	// Simulation du déplacement
+	ag := *agt
+	ag.position = Coord{path[0].Row(), path[0].Col()}
+	for or := 0; or < 4; or++ {
+		rotateAgent(&ag, or)
+		safe := true
+
+		// Calcul des bornes de position de l'agent après mouvement
+
+		borneInfRow, borneSupRow, borneInfCol, borneSupCol := calculateBounds(ag.position, ag.width, ag.height, ag.orientation)
+		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > 20 || borneSupCol > 20) {
+			for i := borneInfRow; i < borneSupRow; i++ {
+				for j := borneInfCol; j < borneSupCol; j++ {
+					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && (env.station[i][j] != "B" && env.station[i][j] != "_") {
+						// Si on n'est pas sur une case atteignable, en dehors de la zone qu'occupe l'agent avant déplacement, on est bloqué
+						safe = false
+					}
+				}
+			}
+			if safe {
+				return true, or
+			}
+		}
+
+	}
+	return false, agt.orientation
+
+}
+
+func IsAgentBlocking(path []alg.Node, agt *Agent, env *Environment) bool {
 	// Détermine si le movement est faisable
 
 	if len(path) <= 0 {
 		return false
 	}
-
+	// Calcul des bornes de position de l'agent avant mouvement
+	infRow, supRow, infCol, supCol := calculateBounds(agt.position, agt.width, agt.height, agt.orientation)
 	// Simulation du déplacement
 	ag := *agt
 	ag.position = Coord{path[0].Row(), path[0].Col()}
-	rotateAgent(&ag, path[0].Or())
+	for or := 0; or < 4; or++ {
+		rotateAgent(&ag, or)
+		blocking := false
 
-	// Calcul des bornes de position de l'agent avant mouvement
-	infRow, supRow, infCol, supCol := calculateBounds(agt.position, agt.width, agt.height, agt.orientation)
+		// Calcul des bornes de position de l'agent après mouvement
+		borneInfRow, borneSupRow, borneInfCol, borneSupCol := calculateBounds(ag.position, ag.width, ag.height, ag.orientation)
+		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > 20 || borneSupCol > 20) {
+			for i := borneInfRow; i < borneSupRow; i++ {
+				for j := borneInfCol; j < borneSupCol; j++ {
+					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && env.station[i][j] == "A" {
+						// Si on n'est pas sur une case atteignable, en dehors de la zone qu'occupe l'agent avant déplacement, on est bloqué
 
-	// Calcul des bornes de position de l'agent après mouvement
-	borneInfRow, borneSupRow, borneInfCol, borneSupCol := calculateBounds(ag.position, ag.width, ag.height, ag.orientation)
-
-	for i := borneInfRow; i < borneSupRow; i++ {
-		for j := borneInfCol; j < borneSupCol; j++ {
-			if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && (env.station[i][j] != "B" && env.station[i][j] != "_") {
-				// Si on est sur un agent, en dehors de la zone qu'occupe l'agent avant déplacement, on est bloqué
+						blocking = true
+					}
+				}
+			}
+			if !blocking {
+				// Si on n'a pas trouvé d'agent bloquant pour cette nouvelle position, on retourne faux
 				return false
 			}
 		}
 	}
+	// Le cas où dans tous les mouvements on est bloqué par un agent
 	return true
-}
-
-func IsAgentBlocking(path []alg.Node, agt *Agent, env *Environment) bool {
-	// Détermine si un agent se trouve sur la case à visiter
-
-	if len(path) <= 0 {
-		return false
-	}
-
-	// Simulation du déplacement
-	ag := *agt
-	ag.position = Coord{path[0].Row(), path[0].Col()}
-	rotateAgent(&ag, path[0].Or())
-
-	// Calcul des bornes de position de l'agent avant mouvement
-	infRow, supRow, infCol, supCol := calculateBounds(agt.position, agt.width, agt.height, agt.orientation)
-
-	// Calcul des bornes de position de l'agent après mouvement
-	borneInfRow, borneSupRow, borneInfCol, borneSupCol := calculateBounds(ag.position, ag.width, ag.height, ag.orientation)
-
-	for i := borneInfRow; i < borneSupRow; i++ {
-		for j := borneInfCol; j < borneSupCol; j++ {
-			if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && env.station[i][j] == "A" {
-				// Si on est sur un agent, en dehors de la zone qu'occupe l'agent avant déplacement, on est bloqué
-				return true
-			}
-		}
-	}
-	return false
 }
 
 func (ag *Agent) isStuck() bool {
@@ -187,22 +210,23 @@ func (ag *Agent) MoveAgent() {
 	if len(ag.path) == 0 {
 		start, end := ag.generatePathExtremities()
 		// Recherche d'un chemin si inexistant
-		path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0))
+		path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false)
 		ag.path = path
 	}
 	// ================== Etude de faisabilité =======================
-	// fmt.Println(ag.position,path[0])
 	if IsAgentBlocking(ag.path, ag, ag.env) {
-		start, end := ag.generatePathExtremities()
-		// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit un chemin en évitant la position
-		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
-		path := alg.FindPath(ag.env.station, start, end, ag.path[0])
-		time.Sleep(time.Second)
-		ag.path = path
+		// TODO:voir comment gérer les situations de blocage
+		// start, end := ag.generatePathExtremities()
+		// // Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit un chemin en évitant la position
+		// time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
+		// path := alg.FindPath(ag.env.station, start, end, ag.path[0], false)
+		// time.Sleep(time.Second)
+		// ag.path = path
 	}
-	if IsMovementSafe(ag.path, ag, ag.env) {
+	safe, or := IsMovementSafe(ag.path, ag, ag.env)
+	if safe {
 		removeAgent(&ag.env.station, ag)
-		rotateAgent(ag, ag.path[0].Or())
+		rotateAgent(ag, or)
 		//ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = ag.isOn
 		ag.position[0] = ag.path[0].Row()
 		ag.position[1] = ag.path[0].Col()
@@ -216,8 +240,7 @@ func (ag *Agent) MoveAgent() {
 		writeAgent(&ag.env.station, ag)
 		// ============ Prise en compte de la vitesse de déplacement ======================
 		time.Sleep(ag.vitesse * time.Millisecond)
-		//fmt.Println(path[0])
-		//fmt.Println(ag.position)
+
 	}
 
 }
@@ -281,31 +304,76 @@ func equalCoord(coord1, coord2 *Coord) bool {
 	return coord1[0] == coord2[0] && coord1[1] == coord2[1]
 }
 
+// Fonction utilitaire de rotation
 func rotateAgent(agt *Agent, orientation int) {
 	agt.orientation = orientation
 }
 
+// Fonction de recherche du prochain point de destination
 func (ag *Agent) findDestination() Coord {
-	destinationZone := ag.env.zones[ag.destination]
-	if destinationZone != ag.env.zones[ag.position] {
-		// Si on n'est pas dans la zone de la destination , on va s'orienter par un panneau
-		//estimDistPos := alg.Heuristic(ag.position[0], ag.position[1], *alg.NewNode(ag.destination[0], ag.destination[1], 0, 0, 0, 0))
-		for _, panneau := range ag.env.panneaux[destinationZone] {
-			// On se rapproche du panneau menant à la zone
-			//estimDistPan := alg.Heuristic(panneau[0], panneau[1], *alg.NewNode(ag.destination[0], ag.destination[1], 0, 0, 0, 0))
-			if !ag.visitedPanneaux[panneau] {
-				//TODO:revoir la mise à jour, peut-être à faire lorsqu'on se situe au niveau de panneau, pas avant
-				//TODO:trouver une meilleure heuristique
-				ag.visitedPanneaux[panneau] = true
-				return panneau
-			}
-		}
-	}
-	// Sinon, on tente d'aller directement à la destination
+	// destination := ag.destination
+	// destinationZone := ag.env.zones[ag.destination]
+
+	// if destinationZone != ag.env.zones[ag.position] {
+	// 	// Si on n'est pas dans la zone de la destination, on va s'orienter par un panneau
+	// 	for _, panneau := range ag.env.panneaux[destinationZone] {
+	// 		if !ag.visitedPanneaux[panneau] {
+	// 			// Si le panneau n'a pas été visité et que son heuristique est meilleure
+	// 			if equalCoord(&ag.position, &Coord{ag.visiting.Row(), ag.visiting.Col()}) {
+	// 				ag.visiting = &panneau
+	// 			} else if panneau.Heuristic() < ag.visiting.Heuristic() {
+	// 				if HeuristicWithObstacles(ag.position, Coord{panneau.Row(), panneau.Col()}, ag.env) < HeuristicWithObstacles(ag.position, Coord{ag.visiting.Row(), ag.visiting.Col()}, ag.env) {
+	// 					//TODO:revoir la mise à jour, peut-être à faire lorsqu'on se situe au niveau de panneau, pas avant
+	// 					ag.visiting = &panneau
+	// 				}
+	// 			}
+	// 		}
+	// 		fmt.Println(ag.visiting)
+	// 	}
+	// }
+
+	// destination = Coord{ag.visiting.Row(), ag.visiting.Col()}
+	// if !equalCoord(&destination, &ag.destination) {
+	// 	// Si la visite de panneau est prévue, on met à jour les informations nécessaires
+	// 	ag.visitedPanneaux[*ag.visiting] = true
+	// }
+
+	// return destination
+	//best_panneau := alg.NewNode(ag.destination[0], ag.destination[1], 0, HeuristicWithObstacles(ag.position, ag.destination, ag.env))
+	//destinationZone := ag.env.zones[ag.destination]
+	//max_dist := best_panneau.Heuristic()
+	// for _, panneau := range ag.env.panneaux[destinationZone] {
+	// 	// Le panneau ne doit pas être déjà visité, et doit avoir une heuristique meilleure
+	// 	if !ag.visitedPanneaux[panneau] && panneau.Heuristic() < best_panneau.Heuristic() {
+	// 		best_panneau = &panneau
+	// 	}
+	// }
+	//return Coord{best_panneau.Row(), best_panneau.Col()}
 	return ag.destination
 }
 
+// Heuristique pour findDestination
+func HeuristicWithObstacles(x, y Coord, env *Environment) int {
+	// Heuristique de distance de Manhattan
+	distance := alg.Heuristic(x[0], x[1], *alg.NewNode(y[0], y[1], 0, 0, 0, 0))
+
+	// Compte le nombre d'obstacles sur le chemin
+	obstaclePenality := 0
+	for i := min(x[0], x[1]); i <= max(x[0], x[1]); i++ {
+		for j := min(y[0], y[1]); j <= max(y[0], y[1]); j++ {
+			if i >= 0 && i < len(env.station) && j >= 0 && j < len(env.station[0]) && env.station[i][j] == "Q" || env.station[i][j] == "X" {
+				obstaclePenality = obstaclePenality + 10
+			}
+		}
+	}
+
+	// Retourne valeur de l'heurisitique
+	return distance + obstaclePenality
+
+}
+
 func calculateBounds(position Coord, width, height, orientation int) (infRow, supRow, infCol, supCol int) {
+	// Fonction de génération des frontières d'un objet ayant une largeur et une hauteur, en focntion de son orientation
 	borneInfRow := 0
 	borneSupRow := 0
 	borneInfCol := 0
@@ -314,21 +382,25 @@ func calculateBounds(position Coord, width, height, orientation int) (infRow, su
 	// Calcul des bornes de position de l'agent après mouvement
 	switch orientation {
 	case 0:
+		// Orienté vers le haut
 		borneInfRow = position[0] - width + 1
 		borneSupRow = position[0] + 1
 		borneInfCol = position[1]
 		borneSupCol = position[1] + height
 	case 1:
+		// Orienté vers la droite
 		borneInfRow = position[0]
 		borneSupRow = position[0] + height
 		borneInfCol = position[1]
 		borneSupCol = position[1] + width
 	case 2:
+		// Orienté vers le bas
 		borneInfRow = position[0]
 		borneSupRow = position[0] + width
 		borneInfCol = position[1]
 		borneSupCol = position[1] + height
 	case 3:
+		// Orienté vers la gauche
 		borneInfRow = position[0]
 		borneSupRow = position[0] + height
 		borneInfCol = position[1] - width + 1

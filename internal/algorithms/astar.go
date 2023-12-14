@@ -30,6 +30,10 @@ func (nd *Node) Or() int {
 	return nd.orientation
 }
 
+func (nd *Node) Heuristic() int {
+	return nd.heuristic
+}
+
 type PriorityQueue []*Node
 
 func (pq PriorityQueue) Len() int { return len(pq) }
@@ -54,10 +58,11 @@ func (pq *PriorityQueue) Pop() interface{} {
 	*pq = old[0 : n-1]
 	return item
 }
-type  ZoneID int
+
+type ZoneID int
 type Coord [2]int
 
-func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node) []Node {
+func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orientation bool) []Node {
 	pq := make(PriorityQueue, 0)
 	heap.Init(&pq)
 
@@ -92,7 +97,7 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node) []Node 
 
 		visited[*current] = true
 
-		neighbors := getNeighbors(matrix, *current, end, forbidenCell)
+		neighbors := getNeighbors(matrix, *current, end, forbidenCell, orientation)
 		for _, neighbor := range neighbors {
 			if !visited[*neighbor] {
 				parents[*neighbor] = *current
@@ -114,7 +119,7 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node) []Node 
 	return nil // Aucun chemin trouvé
 }
 
-func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node) []*Node {
+func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, orientation bool) []*Node {
 	//fmt.Println("okk")
 	neighbors := make([]*Node, 0)
 
@@ -123,11 +128,26 @@ func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node) 
 
 	for _, move := range possibleMoves {
 		newRow, newCol := current.row+move[0], current.col+move[1]
-		for orientation := 0; orientation < 4; orientation++ {
-			current.orientation = orientation
-			// fmt.Println(orientation)
-			// Check if the new position is valid, considering agent dimensions and rotation
-			if isValidMove(matrix, current, forbiddenCell, newRow, newCol) {
+		if orientation {
+			for or := 0; or < 4; or++ {
+				current.orientation = or
+				//fmt.Println(orientation)
+				//Check if the new position is valid, considering agent dimensions and rotation
+				if isValidMove(matrix, current, forbiddenCell, newRow, newCol, orientation) {
+					neighbors = append(neighbors, &Node{
+						row:         newRow,
+						col:         newCol,
+						cost:        current.cost + 1,
+						heuristic:   Heuristic(newRow, newCol, end),
+						width:       current.width,
+						height:      current.height,
+						orientation: current.orientation,
+					})
+				}
+			}
+
+		} else {
+			if isValidMove(matrix, current, forbiddenCell, newRow, newCol, orientation) {
 				neighbors = append(neighbors, &Node{
 					row:         newRow,
 					col:         newCol,
@@ -157,7 +177,7 @@ func abs(x int) int {
 	return x
 }
 
-func isValidMove(matrix [20][20]string, current Node, forbiddenCell Node, newRow, newCol int) bool {
+func isValidMove(matrix [20][20]string, current Node, forbiddenCell Node, newRow, newCol int, orientation bool) bool {
 	// Check if the new position is within the bounds of the matrix
 	if newRow < 0 || newRow >= len(matrix) || newCol < 0 || newCol >= len(matrix[0]) {
 		return false
@@ -167,31 +187,38 @@ func isValidMove(matrix [20][20]string, current Node, forbiddenCell Node, newRow
 	if forbiddenCell.row == newRow && forbiddenCell.col == newCol {
 		return false
 	}
+	// Check if the absolute coordinates overlap with obstacles in the matrix
+	if matrix[newRow][newCol] == "Q" || matrix[newRow][newCol] == "X" {
+		return false
+	}
 
 	// Check if the agent fits in the new position, considering its dimensions and rotation
-	lRowBound, uRowBound, lColBound, uColBound := calculateBounds(newRow, newCol, current.width, current.height, current.orientation)
+	if orientation {
+		lRowBound, uRowBound, lColBound, uColBound := calculateBounds(newRow, newCol, current.width, current.height, current.orientation)
 
-	for i := lRowBound; i < uRowBound; i++ {
-		for j := lColBound; j < uColBound; j++ {
+		for i := lRowBound; i < uRowBound; i++ {
+			for j := lColBound; j < uColBound; j++ {
 
-			// Calculate the absolute coordinates in the matrix
-			absRow, absCol := i, j
+				// Calculate the absolute coordinates in the matrix
+				absRow, absCol := i, j
 
-			// Check if the absolute coordinates are within the bounds of the matrix
-			if absRow < 0 || absRow >= len(matrix) || absCol < 0 || absCol >= len(matrix[0]) {
-				return false
-			}
+				// Check if the absolute coordinates are within the bounds of the matrix
+				if absRow < 0 || absRow >= len(matrix) || absCol < 0 || absCol >= len(matrix[0]) {
+					return false
+				}
 
-			// Check if the absolute coordinates overlap with forbidden cells or obstacles
-			if forbiddenCell.row == absRow && forbiddenCell.col == absCol {
-				return false
-			}
+				// Check if the absolute coordinates overlap with forbidden cells or obstacles
+				if forbiddenCell.row == absRow && forbiddenCell.col == absCol {
+					return false
+				}
 
-			// Check if the absolute coordinates overlap with obstacles in the matrix
-			if matrix[absRow][absCol] == "Q" || matrix[absRow][absCol] == "X" {
-				return false
+				// Check if the absolute coordinates overlap with obstacles in the matrix
+				if matrix[absRow][absCol] == "Q" || matrix[absRow][absCol] == "X" {
+					return false
+				}
 			}
 		}
+
 	}
 
 	return true
