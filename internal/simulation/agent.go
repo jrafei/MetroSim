@@ -10,6 +10,7 @@ package simulation
 
 import (
 	//"fmt"
+
 	"log"
 	"math/rand"
 
@@ -141,7 +142,6 @@ func IsMovementSafe(path []alg.Node, agt *Agent, env *Environment) (bool, int) {
 
 func IsAgentBlocking(path []alg.Node, agt *Agent, env *Environment) bool {
 	// Détermine si le movement est faisable
-
 	if len(path) <= 0 {
 		return false
 	}
@@ -156,12 +156,13 @@ func IsAgentBlocking(path []alg.Node, agt *Agent, env *Environment) bool {
 
 		// Calcul des bornes de position de l'agent après mouvement
 		borneInfRow, borneSupRow, borneInfCol, borneSupCol := calculateBounds(ag.position, ag.width, ag.height, ag.orientation)
+
 		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > 20 || borneSupCol > 20) {
 			for i := borneInfRow; i < borneSupRow; i++ {
 				for j := borneInfCol; j < borneSupCol; j++ {
 					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && env.station[i][j] == "A" {
-						// Si on n'est pas sur une case atteignable, en dehors de la zone qu'occupe l'agent avant déplacement, on est bloqué
 
+						// Si on n'est pas sur une case atteignable, en dehors de la zone qu'occupe l'agent avant déplacement, on est bloqué
 						blocking = true
 					}
 				}
@@ -218,12 +219,11 @@ func (ag *Agent) MoveAgent() {
 	// ================== Etude de faisabilité =======================
 	if IsAgentBlocking(ag.path, ag, ag.env) {
 		// TODO:voir comment gérer les situations de blocage
-		//start, end := ag.generatePathExtremities()
-		// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit un chemin en évitant la position
+		start, end := ag.generatePathExtremities()
+		// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit
 		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
-		//path := alg.FindPath(ag.env.station, start, end, ag.path[0], false)
-		time.Sleep(time.Second)
-		//ag.path = path
+		path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false)
+		ag.path = path
 		return
 	}
 	// ================== Déplacement si aucun problème =======================
@@ -246,7 +246,6 @@ func (ag *Agent) MoveAgent() {
 		time.Sleep(ag.vitesse * time.Millisecond)
 
 	}
-
 }
 
 func (ag *Agent) generatePathExtremities() (alg.Node, alg.Node) {
