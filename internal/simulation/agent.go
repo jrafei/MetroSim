@@ -87,7 +87,7 @@ func (ag *Agent) Start() {
 			ag.behavior.Deliberate(ag)
 			ag.behavior.Act(ag)
 			ag.syncChan <- step
-			if ag.decision == Disapear{
+			if ag.decision == Disapear {
 				ag.env.RemoveAgent(*ag)
 				return
 			}
@@ -250,8 +250,9 @@ func (ag *Agent) MoveAgent() {
 }
 
 func (ag *Agent) generatePathExtremities() (alg.Node, alg.Node) {
+	// Génère les points extrêmes du chemin de l'agent
 	start := *alg.NewNode(ag.position[0], ag.position[1], 0, 0, ag.width, ag.height)
-	destination := ag.findDestination()
+	destination := ag.destination
 	end := *alg.NewNode(destination[0], destination[1], 0, 0, ag.width, ag.height)
 	return start, end
 }
@@ -305,75 +306,13 @@ func removeCoord(to_remove Coord, mapping map[Coord]string) {
 }
 
 func equalCoord(coord1, coord2 *Coord) bool {
+	// Vérifie l'égalité de 2 objets Coord
 	return coord1[0] == coord2[0] && coord1[1] == coord2[1]
 }
 
 // Fonction utilitaire de rotation
 func rotateAgent(agt *Agent, orientation int) {
 	agt.orientation = orientation
-}
-
-// Fonction de recherche du prochain point de destination
-func (ag *Agent) findDestination() Coord {
-	// destination := ag.destination
-	// destinationZone := ag.env.zones[ag.destination]
-
-	// if destinationZone != ag.env.zones[ag.position] {
-	// 	// Si on n'est pas dans la zone de la destination, on va s'orienter par un panneau
-	// 	for _, panneau := range ag.env.panneaux[destinationZone] {
-	// 		if !ag.visitedPanneaux[panneau] {
-	// 			// Si le panneau n'a pas été visité et que son heuristique est meilleure
-	// 			if equalCoord(&ag.position, &Coord{ag.visiting.Row(), ag.visiting.Col()}) {
-	// 				ag.visiting = &panneau
-	// 			} else if panneau.Heuristic() < ag.visiting.Heuristic() {
-	// 				if HeuristicWithObstacles(ag.position, Coord{panneau.Row(), panneau.Col()}, ag.env) < HeuristicWithObstacles(ag.position, Coord{ag.visiting.Row(), ag.visiting.Col()}, ag.env) {
-	// 					//TODO:revoir la mise à jour, peut-être à faire lorsqu'on se situe au niveau de panneau, pas avant
-	// 					ag.visiting = &panneau
-	// 				}
-	// 			}
-	// 		}
-	// 		fmt.Println(ag.visiting)
-	// 	}
-	// }
-
-	// destination = Coord{ag.visiting.Row(), ag.visiting.Col()}
-	// if !equalCoord(&destination, &ag.destination) {
-	// 	// Si la visite de panneau est prévue, on met à jour les informations nécessaires
-	// 	ag.visitedPanneaux[*ag.visiting] = true
-	// }
-
-	// return destination
-	//best_panneau := alg.NewNode(ag.destination[0], ag.destination[1], 0, HeuristicWithObstacles(ag.position, ag.destination, ag.env))
-	//destinationZone := ag.env.zones[ag.destination]
-	//max_dist := best_panneau.Heuristic()
-	// for _, panneau := range ag.env.panneaux[destinationZone] {
-	// 	// Le panneau ne doit pas être déjà visité, et doit avoir une heuristique meilleure
-	// 	if !ag.visitedPanneaux[panneau] && panneau.Heuristic() < best_panneau.Heuristic() {
-	// 		best_panneau = &panneau
-	// 	}
-	// }
-	//return Coord{best_panneau.Row(), best_panneau.Col()}
-	return ag.destination
-}
-
-// Heuristique pour findDestination
-func HeuristicWithObstacles(x, y Coord, env *Environment) int {
-	// Heuristique de distance de Manhattan
-	distance := alg.Heuristic(x[0], x[1], *alg.NewNode(y[0], y[1], 0, 0, 0, 0))
-
-	// Compte le nombre d'obstacles sur le chemin
-	obstaclePenality := 0
-	for i := min(x[0], x[1]); i <= max(x[0], x[1]); i++ {
-		for j := min(y[0], y[1]); j <= max(y[0], y[1]); j++ {
-			if i >= 0 && i < len(env.station) && j >= 0 && j < len(env.station[0]) && env.station[i][j] == "Q" || env.station[i][j] == "X" {
-				obstaclePenality = obstaclePenality + 10
-			}
-		}
-	}
-
-	// Retourne valeur de l'heurisitique
-	return distance + obstaclePenality
-
 }
 
 func calculateBounds(position Coord, width, height, orientation int) (infRow, supRow, infCol, supCol int) {
