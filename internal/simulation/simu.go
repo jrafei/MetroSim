@@ -3,8 +3,6 @@ package simulation
 import (
 	"fmt"
 	"log"
-
-	//"math/rand"
 	"sync"
 	"time"
 )
@@ -41,6 +39,7 @@ var carte [20][20]string = [20][20]string{
 	{"X", "X", "X", "X", "_", "_", "X", "X", "X", "X", "X", "X", "_", "_", "X", "X", "X", "X", "X", "X"},
 	{"X", "X", "X", "X", "S", "S", "X", "X", "X", "X", "X", "X", "E", "E", "X", "X", "X", "X", "X", "X"},
 }
+
 
 var playground [20][20]string = [20][20]string{
 	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
@@ -97,8 +96,15 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		syncChan := make(chan int)
 		//ag := NewAgent(id, &simu.env, syncChan, time.Duration(time.Second), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
 
-		ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{2, 8}, Coord{13, 15}, 2, 1)
-		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{5, 8}, Coord{0, 0}, 2, 1)
+		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{3, 4}, Coord{18, 12}, 2, 1)
+		ag := &Agent{}
+		if i%2==0{
+			ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{18, 4}, Coord{0, 8}, 2, 1)
+		}else{
+			ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{1, 8}, Coord{8, 5}, 1, 1)
+		}
+
+		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{1, 17}, Coord{0, 0}, 2, 1)
 
 		// ajout de l'agent à la simulation
 		simu.agents = append(simu.agents, *ag)
