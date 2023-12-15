@@ -23,7 +23,7 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 func (ul *UsagerLambda) Deliberate(ag *Agent) {
 	if ul.req.decision == Wait{
 		ag.decision = Wait
-	} else if ul.req.decision == Expel{
+	} else if ul.req.decision == Expel{ // cette condition est inutile car l'usager lambda ne peut pas etre expulsé
 		ag.decision = Expel
 	} else if ag.stuck {
 		ag.decision = Wait
@@ -39,7 +39,7 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 		n := rand.Intn(2) // temps d'attente aléatoire
 		time.Sleep(time.Duration(n) * time.Second)
 	} else {
-		ag.destination = ul.findNearestExit(ag.env)
+		ag.destination = ag.departure
 		ag.MoveAgent()
 	}
 }
@@ -47,7 +47,7 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 
 /*
  * Fonction qui permet de trouver la sortie la plus proche
-*/
+
 func (ul *UsagerLambda) findNearestExit(env *Environment) Coord{
 	station := env.station
 	for i := 0; i < len(station); i++ {
@@ -59,3 +59,4 @@ func (ul *UsagerLambda) findNearestExit(env *Environment) Coord{
 	}
 	return Coord{0,0}
 }
+*/

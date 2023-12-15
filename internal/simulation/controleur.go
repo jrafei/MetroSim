@@ -54,7 +54,7 @@ func (c *Controleur) Deliberate(ag *Agent) {
 		} else if matchedFraud {
 			ag.decision = Expel // virer l'agent devant lui
 		} else{
-			// Comportement de l'usager lambda (par defaut)
+			// Comportement de l'usager lambda (comportement par defaut)
 			if ag.stuck {
 				ag.decision = Wait
 			} else {
@@ -71,7 +71,7 @@ func (c *Controleur) Act(ag *Agent) {
 		n := rand.Intn(2) // temps d'attente aléatoire
 		time.Sleep(time.Duration(n) * time.Second)
 	} else {
-		agt_face_id := AgentID(c.faceCase)
+		agt_face_id := AgentID(c.faceCase) //id de l'agent qui se trouve devant le controleur
 		ag.env.agentsChan[agt_face_id] <- *NewRequest(ag.id, ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
 	}
 }

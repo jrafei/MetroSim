@@ -241,7 +241,7 @@ func writeAgent(matrix *[20][20]string, agt *Agent) {
 
 	for i := borneInfRow; i < borneSupRow; i++ {
 		for j := borneInfCol; j < borneSupCol; j++ {
-			matrix[i][j] = string(agt.id)
+			matrix[i][j] = string(agt.id)[0:1]
 		}
 	}
 

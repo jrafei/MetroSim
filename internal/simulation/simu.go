@@ -87,7 +87,7 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 	simu.maxDuration = maxDuration
 
 	// Communication entre agents
-	mapChan := make(map[AgentID]chan AgentID)
+	mapChan := make(map[AgentID]chan Request)
 	simu.env = *NewEnvironment([]Agent{}, carte, mapChan)
 	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
 
@@ -110,9 +110,11 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		// ajout de l'agent à l'environnement
 		ag.env.AddAgent(*ag)
 
-		// ajout
-		simu.env.agentsChan[ag.id] = make(chan Requete)
+		// ajout du channel de l'agent à l'environnement
+		simu.env.agentsChan[ag.id] = make(chan Request)
 	}
+
+
 
 	return simu
 }
@@ -120,7 +122,6 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 func (simu *Simulation) Run() {
 	// A REVOIR si nécessaire de faire appeler simu.env.pi() 
 	log.Printf("Démarrage de la simulation [step: %d, π: %f]", simu.step, simu.env.PI())
-
 	// Démarrage du micro-service de Log
 	go simu.Log()
 	// Démarrage du micro-service d'affichage
@@ -167,8 +168,9 @@ func (simu *Simulation) Print() {
 		}
 		fmt.Println()
 		fmt.Println()
+		fmt.Println("============================================================")
 		//time.Sleep(time.Second / 4) // 60 fps !
-		time.Sleep(500 * time.Millisecond) // 1 fps !
+		time.Sleep(5000 * time.Millisecond) // 1 fps !
 		//fmt.Print("\033[H\033[2J") // effacement du terminal
 	}
 }
