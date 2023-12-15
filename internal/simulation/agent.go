@@ -51,15 +51,16 @@ type Agent struct {
 	width       int
 	height      int
 	orientation int //0 : vers le haut, 1 : vers la droite, 2 : vers le bas, 3 : vers la gauche
+	path        []alg.Node
 	request     *Request
+	// visitedPanneaux map[alg.Node]bool
+	// visiting        *alg.Node
 }
 
 type Request struct {
 	demandeur AgentID
 	decision int
-	path        []alg.Node
-	// visitedPanneaux map[alg.Node]bool
-	// visiting        *alg.Node
+
 }
 
 
