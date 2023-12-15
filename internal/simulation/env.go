@@ -11,7 +11,12 @@ type Environment struct {
 	agentCount int
 	station    [20][20]string
 	agentsChan map[AgentID]chan Request
+	// zones      map[Coord]ZoneID      // Zones de la station
+	// panneaux   map[ZoneID][]alg.Node // Les panneaux de la station, permettant d'aller vers la zone
 }
+
+type ZoneID int
+
 
 
 
@@ -25,6 +30,18 @@ func NewEnvironment(ags []Agent, carte [20][20]string, agentsCh map[AgentID]chan
 func (env *Environment) AddAgent(agt Agent) {
 	env.ags = append(env.ags, agt)
 	env.agentCount++
+}
+
+func (env *Environment) RemoveAgent(agt Agent) {
+	for i := 0; i < len(env.station); i++ {
+		if env.ags[i].id == agt.id{
+			// Utiliser la syntaxe de découpage pour supprimer l'élément
+			env.ags = append(env.ags[:i], env.ags[i+1:]...)
+			// Sortir de la boucle après avoir trouvé et supprimé l'élément
+			break
+		}
+	}
+	env.agentCount--
 }
 
 func (env *Environment) Do(a Action, c Coord) (err error) {
