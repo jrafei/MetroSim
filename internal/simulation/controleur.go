@@ -1,12 +1,11 @@
 package simulation
 
 import (
-	"math/rand"
-	"time"
-	"regexp"
 	"fmt"
+	"math/rand"
+	"regexp"
+	"time"
 )
-
 
 /*
 	Je suppose que l'id du controleur est de format "Cont + un chiffre"
@@ -15,7 +14,7 @@ import (
 	Exemple : "Agent1"
 */
 
-type Controleur struct{
+type Controleur struct {
 	faceCase string // chaine de caractère qui contient l'id de l'agent qui se trouve devant le controleur, exemple : "Agent1", "Fraudeur1", "X" ,etc.
 }
 
@@ -34,13 +33,12 @@ func (c *Controleur) Percept(ag *Agent) {
 
 }
 
- 
 func (c *Controleur) Deliberate(ag *Agent) {
 	// Verifier si la case devant lui contient un agent ou un fraudeur
 	// Créer l'expression régulière
-	regexAgent:= `^Agent\d+$` // \d+ correspond à un ou plusieurs chiffres
+	regexAgent := `^Agent\d+$` // \d+ correspond à un ou plusieurs chiffres
 	regexFraudeur := `^Fraudeur\d+$`
-	
+
 	// Vérifier si la valeur de faceCase ne correspond pas au motif
 	matchedAgt, err1 := regexp.MatchString(regexAgent, c.faceCase)
 	matchedFraud, err2 := regexp.MatchString(regexFraudeur, c.faceCase)
@@ -55,7 +53,7 @@ func (c *Controleur) Deliberate(ag *Agent) {
 			ag.decision = Expel // arreter l'agent devant lui
 		} else if matchedFraud {
 			ag.decision = Expel // virer l'agent devant lui
-		} else{
+		} else {
 			// Comportement de l'usager lambda (comportement par defaut)
 			if ag.stuck {
 				ag.decision = Wait
@@ -75,6 +73,6 @@ func (c *Controleur) Act(ag *Agent) {
 	} else {
 		agt_face_id := AgentID(c.faceCase) //id de l'agent qui se trouve devant le controleur
 		fmt.Print("L'agent ", agt_face_id, " a été expulsé\n")
-		ag.env.agentsChan[agt_face_id] <- *NewRequest(ag.id, ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
+		ag.env.agentsChan[agt_face_id] <- *NewRequest(ag.env.agentsChan[ag.id], ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
 	}
 }

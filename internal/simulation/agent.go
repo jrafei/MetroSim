@@ -9,6 +9,7 @@ package simulation
  */
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	alg "metrosim/internal/algorithms"
@@ -22,8 +23,9 @@ const (
 	Mark
 	Wait
 	Move
-	Disapear
+	Disappear
 	Expel
+	GiveInfos
 )
 
 type Coord [2]int
@@ -48,12 +50,10 @@ type Agent struct {
 	orientation int //0 : vers le haut, 1 : vers la droite, 2 : vers le bas, 3 : vers la gauche
 	path        []alg.Node
 	request     *Request
-	// visitedPanneaux map[alg.Node]bool
-	// visiting        *alg.Node
 }
 
 type Request struct {
-	demandeur AgentID
+	demandeur chan Request
 	decision  int
 }
 
@@ -63,7 +63,7 @@ type Behavior interface {
 	Act(*Agent)
 }
 
-func NewRequest(demandeur AgentID, decision int) (req *Request) {
+func NewRequest(demandeur chan Request, decision int) (req *Request) {
 	return &Request{demandeur, decision}
 }
 
@@ -78,6 +78,7 @@ func (ag *Agent) ID() AgentID {
 
 func (ag *Agent) Start() {
 	log.Printf("%s starting...\n", ag.id)
+	go ag.listenForRequests()
 	go func() {
 		var step int
 		for {
@@ -86,7 +87,7 @@ func (ag *Agent) Start() {
 			ag.behavior.Deliberate(ag)
 			ag.behavior.Act(ag)
 			ag.syncChan <- step
-			if ag.decision == Disapear {
+			if ag.decision == Disappear {
 				ag.env.RemoveAgent(*ag)
 				return
 			}
@@ -350,4 +351,17 @@ func calculateBounds(position Coord, width, height, orientation int) (infRow, su
 
 	}
 	return borneInfRow, borneSupRow, borneInfCol, borneSupCol
+}
+
+func (ag *Agent) listenForRequests() {
+	for {
+		if ag.request == nil {
+			req := <-ag.env.agentsChan[ag.id]
+			fmt.Println("Request received by UsagerLambda:", req.decision)
+			ag.request = &req
+			if req.decision == Disappear {
+				return
+			}
+		}
+	}
 }

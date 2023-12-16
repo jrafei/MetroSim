@@ -72,6 +72,7 @@ type Simulation struct {
 	step        int // Stats
 	start       time.Time
 	syncChans   sync.Map
+	metro       Metro
 }
 
 func (sim *Simulation) Env() *Environment {
@@ -88,6 +89,7 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 	mapChan := make(map[AgentID]chan Request)
 	simu.env = *NewEnvironment([]Agent{}, carte, mapChan)
 	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
+	simu.metro = *NewMetro(10*time.Second, 5*time.Second, 2, []Coord{{8, 5}}, &simu.env)
 
 	// création des agents et des channels
 	for i := 0; i < agentCount; i++ {
@@ -95,7 +97,6 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 
 		syncChan := make(chan int)
 		//ag := NewAgent(id, &simu.env, syncChan, time.Duration(time.Second), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
-
 		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{},  Coord{18, 4}, Coord{0, 8}, 2, 1)
 
 		ag := &Agent{}
@@ -103,11 +104,11 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		if i%2 == 0 { //Type Agent
 			id := fmt.Sprintf("Agent%d", i)
 			//NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int)
-			ag = NewAgent(id, &simu.env, syncChan, 500, 0, true, &UsagerLambda{}, Coord{18, 4}, Coord{0, 8}, 2, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, Coord{18, 4}, Coord{0, 8}, 1, 1)
 		} else { // Type Controleur
 			//id := fmt.Sprintf("Controleur%d", i)
 			id := fmt.Sprintf("Agent%d", i)
-			ag = NewAgent(id, &simu.env, syncChan, 500, 0, true, &UsagerLambda{}, Coord{1, 8}, Coord{8, 5}, 1, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, Coord{1, 8}, Coord{8, 5}, 1, 1)
 			//ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &Controleur{}, Coord{18, 12}, Coord{18, 4}, 1, 1)
 		}
 
@@ -150,6 +151,7 @@ func (simu *Simulation) Run() {
 
 	// On sauvegarde la date du début de la simulation
 	simu.start = time.Now()
+	simu.metro.Start()
 
 	// Lancement de l'orchestration de tous les agents
 	// simu.step += 1 // plus de sens
