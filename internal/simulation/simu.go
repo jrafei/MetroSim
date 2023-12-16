@@ -41,7 +41,6 @@ var carte [20][20]string = [20][20]string{
 	{"X", "X", "X", "X", "S", "S", "X", "X", "X", "X", "X", "X", "E", "E", "X", "X", "X", "X", "X", "X"},
 }
 
-
 var playground [20][20]string = [20][20]string{
 	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
 	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
@@ -93,26 +92,25 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 	// création des agents et des channels
 	for i := 0; i < agentCount; i++ {
 		// création de l'agent
-		
+
 		syncChan := make(chan int)
 		//ag := NewAgent(id, &simu.env, syncChan, time.Duration(time.Second), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
 
 		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{},  Coord{18, 4}, Coord{0, 8}, 2, 1)
-		
-		
+
 		ag := &Agent{}
-		
-		if i%2==0{ //Type Agent
+
+		if i%2 == 0 { //Type Agent
 			id := fmt.Sprintf("Agent%d", i)
 			//NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int)
-			ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{16, 5+i}, Coord{0, 8}, 1, 1)
-		}else{ // Type Controleur
-			id := fmt.Sprintf("Controleur%d", i)
-			//ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{1, 8}, Coord{8, 5}, 1, 1)
-			ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &Controleur{}, Coord{16, 12}, Coord{18, 4}, 1, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 500, 0, true, &UsagerLambda{}, Coord{18, 4}, Coord{0, 8}, 2, 1)
+		} else { // Type Controleur
+			//id := fmt.Sprintf("Controleur%d", i)
+			id := fmt.Sprintf("Agent%d", i)
+			ag = NewAgent(id, &simu.env, syncChan, 500, 0, true, &UsagerLambda{}, Coord{1, 8}, Coord{8, 5}, 1, 1)
+			//ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &Controleur{}, Coord{18, 12}, Coord{18, 4}, 1, 1)
 		}
-		
-		
+
 		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{19, 12}, Coord{0, 8}, 2, 1)
 
 		// ajout de l'agent à la simulation
@@ -129,13 +127,11 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		simu.env.agentsChan[ag.id] = make(chan Request)
 	}
 
-
-
 	return simu
 }
 
 func (simu *Simulation) Run() {
-	// A REVOIR si nécessaire de faire appeler simu.env.pi() 
+	// A REVOIR si nécessaire de faire appeler simu.env.pi()
 	log.Printf("Démarrage de la simulation [step: %d, π: %f]", simu.step, simu.env.PI())
 	// Démarrage du micro-service de Log
 	go simu.Log()
@@ -164,8 +160,8 @@ func (simu *Simulation) Run() {
 			for {
 				step++
 				c, _ := simu.syncChans.Load(agt.ID()) // communiquer les steps aux agents
-				c.(chan int) <- step             // /!\ utilisation d'un "Type Assertion"
-				time.Sleep(1 * time.Millisecond) // "cool down"
+				c.(chan int) <- step                  // /!\ utilisation d'un "Type Assertion"
+				time.Sleep(1 * time.Millisecond)      // "cool down"
 				<-c.(chan int)
 			}
 		}(agt)
@@ -175,7 +171,6 @@ func (simu *Simulation) Run() {
 
 	log.Printf("Fin de la simulation [step: %d, in: %d, out: %d, π: %f]", simu.step, simu.env.PI())
 }
-
 
 func (simu *Simulation) Print_v0() {
 	for {
@@ -211,7 +206,6 @@ func (simu *Simulation) Print() {
         //fmt.Print("\033[H\033[2J") // effacement du terminal
     }
 }
-
 
 func (simu *Simulation) Log() {
 	// Not implemented

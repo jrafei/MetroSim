@@ -7,7 +7,7 @@ import (
 	alg "metrosim/internal/algorithms"
 )
 
-type UsagerLambda struct{
+type UsagerLambda struct {
 	req Request
 }
 
@@ -27,9 +27,8 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 
 		}
 	}
-	
-}
 
+}
 
 func (ul *UsagerLambda) Deliberate(ag *Agent) {
 	//fmt.Println("[AgentLambda Deliberate] decision :", ul.req.decision)

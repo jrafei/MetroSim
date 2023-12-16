@@ -2,7 +2,9 @@ package algorithms
 
 import (
 	"container/heap"
+	"context"
 	"math/rand"
+	"time"
 )
 
 /*
@@ -62,7 +64,11 @@ func (pq *PriorityQueue) Pop() interface{} {
 type ZoneID int
 type Coord [2]int
 
-func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orientation bool) []Node {
+func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orientation bool, timeout time.Duration) []Node {
+	// Création d'un context avec timeout, pour limiter le calcul
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
 	pq := make(PriorityQueue, 0)
 	heap.Init(&pq)
 
@@ -76,6 +82,13 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orienta
 	foundPath := false
 
 	for pq.Len() > 0 {
+		select {
+		case <-ctx.Done():
+			// Timeout reached, return an error or handle accordingly
+			return nil
+		default:
+			// Continue with the algorithm
+		}
 		current := heap.Pop(&pq).(*Node)
 
 		// Mise à jour du point le plus proche si le point actuel est plus proche
@@ -120,10 +133,9 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orienta
 }
 
 func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, orientation bool) []*Node {
-	//fmt.Println("okk")
 	neighbors := make([]*Node, 0)
 
-	// Possible moves: up, down, left, right
+	// Déplacements possibles: up, down, left, right
 	possibleMoves := [][]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
 
 	for _, move := range possibleMoves {
@@ -131,8 +143,7 @@ func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, 
 		if orientation {
 			for or := 0; or < 4; or++ {
 				current.orientation = or
-				//fmt.Println(orientation)
-				//Check if the new position is valid, considering agent dimensions and rotation
+				//Vérifie que le déplacement soit valide
 				if isValidMove(matrix, current, forbiddenCell, newRow, newCol, orientation) {
 					neighbors = append(neighbors, &Node{
 						row:         newRow,
@@ -169,7 +180,8 @@ func Heuristic(row, col int, end Node) int {
 	// Heuristique simple : distance de Manhattan
 	// On introduit de l'aléatoire pour ajouter de la diversité dans la construction des chemins
 	// On évite d'avoir tout le temps le même chemin pour un même point de départ et d'arrivé
-	return abs(row-end.row) + abs(col-end.col) + rand.Intn(3)
+	//return abs(row-end.row) + abs(col-end.col) + rand.Intn(3)
+	return abs(row-end.row) + abs(col-end.col) + rand.Intn(10)
 }
 
 func abs(x int) int {
