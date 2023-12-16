@@ -9,22 +9,20 @@ import (
 type Metro struct {
 	frequency  time.Duration
 	stopTime   time.Duration
-	freeSpace  int     // nombre de cases disponibles dans le métro
-	gates      []Coord //listes des portes du métro
+	freeSpace  int // nombre de cases disponibles dans le métro
 	env        *Environment
 	comChannel chan Request
-	way        WayID
+	way        *Way
 }
 
-func NewMetro(freq time.Duration, stopT time.Duration, freeS int, gates []Coord, env *Environment, wayNumber WayID) *Metro {
+func NewMetro(freq time.Duration, stopT time.Duration, freeS int, env *Environment, way *Way) *Metro {
 	return &Metro{
 		frequency:  freq,
 		stopTime:   stopT,
 		freeSpace:  freeS,
-		gates:      gates,
 		env:        env,
 		comChannel: make(chan Request),
-		way:        wayNumber,
+		way:        way,
 	}
 }
 
@@ -52,7 +50,7 @@ func (metro *Metro) pickUpUsers() {
 	t := time.Now()
 	for time.Now().Before(t.Add(metro.stopTime)) {
 		if metro.freeSpace > 0 {
-			for _, gate := range metro.gates {
+			for _, gate := range metro.way.gates {
 				go metro.pickUpGate(&gate)
 			}
 		}
