@@ -165,7 +165,8 @@ func IsAgentBlocking(path []alg.Node, agt *Agent, env *Environment) bool {
 	ag.position = Coord{path[0].Row(), path[0].Col()}
 	for or := 0; or < 4; or++ {
 		rotateAgent(&ag, or)
-		blocking := false
+		blocking := false 
+		//Test
 
 		// Calcul des bornes de position de l'agent après mouvement
 		borneInfRow, borneSupRow, borneInfCol, borneSupCol := calculateBounds(ag.position, ag.width, ag.height, ag.orientation)
