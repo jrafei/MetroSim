@@ -28,6 +28,7 @@ const (
 	Wait
 	Move
 	Disapear
+	Expel
 )
 
 type Coord [2]int
@@ -49,16 +50,28 @@ type Agent struct {
 	stuck       bool
 	width       int
 	height      int
-	orientation int
+	orientation int //0 : vers le haut, 1 : vers la droite, 2 : vers le bas, 3 : vers la gauche
 	path        []alg.Node
+	request     *Request
 	// visitedPanneaux map[alg.Node]bool
 	// visiting        *alg.Node
 }
+
+type Request struct {
+	demandeur AgentID
+	decision int
+
+}
+
 
 type Behavior interface {
 	Percept(*Agent)
 	Deliberate(*Agent)
 	Act(*Agent)
+}
+
+func NewRequest(demandeur AgentID, decision int) (req *Request) {
+	return &Request{demandeur, decision}
 }
 
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int) *Agent {
@@ -70,7 +83,7 @@ func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Durat
 	// 	visitedPanneaux[panneau] = false
 	// }
 	// visiting := alg.NewNode(destination[0], destination[1], 0, HeuristicWithObstacles(departure, destination, env), 0, 0)
-	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 0, make([]alg.Node, 0)}
+	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil}
 }
 
 func (ag *Agent) ID() AgentID {
@@ -278,7 +291,7 @@ func writeAgent(matrix *[20][20]string, agt *Agent) {
 
 	for i := borneInfRow; i < borneSupRow; i++ {
 		for j := borneInfCol; j < borneSupCol; j++ {
-			matrix[i][j] = "A"
+			matrix[i][j] = string(agt.id)
 		}
 	}
 
