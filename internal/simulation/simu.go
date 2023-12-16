@@ -181,9 +181,9 @@ func (simu *Simulation) Print_v0() {
 		for i := 0; i < 20; i++ {
 			fmt.Println(simu.env.station[i])
 		}
+		//fmt.Println("=================================================================================")
 		fmt.Println()
 		fmt.Println()
-		//fmt.Println("============================================================")
 		//time.Sleep(time.Second / 4) // 60 fps !
 		time.Sleep(500 * time.Millisecond) // 1 fps !
 		//fmt.Print("\033[H\033[2J") // effacement du terminal
