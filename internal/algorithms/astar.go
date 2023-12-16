@@ -65,7 +65,7 @@ type ZoneID int
 type Coord [2]int
 
 func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orientation bool, timeout time.Duration) []Node {
-	// Création d'un context avec timeout
+	// Création d'un context avec timeout, pour limiter le calcul
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -133,10 +133,9 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orienta
 }
 
 func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, orientation bool) []*Node {
-	//fmt.Println("okk")
 	neighbors := make([]*Node, 0)
 
-	// Possible moves: up, down, left, right
+	// Déplacements possibles: up, down, left, right
 	possibleMoves := [][]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
 
 	for _, move := range possibleMoves {
@@ -144,8 +143,7 @@ func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, 
 		if orientation {
 			for or := 0; or < 4; or++ {
 				current.orientation = or
-				//fmt.Println(orientation)
-				//Check if the new position is valid, considering agent dimensions and rotation
+				//Vérifie que le déplacement soit valide
 				if isValidMove(matrix, current, forbiddenCell, newRow, newCol, orientation) {
 					neighbors = append(neighbors, &Node{
 						row:         newRow,

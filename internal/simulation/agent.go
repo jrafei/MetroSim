@@ -9,13 +9,8 @@ package simulation
  */
 
 import (
-	//"fmt"
-
 	"log"
 	"math/rand"
-
-	//"math"
-	//"math/rand"
 	alg "metrosim/internal/algorithms"
 	"time"
 )
@@ -74,13 +69,6 @@ func NewRequest(demandeur AgentID, decision int) (req *Request) {
 
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int) *Agent {
 	isOn := make(map[Coord]string)
-	//saveCells(&env.station, isOn, departure, width, height, 0)
-	// Enregistrement des panneaux menant à la zone
-	// visitedPanneaux := make(map[alg.Node]bool, len(env.panneaux[env.zones[destination]]))
-	// for _, panneau := range env.panneaux[env.zones[destination]] {
-	// 	visitedPanneaux[panneau] = false
-	// }
-	// visiting := alg.NewNode(destination[0], destination[1], 0, HeuristicWithObstacles(departure, destination, env), 0, 0)
 	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil}
 }
 
@@ -257,7 +245,6 @@ func (ag *Agent) MoveAgent() {
 		// ============ Prise en compte de la vitesse de déplacement ======================
 		time.Sleep(ag.vitesse * time.Millisecond)
 	}
-	//fmt.Println(ag.id, ag.position, ag.path[0], ag.isOn)
 
 }
 
