@@ -123,6 +123,7 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 
 		// ajout de l'agent à l'environnement
 		ag.env.AddAgent(*ag)
+		ag.env.controlledAgents[ag.id] = false
 
 		// ajout du channel de l'agent à l'environnement
 		simu.env.agentsChan[ag.id] = make(chan Request)
@@ -203,6 +204,7 @@ func (simu *Simulation) Print() {
             fmt.Println()
         }
         fmt.Println()
+		fmt.Println()
         //fmt.Println("============================================================")
         //time.Sleep(time.Second / 4) // 60 fps !
         time.Sleep(500 * time.Millisecond) // 1 fps !

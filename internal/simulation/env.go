@@ -11,6 +11,7 @@ type Environment struct {
 	agentCount int
 	station    [20][20]string
 	agentsChan map[AgentID]chan Request
+	controlledAgents map[AgentID]bool
 	// zones      map[Coord]ZoneID      // Zones de la station
 	// panneaux   map[ZoneID][]alg.Node // Les panneaux de la station, permettant d'aller vers la zone
 }
@@ -23,7 +24,11 @@ type ZoneID int
 
 
 func NewEnvironment(ags []Agent, carte [20][20]string, agentsCh map[AgentID]chan Request) (env *Environment) {
-	return &Environment{ags: ags, agentCount: len(ags), station: carte, agentsChan: agentsCh}
+	mapControlle := make(map[AgentID]bool)
+	for _, ag := range ags {
+		mapControlle[ag.id] = false
+	}
+	return &Environment{ags: ags, agentCount: len(ags), station: carte, agentsChan: agentsCh, controlledAgents: mapControlle}
 }
 
 
@@ -77,4 +82,24 @@ func (env *Environment) Rect() Coord {
 
 func (env *Environment) GetAgentChan(agt_id AgentID) chan Request {
 	return env.agentsChan[agt_id]
+}
+
+func existAgent(c string) bool {
+	return c != "X" && c != "E"  &&  c != "S" &&  c != "W" &&  c!= "Q" && c!= "_" &&  c!= "B"
+}
+
+func calculDirection(depart Coord, arrive Coord) int {
+	if depart[0] == arrive[0] {
+		if depart[1] > arrive[1] {
+			return  3 //Gauche
+		} else {
+			return  1 //droite
+		}
+	} else {
+		if depart[0] > arrive[0] {
+			return 0 //haut
+		} else {
+			return 2 //bas
+		}
+	}
 }
