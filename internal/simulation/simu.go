@@ -110,7 +110,7 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		}
 		*/
 		
-		ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{1, 17}, Coord{0, 0}, 2, 1)
+		ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{19, 12}, Coord{0, 8}, 2, 1)
 
 		// ajout de l'agent à la simulation
 		simu.agents = append(simu.agents, *ag)
@@ -179,7 +179,7 @@ func (simu *Simulation) Print() {
 		}
 		fmt.Println()
 		fmt.Println()
-		fmt.Println("============================================================")
+		//fmt.Println("============================================================")
 		//time.Sleep(time.Second / 4) // 60 fps !
 		time.Sleep(5000 * time.Millisecond) // 1 fps !
 		//fmt.Print("\033[H\033[2J") // effacement du terminal
