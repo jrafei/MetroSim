@@ -87,9 +87,13 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 
 	// Communication entre agents
 	mapChan := make(map[AgentID]chan Request)
+
+	// Création de l'environement
 	simu.env = *NewEnvironment([]Agent{}, carte, mapChan)
 	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
-	simu.metro = *NewMetro(10*time.Second, 5*time.Second, 2, []Coord{{8, 5}}, &simu.env)
+
+	// Création du métro
+	simu.metro = *NewMetro(10*time.Second, 5*time.Second, 2, []Coord{{8, 5}}, &simu.env, 1)
 
 	// création des agents et des channels
 	for i := 0; i < agentCount; i++ {

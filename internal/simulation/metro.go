@@ -2,6 +2,7 @@ package simulation
 
 import (
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -12,9 +13,10 @@ type Metro struct {
 	gates      []Coord //listes des portes du métro
 	env        *Environment
 	comChannel chan Request
+	way        WayID
 }
 
-func NewMetro(freq time.Duration, stopT time.Duration, freeS int, gates []Coord, env *Environment) *Metro {
+func NewMetro(freq time.Duration, stopT time.Duration, freeS int, gates []Coord, env *Environment, wayNumber WayID) *Metro {
 	return &Metro{
 		frequency:  freq,
 		stopTime:   stopT,
@@ -22,6 +24,7 @@ func NewMetro(freq time.Duration, stopT time.Duration, freeS int, gates []Coord,
 		gates:      gates,
 		env:        env,
 		comChannel: make(chan Request),
+		way:        wayNumber,
 	}
 }
 
@@ -33,8 +36,8 @@ func (metro *Metro) Start() {
 		for {
 			//step = <-metro.syncChan
 			if refTime.Add(metro.frequency).Before(time.Now()) {
-				//defer func() { refTime = time.Now() }()
 				go metro.pickUpUsers()
+				metro.freeSpace = rand.Intn(5)
 				//go metro.dropUsers()
 				refTime = time.Now()
 			}
@@ -61,7 +64,7 @@ func (metro *Metro) pickUpGate(gate *Coord) {
 	gate_cell := metro.env.station[gate[0]][gate[1]]
 	if len(gate_cell) > 1 {
 		agent := metro.findAgent(AgentID(gate_cell))
-		if agent != nil && agent.width*agent.height <= metro.freeSpace {
+		if agent != nil && agent.width*agent.height <= metro.freeSpace && agent.destination == *gate {
 			metro.env.agentsChan[agent.id] <- *NewRequest(metro.comChannel, Disappear)
 			metro.freeSpace--
 		}
