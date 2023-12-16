@@ -93,24 +93,27 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 	// création des agents et des channels
 	for i := 0; i < agentCount; i++ {
 		// création de l'agent
-		id := fmt.Sprintf("Agent #%d", i)
+		
 		syncChan := make(chan int)
 		//ag := NewAgent(id, &simu.env, syncChan, time.Duration(time.Second), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
 
 		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{},  Coord{18, 4}, Coord{0, 8}, 2, 1)
 		
-		/*
+		
 		ag := &Agent{}
 		
-		if i%2==0{
+		if i%2==0{ //Type Agent
+			id := fmt.Sprintf("Agent%d", i)
 			//NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int)
-			ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{18, 4}, Coord{0, 8}, 2, 1)
-		}else{
-			ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{1, 8}, Coord{8, 5}, 1, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{18, 4}, Coord{0, 8}, 1, 1)
+		}else{ // Type Controleur
+			id := fmt.Sprintf("Controleur%d", i)
+			//ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{1, 8}, Coord{8, 5}, 1, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &Controleur{}, Coord{18, 12}, Coord{18, 4}, 1, 1)
 		}
-		*/
 		
-		ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{19, 12}, Coord{0, 8}, 2, 1)
+		
+		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{19, 12}, Coord{0, 8}, 2, 1)
 
 		// ajout de l'agent à la simulation
 		simu.agents = append(simu.agents, *ag)
@@ -172,7 +175,8 @@ func (simu *Simulation) Run() {
 	log.Printf("Fin de la simulation [step: %d, in: %d, out: %d, π: %f]", simu.step, simu.env.PI())
 }
 
-func (simu *Simulation) Print() {
+
+func (simu *Simulation) Print_v0() {
 	for {
 		for i := 0; i < 20; i++ {
 			fmt.Println(simu.env.station[i])
@@ -181,10 +185,31 @@ func (simu *Simulation) Print() {
 		fmt.Println()
 		//fmt.Println("============================================================")
 		//time.Sleep(time.Second / 4) // 60 fps !
-		time.Sleep(5000 * time.Millisecond) // 1 fps !
+		time.Sleep(500 * time.Millisecond) // 1 fps !
 		//fmt.Print("\033[H\033[2J") // effacement du terminal
 	}
 }
+func (simu *Simulation) Print() {
+    for {
+        for i := 0; i < 20; i++ {
+            for j := 0; j < 20; j++ {
+                element := simu.env.station[i][j]
+                if len(element) > 1 {
+                    fmt.Print(string(element[0]) + " ") // Afficher le premier caractère si la longueur est supérieure à 1
+                } else {
+                    fmt.Print(element+" ")
+                }
+            }
+            fmt.Println()
+        }
+        fmt.Println()
+        //fmt.Println("============================================================")
+        //time.Sleep(time.Second / 4) // 60 fps !
+        time.Sleep(500 * time.Millisecond) // 1 fps !
+        //fmt.Print("\033[H\033[2J") // effacement du terminal
+    }
+}
+
 
 func (simu *Simulation) Log() {
 	// Not implemented

@@ -83,7 +83,7 @@ func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Durat
 	// 	visitedPanneaux[panneau] = false
 	// }
 	// visiting := alg.NewNode(destination[0], destination[1], 0, HeuristicWithObstacles(departure, destination, env), 0, 0)
-	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 0, make([]alg.Node, 0), nil}
+	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil}
 }
 
 func (ag *Agent) ID() AgentID {
@@ -291,7 +291,7 @@ func writeAgent(matrix *[20][20]string, agt *Agent) {
 
 	for i := borneInfRow; i < borneSupRow; i++ {
 		for j := borneInfCol; j < borneSupCol; j++ {
-			matrix[i][j] = "A"//string(agt.id)[0:1]
+			matrix[i][j] = string(agt.id)
 		}
 	}
 
