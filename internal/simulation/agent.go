@@ -28,7 +28,8 @@ const (
 	Wait
 	Move
 	Disapear
-	Expel
+	Expel // virer l'agent
+	Stop  // arreter l'agent
 )
 
 type Coord [2]int

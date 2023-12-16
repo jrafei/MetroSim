@@ -34,9 +34,9 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 func (ul *UsagerLambda) Deliberate(ag *Agent) {
 	//fmt.Println("[AgentLambda Deliberate] decision :", ul.req.decision)
 
-	if ul.req.decision == Wait{
+	if ul.req.decision == Stop{
 		ag.decision = Wait
-	} else if ul.req.decision == Expel{ // cette condition est inutile car l'usager lambda ne peut pas etre expulsé
+	} else if ul.req.decision == Expel{ // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
 			ag.decision = Expel
 		}else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") {
 			//fmt.Println(ag.id, "disapear")

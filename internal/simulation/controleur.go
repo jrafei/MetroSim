@@ -55,15 +55,15 @@ func (c *Controleur) Deliberate(ag *Agent) {
 	} else {
 		if matchedAgt  && ag.env.controlledAgents[AgentID(c.faceCase)] == false { // si l'agent devant le controleur est un agent et qu'il n'a pas encore été controlé
 			//fmt.Println("L'agent ", c.face, " a été détecté par le controleur")
-			ag.decision = Expel // arreter l'agent devant lui
+			ag.decision = Stop // arreter l'agent devant lui
 		} else if matchedFraud && !ag.env.controlledAgents[AgentID(c.faceCase)]{
 			ag.decision = Expel // virer l'agent devant lui
 		} else{
 			// Comportement de l'usager lambda (comportement par defaut)
 			if ag.stuck {
-				ag.decision = Wait
+				ag.decision = Wait // attendre
 			} else {
-				ag.decision = Move
+				ag.decision = Move // avancer
 			}
 		}
 	}
@@ -75,7 +75,7 @@ func (c *Controleur) Act(ag *Agent) {
 	} else if ag.decision == Wait {
 		n := rand.Intn(2) // temps d'attente aléatoire
 		time.Sleep(time.Duration(n) * time.Second)
-	} else { // Expel
+	} else { // Expel ou Wait
 		agt_face_id := AgentID(c.faceCase) //id de l'agent qui se trouve devant le controleur
 		ag.env.agentsChan[agt_face_id] <- *NewRequest(ag.id, ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
 		//fmt.Print("[Controlleur , Act ]requête envoyée à l'agent ", agt_face_id, "\n") 
