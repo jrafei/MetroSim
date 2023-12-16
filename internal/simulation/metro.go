@@ -1,6 +1,7 @@
 package simulation
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"time"
@@ -35,7 +36,8 @@ func (metro *Metro) Start() {
 			//step = <-metro.syncChan
 			if refTime.Add(metro.frequency).Before(time.Now()) {
 				go metro.pickUpUsers()
-				metro.freeSpace = rand.Intn(5)
+				metro.freeSpace = rand.Intn(10)
+				fmt.Println(metro.way.id, metro.freeSpace)
 				//go metro.dropUsers()
 				refTime = time.Now()
 			}
