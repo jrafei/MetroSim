@@ -277,6 +277,7 @@ func (ag *Agent) MoveAgent() {
 				reqToBlockingAgent = NewRequest(blockingAgentID, 3)
 				ag.env.agentsChan[blockingAgentID] <- *reqToBlockingAgent
 
+				//Faire le moment ou blocking agent recoit qqchose sur son canal
 				//BlockingAgent cherche si autour de lui c'est vide
 				possible, or := IsMovementSafe(blockingAgent.path, blockingAgent, blockingAgent.env)
 				if !possible {
