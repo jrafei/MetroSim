@@ -1,0 +1,55 @@
+// ================== Comprendre la structure du code ==================
+
+Agent : 
+
+	id          AgentID //identification
+	vitesse     time.Duration //vitesse
+	force       int
+	politesse   bool
+	position    Coord // Coordonnées de référence, width et height on compte width et height à partir de cette position
+	departure   Coord
+	destination Coord
+	behavior    Behavior
+	env         *Environment //Environnement dan slequel il est
+	syncChan    chan int
+	decision    int
+	isOn        map[Coord]string // Contenu de la case sur laquelle il se trouve
+	stuck       bool
+	width       int
+	height      int
+	orientation int //0 : vers le haut, 1 : vers la droite, 2 : vers le bas, 3 : vers la gauche
+	path        []alg.Node
+	request     *Request
+
+
+
+	if ag.politesse == false {
+
+
+	}
+
+// =============== Questions =================
+Pourquoi l environnement dans Percept est passé par copie alors que cekui de Act par pointeur? dan sle cours.
+	Réponse : pointeur pour qu on puisse agir dessus?
+			  a quoi sert log dans simulation?
+
+
+Dans le projet : 
+	- A quoi sert sync.Map dans Simulation?
+	- Vous avez pas fait tous les getters dans Agent?
+	- Attributs syncChan et path dans Agent? qu est ce que le channel de synchro qui prend plusieurs channel entre eux
+
+	
+	// Lancement de l'orchestration de tous les agents
+	// simu.step += 1 // plus de sens
+	for _, agt := range simu.agents {
+		go func(agt Agent) {
+			step := 0
+			for {
+				step++
+				c, _ := simu.syncChans.Load(agt.ID()) // communiquer les steps aux agents
+				c.(chan int) <- step             // /!\ utilisation d'un "Type Assertion"
+				time.Sleep(1 * time.Millisecond) // "cool down"
+				<-c.(chan int)
+			}
+		}(agt)
