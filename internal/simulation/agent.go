@@ -11,7 +11,7 @@ package simulation
 import (
 	//"fmt"
 
-	"log"
+	//"log"
 	"math/rand"
 
 	//"math"
@@ -28,7 +28,8 @@ const (
 	Wait
 	Move
 	Disapear
-	Expel
+	Expel // virer l'agent
+	Stop  // arreter l'agent
 )
 
 type Coord [2]int
@@ -50,17 +51,17 @@ type Agent struct {
 	stuck       bool
 	width       int
 	height      int
-	orientation int //0 : vers le haut, 1 : vers la droite, 2 : vers le bas, 3 : vers la gauche
+	orientation int //0 : vers le haut, 1 : vers la droite, 2 : vers le bas, 3 : vers la gauche (sens de deuxieme case occupé par l'agent)
 	path        []alg.Node
 	request     *Request
+	direction   int //0 : vers le haut, 1 : vers la droite, 2 : vers le bas, 3 : vers la gauche (sens de son deplacement)
 	// visitedPanneaux map[alg.Node]bool
 	// visiting        *alg.Node
 }
 
 type Request struct {
-	demandeur AgentID
+	demandeur AgentID //chan Request ?? boucle NON ??
 	decision int
-
 }
 
 
@@ -83,7 +84,7 @@ func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Durat
 	// 	visitedPanneaux[panneau] = false
 	// }
 	// visiting := alg.NewNode(destination[0], destination[1], 0, HeuristicWithObstacles(departure, destination, env), 0, 0)
-	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil}
+	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 0, make([]alg.Node, 0), nil, 0}
 }
 
 func (ag *Agent) ID() AgentID {
@@ -91,7 +92,7 @@ func (ag *Agent) ID() AgentID {
 }
 
 func (ag *Agent) Start() {
-	log.Printf("%s starting...\n", ag.id)
+	//log.Printf("%s starting...\n", ag.id)
 
 	go func() {
 		var step int
@@ -209,7 +210,7 @@ func (ag *Agent) isStuck() bool {
 				count++
 			}
 			// Case inaccessible
-			if i < 0 || j < 0 || i > 19 || j > 19 || ag.env.station[i][j] == "X" || ag.env.station[i][j] == "Q" || ag.env.station[i][j] == "A" {
+			if i < 0 || j < 0 || i > 19 || j > 19 || ag.env.station[i][j] == "X" || ag.env.station[i][j] == "Q" || existAgent(ag.env.station[i][j])  {
 				not_acc++
 
 			}
@@ -222,7 +223,7 @@ func (ag *Agent) isStuck() bool {
 }
 
 func (ag *Agent) MoveAgent() {
-
+	//fmt.Println("[Agent, MoveAgent] destination ", ag.destination)
 	// ================== Tentative de calcul du chemin =======================
 	if len(ag.path) == 0 {
 		start, end := ag.generatePathExtremities()
@@ -244,8 +245,12 @@ func (ag *Agent) MoveAgent() {
 	safe, or := IsMovementSafe(ag.path, ag, ag.env)
 	if safe {
 		RemoveAgent(&ag.env.station, ag)
-		rotateAgent(ag, or)
+		rotateAgent(ag, or) // mise à jour de l'orientation
 		//ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = ag.isOn
+		
+		//MODIFICATION DE DIRECTION 
+		ag.direction = calculDirection(ag.position, Coord{ag.path[0].Row(), ag.path[0].Col()})
+		//fmt.Println("[MoveAgent]Direction : ", ag.direction)
 		ag.position[0] = ag.path[0].Row()
 		ag.position[1] = ag.path[0].Col()
 		if len(ag.path) > 1 {
