@@ -60,7 +60,7 @@ type Agent struct {
 }
 
 type Request struct {
-	demandeur AgentID //chan Request ?? boucle NON ??
+	demandeur chan Request //channel de l'émetteur de la demande
 	decision  int
 }
 
@@ -70,7 +70,7 @@ type Behavior interface {
 	Act(*Agent)
 }
 
-func NewRequest(demandeur AgentID, decision int) (req *Request) {
+func NewRequest(demandeur chan Request, decision int) (req *Request) {
 	return &Request{demandeur, decision}
 }
 
@@ -255,7 +255,6 @@ func (ag *Agent) MoveAgent() {
 	// ================== Etude de faisabilité =======================
 	if IsAgentBlocking(ag.path, ag, ag.env) {
 		if ag.politesse {
-			// TODO:voir comment gérer les situations de blocage
 			start, end := ag.generatePathExtremities()
 			// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit
 			time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
@@ -274,12 +273,19 @@ func (ag *Agent) MoveAgent() {
 			for !accept && i < 3 {
 				//Demande à l'agent qui bloque de se pousser (réitère trois fois s'il lui dit pas possible)
 				i += 1
-				reqToBlockingAgent = NewRequest(blockingAgentID, 3)
-				ag.env.agentsChan[blockingAgentID] <- *reqToBlockingAgent
+				reqToBlockingAgent = NewRequest(ag.env.agentsChan[ag.id], 3) //Création "Hello, je suis ag.id, move."
+				ag.env.agentsChan[blockingAgentID] <- *reqToBlockingAgent    //Envoi requête
 
-				//Faire le moment ou blocking agent recoit qqchose sur son canal
+				/*
+					1. Faire le moment ou blocking agent recoit qqchose sur son canal
+					2.
+
+
+				*/
+
 				//BlockingAgent cherche si autour de lui c'est vide
 				possible, or := IsMovementSafe(blockingAgent.path, blockingAgent, blockingAgent.env)
+
 				if !possible {
 					reqToImpoliteAgent = NewRequest(ag.id, 0)
 					ag.env.agentsChan[ag.id] <- *reqToImpoliteAgent

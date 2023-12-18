@@ -3,11 +3,11 @@ package simulation
 import (
 	//"fmt"
 	"math/rand"
-	"time"
 	alg "metrosim/internal/algorithms"
+	"time"
 )
 
-type UsagerLambda struct{
+type UsagerLambda struct {
 	req Request
 }
 
@@ -15,35 +15,34 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 	// récupérer le channel de l'agent lambda
 	//fmt.Println("[AgentLambda, Percept] direction ", ag.direction)
 
-	chan_agt := ag.env.GetAgentChan(ag.id) 
+	chan_agt := ag.env.GetAgentChan(ag.id)
 	select {
-	case req := <-chan_agt : //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
+	case req := <-chan_agt: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		//fmt.Println("[AgentLambda, Percept] Requete recue par l'agent lambda : ", req.decision)
 		ul.req = req
-	case <- time.After(time.Second):
+	case <-time.After(time.Second):
 		ag.stuck = ag.isStuck()
 		if ag.stuck {
 			return
 
 		}
 	}
-	
-}
 
+}
 
 func (ul *UsagerLambda) Deliberate(ag *Agent) {
 	//fmt.Println("[AgentLambda Deliberate] decision :", ul.req.decision)
 
-	if ul.req.decision == Stop{
+	if ul.req.decision == Stop {
 		ag.decision = Wait
-	} else if ul.req.decision == Expel{ // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
-			ag.decision = Expel
-		}else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") {
-			//fmt.Println(ag.id, "disapear")
-			ag.decision = Disapear
-			} else {
-				ag.decision = Move
-			}
+	} else if ul.req.decision == Expel { // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
+		ag.decision = Expel
+	} else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") {
+		//fmt.Println(ag.id, "disapear")
+		ag.decision = Disapear
+	} else {
+		ag.decision = Move
+	}
 }
 
 func (ul *UsagerLambda) Act(ag *Agent) {
@@ -59,7 +58,7 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.departure
 		ag.env.controlledAgents[ag.id] = true
-		ag.path = make([]alg.Node,0)
+		ag.path = make([]alg.Node, 0)
 		ag.MoveAgent()
 	}
 }
