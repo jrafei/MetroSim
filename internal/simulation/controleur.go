@@ -19,7 +19,25 @@ import (
 
 type Controleur struct{
 	faceCase string // chaine de caractère qui contient l'id de l'agent qui se trouve devant le controleur, exemple : "Agent1", "Fraudeur1", "X" ,etc.
-	}
+	lifetime time.Duration // durée de vie du controleur
+	timer *time.Timer // timer qui permet de définir la durée de vie du controleur
+	isExpired bool // true si le controleur est expiré, false sinon
+}
+
+
+func NewControleur(lifetime time.Duration) *Controleur {
+	return &Controleur{lifetime: lifetime, isExpired: false}
+}
+
+func (c *Controleur) startTimer() {
+    c.timer = time.NewTimer(c.lifetime)
+    go func() {
+        <-c.timer.C
+        c.isExpired = true
+        // Ajoutez ici la logique à exécuter lorsque le timer expire
+    }()
+}
+
 
 func (c *Controleur) Percept(ag *Agent) {
 		env := ag.env
@@ -38,7 +56,7 @@ func (c *Controleur) Percept(ag *Agent) {
 
  
 func (c *Controleur) Deliberate(ag *Agent) {
-	// Verifier si la  devant lui contient un agent ou un fraudeur
+	// Verifier si la case devant lui contient un agent ou un fraudeur
 	// Créer l'expression régulière
 	regexAgent:= `^Agent\d+$` // \d+ correspond à un ou plusieurs chiffres
 	regexFraudeur := `^Fraudeur\d+$`
@@ -77,7 +95,8 @@ func (c *Controleur) Act(ag *Agent) {
 		time.Sleep(time.Duration(n) * time.Second)
 	} else { // Expel ou Wait
 		agt_face_id := AgentID(c.faceCase) //id de l'agent qui se trouve devant le controleur
-		ag.env.agentsChan[agt_face_id] <- *NewRequest(ag.id, ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
+		agt_chan := ag.env.agentsChan[agt_face_id]
+		ag.env.agentsChan[agt_face_id] <- *NewRequest(agt_chan, ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
 		//fmt.Print("[Controlleur , Act ]requête envoyée à l'agent ", agt_face_id, "\n") 
 	}
 }

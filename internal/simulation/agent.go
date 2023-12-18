@@ -54,10 +54,11 @@ type Agent struct {
 	direction   int //0 : vers le haut, 1 : vers la droite, 2 : vers le bas, 3 : vers la gauche (sens de son deplacement)
 	// visitedPanneaux map[alg.Node]bool
 	// visiting        *alg.Node
+
 }
 
 type Request struct {
-	demandeur AgentID //chan Request ?? boucle NON ??
+	demandeur chan Request 
 	decision  int
 }
 
@@ -67,8 +68,8 @@ type Behavior interface {
 	Act(*Agent)
 }
 
-func NewRequest(demandeur AgentID, decision int) (req *Request) {
-	return &Request{demandeur, decision}
+func NewRequest(c chan Request, decision int) (req *Request) {
+	return &Request{c, decision}
 }
 
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int) *Agent {
@@ -386,7 +387,7 @@ func (ag *Agent) findNearestExit() (Coord){
 	min := 1000000
 	for i := 0; i < 20; i++ {
 		for j := 0; j < 20; j++ {
-			if ag.env.station[i][j] == "S" {
+			if ag.env.station[i][j] == "S" || ag.env.station[i][j] == "W" {
 				dist := alg.Abs(ag.position[0]-i) + alg.Abs(ag.position[1]-j)
 				if dist < min {
 					min = dist
