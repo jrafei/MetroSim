@@ -114,8 +114,8 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		} else { // Type Controleur
 			//id := fmt.Sprintf("Controleur%d", i)
 			id := fmt.Sprintf("Controleur%d", i)
-			ag = NewAgent(id, &simu.env, syncChan, 500, 0, true, &UsagerLambda{}, Coord{1, 8}, Coord{8, 5}, 1, 1)
-			//ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &Controleur{}, Coord{18, 12}, Coord{18, 4}, 1, 1)
+			//ag = NewAgent(id, &simu.env, syncChan, 500, 0, true, &Controleur{}, Coord{1, 8}, Coord{8, 5}, 1, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &Controleur{}, Coord{18, 12}, Coord{18, 4}, 1, 1)
 		}
 
 		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{19, 12}, Coord{0, 8}, 2, 1)
@@ -203,8 +203,8 @@ func (simu *Simulation) Print_v0() {
 }
 func (simu *Simulation) Print() {
     for {
-        for i := 0; i < 20; i++ {
-            for j := 0; j < 20; j++ {
+        for i := 0; i < len(simu.env.station[0]); i++ {
+            for j := 0; j < len(simu.env.station[0]); j++ {
                 element := simu.env.station[i][j]
                 if len(element) > 1 {
                     fmt.Print(string(element[0]) + " ") // Afficher le premier caractère si la longueur est supérieure à 1

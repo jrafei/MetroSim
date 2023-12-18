@@ -9,7 +9,7 @@ package simulation
  */
 
 import (
-	"fmt"
+	//"fmt"
 	"log"
 	//"fmt"
 
@@ -87,6 +87,12 @@ func (ag *Agent) ID() AgentID {
 func (ag *Agent) Start() {
 	log.Printf("%s starting...\n", ag.id)
 	go ag.listenForRequests()
+	
+	// si c'est un controlleur on lance le timer de durée de vie
+	if (ag.id[0] == 'C') {
+		ag.behavior.(*Controleur).startTimer()
+	}
+
 	go func() {
 		var step int
 		for {
@@ -373,7 +379,7 @@ func (ag *Agent) listenForRequests() {
 	for {
 		if ag.request == nil {
 			req := <-ag.env.agentsChan[ag.id]
-			fmt.Println("Request received by UsagerLambda:", req.decision)
+			//fmt.Println("Request received by UsagerLambda:", req.decision)
 			ag.request = &req
 			if req.decision == Disappear {
 				return
@@ -381,20 +387,6 @@ func (ag *Agent) listenForRequests() {
 		}
 	}
 }
-
-func (ag *Agent) listenForRequests() {
-	for {
-		if ag.request == nil {
-			req := <-ag.env.agentsChan[ag.id]
-			fmt.Println("Request received by UsagerLambda:", req.decision)
-			ag.request = &req
-			if req.decision == Disappear {
-				return
-			}
-		}
-	}
-}
-
 
 func (ag *Agent) findNearestGate(gates [] Coord) (Coord) {
 	// Recherche de la porte la plus proche
@@ -414,8 +406,9 @@ func (ag *Agent) findNearestExit() (Coord){
 	// Recherche de la sortie la plus proche
 	nearest := Coord{0, 0}
 	min := 1000000
-	for i := 0; i < 20; i++ {
-		for j := 0; j < 20; j++ {
+	n := len(ag.env.station[0])
+	for i := 0; i < n ; i++ {
+		for j := 0; j < n ; j++ {
 			if ag.env.station[i][j] == "S" || ag.env.station[i][j] == "W" {
 				dist := alg.Abs(ag.position[0]-i) + alg.Abs(ag.position[1]-j)
 				if dist < min {

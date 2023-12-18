@@ -19,10 +19,6 @@ type Environment struct {
 type ZoneID int
 
 
-
-
-
-
 func NewEnvironment(ags []Agent, carte [20][20]string, agentsCh map[AgentID]chan Request) (env *Environment) {
 	mapControlle := make(map[AgentID]bool)
 	for _, ag := range ags {
@@ -81,6 +77,10 @@ func (env *Environment) Rect() Coord {
 
 func (env *Environment) GetAgentChan(agt_id AgentID) chan Request {
 	return env.agentsChan[agt_id]
+}
+
+func (env *Environment) verifyEmptyCase(c Coord) bool {
+	return env.station[c[0]][c[1]] == "_" //|| env.station[c[0]][c[1]] == "E" || env.station[c[0]][c[1]] == "S" || env.station[c[0]][c[1]] == "W" 
 }
 
 func existAgent(c string) bool {
