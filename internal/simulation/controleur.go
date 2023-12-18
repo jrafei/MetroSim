@@ -3,12 +3,11 @@ package simulation
 //ajouter liste des agents déjà controllés
 
 import (
+	"fmt"
 	"math/rand"
-	"time"
 	"regexp"
-	//"fmt"
+	"time"
 )
-
 
 /*
 	Je suppose que l'id du controleur est de format "Cont + un chiffre"
@@ -17,7 +16,7 @@ import (
 	Exemple : "Agent1"
 */
 
-type Controleur struct{
+type Controleur struct {
 	faceCase string // chaine de caractère qui contient l'id de l'agent qui se trouve devant le controleur, exemple : "Agent1", "Fraudeur1", "X" ,etc.
 	lifetime time.Duration // durée de vie du controleur
 	timer *time.Timer // timer qui permet de définir la durée de vie du controleur
@@ -54,13 +53,12 @@ func (c *Controleur) Percept(ag *Agent) {
 
 }
 
- 
 func (c *Controleur) Deliberate(ag *Agent) {
 	// Verifier si la case devant lui contient un agent ou un fraudeur
 	// Créer l'expression régulière
-	regexAgent:= `^Agent\d+$` // \d+ correspond à un ou plusieurs chiffres
+	regexAgent := `^Agent\d+$` // \d+ correspond à un ou plusieurs chiffres
 	regexFraudeur := `^Fraudeur\d+$`
-	
+
 	// Vérifier si la valeur de faceCase ne correspond pas au motif
 	matchedAgt, err1 := regexp.MatchString(regexAgent, c.faceCase)
 	matchedFraud, err2 := regexp.MatchString(regexFraudeur, c.faceCase)
@@ -76,7 +74,7 @@ func (c *Controleur) Deliberate(ag *Agent) {
 			ag.decision = Stop // arreter l'agent devant lui
 		} else if matchedFraud && !ag.env.controlledAgents[AgentID(c.faceCase)]{
 			ag.decision = Expel // virer l'agent devant lui
-		} else{
+		} else {
 			// Comportement de l'usager lambda (comportement par defaut)
 			if ag.stuck {
 				ag.decision = Wait // attendre
@@ -95,9 +93,8 @@ func (c *Controleur) Act(ag *Agent) {
 		time.Sleep(time.Duration(n) * time.Second)
 	} else { // Expel ou Wait
 		agt_face_id := AgentID(c.faceCase) //id de l'agent qui se trouve devant le controleur
-		agt_chan := ag.env.agentsChan[agt_face_id]
-		ag.env.agentsChan[agt_face_id] <- *NewRequest(agt_chan, ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
-		//fmt.Print("[Controlleur , Act ]requête envoyée à l'agent ", agt_face_id, "\n") 
+		fmt.Print("L'agent ", agt_face_id, " a été expulsé\n")
+		ag.env.agentsChan[agt_face_id] <- *NewRequest(ag.env.agentsChan[ag.id], ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
 	}
 }
 

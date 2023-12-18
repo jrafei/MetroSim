@@ -9,6 +9,8 @@ package simulation
  */
 
 import (
+	"fmt"
+	"log"
 	//"fmt"
 
 	//"log"
@@ -24,9 +26,10 @@ const (
 	Mark
 	Wait
 	Move
-	Disapear
+	Disappear
 	Expel // virer l'agent
 	Stop  // arreter l'agent
+	GiveInfos
 )
 
 type Coord [2]int
@@ -58,7 +61,7 @@ type Agent struct {
 }
 
 type Request struct {
-	demandeur chan Request 
+	demandeur chan Request
 	decision  int
 }
 
@@ -68,8 +71,8 @@ type Behavior interface {
 	Act(*Agent)
 }
 
-func NewRequest(c chan Request, decision int) (req *Request) {
-	return &Request{c, decision}
+func NewRequest(demandeur chan Request, decision int) (req *Request) {
+	return &Request{demandeur, decision}
 }
 
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int) *Agent {
@@ -82,8 +85,8 @@ func (ag *Agent) ID() AgentID {
 }
 
 func (ag *Agent) Start() {
-	//log.Printf("%s starting...\n", ag.id)
-
+	log.Printf("%s starting...\n", ag.id)
+	go ag.listenForRequests()
 	go func() {
 		var step int
 		for {
@@ -92,7 +95,7 @@ func (ag *Agent) Start() {
 			ag.behavior.Deliberate(ag)
 			ag.behavior.Act(ag)
 			ag.syncChan <- step
-			if ag.decision == Disapear {
+			if ag.decision == Disappear {
 				ag.env.RemoveAgent(*ag)
 				return
 			}
@@ -364,6 +367,32 @@ func calculateBounds(position Coord, width, height, orientation int) (infRow, su
 
 	}
 	return borneInfRow, borneSupRow, borneInfCol, borneSupCol
+}
+
+func (ag *Agent) listenForRequests() {
+	for {
+		if ag.request == nil {
+			req := <-ag.env.agentsChan[ag.id]
+			fmt.Println("Request received by UsagerLambda:", req.decision)
+			ag.request = &req
+			if req.decision == Disappear {
+				return
+			}
+		}
+	}
+}
+
+func (ag *Agent) listenForRequests() {
+	for {
+		if ag.request == nil {
+			req := <-ag.env.agentsChan[ag.id]
+			fmt.Println("Request received by UsagerLambda:", req.decision)
+			ag.request = &req
+			if req.decision == Disappear {
+				return
+			}
+		}
+	}
 }
 
 
