@@ -9,14 +9,14 @@ type Environment struct {
 	sync.RWMutex
 	ags        []Agent
 	agentCount int
-	station    [20][20]string
+	station    [50][50]string
 	agentsChan map[AgentID]chan Request
 	controlledAgents map[AgentID]bool
 	// zones      map[Coord]ZoneID      // Zones de la station
 	// panneaux   map[ZoneID][]alg.Node // Les panneaux de la station, permettant d'aller vers la zone
 }
 
-func NewEnvironment(ags []Agent, carte [20][20]string, agentsCh map[AgentID]chan Request) (env *Environment) {
+func NewEnvironment(ags []Agent, carte [50][50]string, agentsCh map[AgentID]chan Request) (env *Environment) {
 	mapControlle := make(map[AgentID]bool)
 	for _, ag := range ags {
 		mapControlle[ag.id] = false

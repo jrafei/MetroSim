@@ -73,7 +73,7 @@ func NewRequest(demandeur chan Request, decision int) (req *Request) {
 
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int) *Agent {
 	isOn := make(map[Coord]string)
-	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil,0}
+	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil, 0}
 }
 
 func (ag *Agent) ID() AgentID {
@@ -128,7 +128,7 @@ func IsMovementSafe(path []alg.Node, agt *Agent, env *Environment) (bool, int) {
 		// Calcul des bornes de position de l'agent après mouvement
 
 		borneInfRow, borneSupRow, borneInfCol, borneSupCol := calculateBounds(ag.position, ag.width, ag.height, ag.orientation)
-		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > 20 || borneSupCol > 20) {
+		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > 50 || borneSupCol > 50) {
 			for i := borneInfRow; i < borneSupRow; i++ {
 				for j := borneInfCol; j < borneSupCol; j++ {
 					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && (env.station[i][j] != "B" && env.station[i][j] != "_" && env.station[i][j] != "W" && env.station[i][j] != "S") {
@@ -162,7 +162,7 @@ func IsAgentBlocking(path []alg.Node, agt *Agent, env *Environment) bool {
 		// Calcul des bornes de position de l'agent après mouvement
 		borneInfRow, borneSupRow, borneInfCol, borneSupCol := calculateBounds(ag.position, ag.width, ag.height, ag.orientation)
 		//fmt.Println(ag.id,borneInfRow,borneInfRow, borneSupRow, borneInfCol, borneSupCol)
-		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > 20 || borneSupCol > 20) {
+		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > 50 || borneSupCol > 50) {
 			for i := borneInfRow; i < borneSupRow; i++ {
 				for j := borneInfCol; j < borneSupCol; j++ {
 					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && len(env.station[i][j]) > 2 {
@@ -245,12 +245,12 @@ func (ag *Agent) MoveAgent() {
 
 	// ================== Etude de faisabilité =======================
 	if IsAgentBlocking(ag.path, ag, ag.env) {
-		
+
 		if ag.politesse {
 			start, end := ag.generatePathExtremities()
 			// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit
 			time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
-			path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false,2*time.Second)
+			path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false, 2*time.Second)
 			ag.path = path
 			return
 		} else {
@@ -275,18 +275,18 @@ func (ag *Agent) MoveAgent() {
 
 				*/
 				/*
-				//BlockingAgent cherche si autour de lui c'est vide
-				possible, or := IsMovementSafe(blockingAgent.path, blockingAgent, blockingAgent.env)
+					//BlockingAgent cherche si autour de lui c'est vide
+					possible, or := IsMovementSafe(blockingAgent.path, blockingAgent, blockingAgent.env)
 
-				if !possible {
-					reqToImpoliteAgent = NewRequest(ag.id, 0)
-					ag.env.agentsChan[ag.id] <- *reqToImpoliteAgent
-				} else {
-					//Bouge sur la case possible
-					accept = true
-					coordBlockingAgent := blockingAgent.position
-					//Gérer le déplacement de Ag et de BlockingAgent + déplacement en fonction de la force !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				}
+					if !possible {
+						reqToImpoliteAgent = NewRequest(ag.id, 0)
+						ag.env.agentsChan[ag.id] <- *reqToImpoliteAgent
+					} else {
+						//Bouge sur la case possible
+						accept = true
+						coordBlockingAgent := blockingAgent.position
+						//Gérer le déplacement de Ag et de BlockingAgent + déplacement en fonction de la force !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+					}
 				*/
 			}
 		}
@@ -323,7 +323,7 @@ func (ag *Agent) generatePathExtremities() (alg.Node, alg.Node) {
 	return start, end
 }
 
-func RemoveAgent(matrix *[20][20]string, agt *Agent) {
+func RemoveAgent(matrix *[50][50]string, agt *Agent) {
 	// Supprime l'agent de la matrice
 
 	// Calcul des bornes de position de l'agent
@@ -337,7 +337,7 @@ func RemoveAgent(matrix *[20][20]string, agt *Agent) {
 	}
 }
 
-func writeAgent(matrix *[20][20]string, agt *Agent) {
+func writeAgent(matrix *[50][50]string, agt *Agent) {
 	// Ecris l'agent dans la matrice
 
 	// Calcul des bornes de position de l'agent
@@ -351,7 +351,7 @@ func writeAgent(matrix *[20][20]string, agt *Agent) {
 
 }
 
-func saveCells(matrix *[20][20]string, savedCells map[Coord]string, position Coord, width, height, orientation int) {
+func saveCells(matrix *[50][50]string, savedCells map[Coord]string, position Coord, width, height, orientation int) {
 	// Enregistrement des valeurs des cellules de la matrice
 	borneInfRow, borneSupRow, borneInfCol, borneSupCol := calculateBounds(position, width, height, orientation)
 

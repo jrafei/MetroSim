@@ -64,7 +64,7 @@ func (pq *PriorityQueue) Pop() interface{} {
 type ZoneID int
 type Coord [2]int
 
-func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orientation bool, timeout time.Duration) []Node {
+func FindPath(matrix [50][50]string, start, end Node, forbidenCell Node, orientation bool, timeout time.Duration) []Node {
 	// Création d'un context avec timeout, pour limiter le calcul
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -132,7 +132,7 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orienta
 	return nil // Aucun chemin trouvé
 }
 
-func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, orientation bool) []*Node {
+func getNeighbors(matrix [50][50]string, current, end Node, forbiddenCell Node, orientation bool) []*Node {
 	neighbors := make([]*Node, 0)
 
 	// Déplacements possibles: up, down, left, right
@@ -191,7 +191,7 @@ func abs(x int) int {
 	return x
 }
 
-func isValidMove(matrix [20][20]string, current Node, forbiddenCell Node, newRow, newCol int, orientation bool) bool {
+func isValidMove(matrix [50][50]string, current Node, forbiddenCell Node, newRow, newCol int, orientation bool) bool {
 	// Check if the new position is within the bounds of the matrix
 	if newRow < 0 || newRow >= len(matrix) || newCol < 0 || newCol >= len(matrix[0]) {
 		return false
