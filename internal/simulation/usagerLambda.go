@@ -8,7 +8,7 @@ import (
 )
 
 type UsagerLambda struct {
-	req *Request
+	req *Request // requete recue par l'agent lambda
 }
 
 func (ul *UsagerLambda) Percept(ag *Agent) {
@@ -39,11 +39,13 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 				ag.decision = Expel
 				ul.req = nil //demande traitée
 		}
-	}else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") {
-			//fmt.Println(ag.id, "disapear")
+	}else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si l'agent est arrivé à sa destination et qu'il est sur une sortie
+			//fmt.Println(ag.id, "disappear")
 			ag.decision = Disappear
-			} else {
-				ag.decision = Move
+		} else if ag.stuck{ // si l'agent est bloqué
+			ag.decision = Wait
+			}else {
+			ag.decision = Move
 			}
 }
 

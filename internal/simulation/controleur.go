@@ -17,6 +17,7 @@ import (
 */
 
 type Controleur struct {
+	req *Request // requete reçue par le controleur
 	faceCase string // chaine de caractère qui contient l'id de l'agent qui se trouve devant le controleur, exemple : "Agent1", "Fraudeur1", "X" ,etc.
 	timer *time.Timer // timer qui permet de définir la durée de vie du controleur
 	isExpired bool // true si le controleur est expiré, false sinon
@@ -38,31 +39,44 @@ func (c *Controleur) startTimer() {
 
 func (c *Controleur) Percept(ag *Agent) {
 	env := ag.env
-	if ag.direction == 0 { // vers le haut
-		if (ag.position[0] - 1) < 0 {
+	switch {
+		case ag.direction == 0: // vers le haut
+			if (ag.position[0] - 1) < 0 {
 			c.faceCase = "X" // si le controleur est au bord de la station, alors il fait face à un mur
-		} else {
+			} else {
 			c.faceCase = env.station[ag.position[0]-1][ag.position[1]]
-		}
-	} else if ag.direction == 1 { // vers la droite
-		if (ag.position[1] + 1) > 19 {
+			}
+		case ag.direction == 1: // vers la droite
+			if (ag.position[1] + 1) > 19 {
 				c.faceCase = "X" // si le controleur est au bord de la station, alors il fait face à un mur
 			} else {
 				c.faceCase = env.station[ag.position[0]][ag.position[1]+1]
 			}
-		} else if ag.direction == 2 { // vers le bas
-				if (ag.position[0] + 1) > 19 {
-					c.faceCase = "X" // si le controleur est au bord de la station, alors il fait face à un mur
-				} else {
+		case ag.direction == 2: // vers le bas
+			if (ag.position[0] + 1) > 19 {
+				c.faceCase = "X" // si le controleur est au bord de la station, alors il fait face à un mur
+			} else {
 				c.faceCase = env.station[ag.position[0]+1][ag.position[1]]
-				}
-			}else { // vers la gauche
-				if (ag.position[1] - 1) < 0 {
-					c.faceCase = "X" // si le controleur est au bord de la station, alors il fait face à un mur
-				} else {
-				c.faceCase = env.station[ag.position[0]][ag.position[1]-1]
-				}
 			}
+		
+		case ag.direction == 3: // vers la gauche
+			if (ag.position[1] - 1) < 0 {
+				c.faceCase = "X" // si le controleur est au bord de la station, alors il fait face à un mur
+			} else {
+				c.faceCase = env.station[ag.position[0]][ag.position[1]-1]
+			}
+
+		// comportement par défaut (comportement agent Lambda)
+		case ag.request != nil: //verifier si l'agent est communiqué par un autre agent (A VOIR SI IL EXISTE DEJA UN AGENT QUI COMMUNIQUE AVEC LE CONTROLEUR)
+			//print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
+			c.req = ag.request
+		default:
+			ag.stuck = ag.isStuck()
+			if ag.stuck {
+				return
+	
+			}
+	}
 }
 
 func (c *Controleur) Deliberate(ag *Agent) {
@@ -86,29 +100,36 @@ func (c *Controleur) Deliberate(ag *Agent) {
 			ag.decision = Stop // arreter l'agent devant lui
 		} else if matchedFraud && !ag.env.controlledAgents[AgentID(c.faceCase)]{
 			ag.decision = Expel // virer l'agent devant lui
-		} else {
-			// Comportement de l'usager lambda (comportement par defaut)
-			if ag.stuck {
-				ag.decision = Wait // attendre
-			} else {
-				ag.decision = Move // avancer
-			}
-		}
+			//sinon comportement par défaut (comportement de l'usager lambda)
+			}else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si l'agent est arrivé à sa destination et qu'il est sur une sortie
+				//fmt.Println(ag.id, "disappear")
+				ag.decision = Disappear
+				} else if ag.stuck{ // si l'agent est bloqué
+					ag.decision = Wait
+					}else {
+					ag.decision = Move
+					}
 	}
 }
 
 func (c *Controleur) Act(ag *Agent) {
-	if ag.decision == Move {
+	switch ag.decision {
+	case Move:
 		if !c.isExpired {
 			ag.destination = c.randomDestination(ag)
 		}else {
 			ag.destination = ag.findNearestExit()
 		}
 		ag.MoveAgent()
-	} else if ag.decision == Wait {
+
+	case Wait:
 		n := rand.Intn(2) // temps d'attente aléatoire
 		time.Sleep(time.Duration(n) * time.Second)
-	} else { // Expel ou Wait
+
+	case Disappear:
+		RemoveAgent(&ag.env.station, ag)
+
+	default : //Expel ou Wait
 		agt_face_id := AgentID(c.faceCase) //id de l'agent qui se trouve devant le controleur
 		//fmt.Print("L'agent ", agt_face_id, " a été expulsé\n")
 		ag.env.agentsChan[agt_face_id] <- *NewRequest(ag.env.agentsChan[ag.id], ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
