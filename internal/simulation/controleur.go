@@ -24,8 +24,8 @@ type Controleur struct {
 
 func (c *Controleur) startTimer() {
 	rand.Seed(time.Now().UnixNano()) // le générateur de nombres aléatoires
-	//randomSeconds := rand.Intn(9) + 2 // Génère un entier aléatoire entre 2 et 10
-	randomSeconds := 2
+	randomSeconds := rand.Intn(9) + 2 // Génère un entier aléatoire entre 2 et 10
+	//randomSeconds := 2
 	lifetime := time.Duration(randomSeconds) * time.Second
     c.timer = time.NewTimer(lifetime)
 	//fmt.Println("[Controleur , startTimer] Le controleur est créé avec une durée de vie de ", lifetime)

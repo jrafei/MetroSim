@@ -7,13 +7,11 @@ import (
 	alg "metrosim/internal/algorithms"
 )
 
-type UsagerLambda struct {
+type MobiliteReduite struct {
 	req *Request
 }
 
-func (ul *UsagerLambda) Percept(ag *Agent) {
-	// récupérer le channel de l'agent lambda
-
+func (ul *MobiliteReduite) Percept(ag *Agent) {
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		//print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
@@ -25,10 +23,9 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 
 		}
 	}
-
 }
 
-func (ul *UsagerLambda) Deliberate(ag *Agent) {
+func (ul *MobiliteReduite) Deliberate(ag *Agent) {
 	//fmt.Println("[AgentLambda Deliberate] decision :", ul.req.decision)
 	if (ul.req != nil ) {
 		if ul.req.decision == Stop{
@@ -47,7 +44,7 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 			}
 }
 
-func (ul *UsagerLambda) Act(ag *Agent) {
+func (ul *MobiliteReduite) Act(ag *Agent) {
 	//fmt.Println("[AgentLambda Act] decision :",ag.decision)
 	if ag.decision == Move {
 		ag.MoveAgent()
