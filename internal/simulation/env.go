@@ -16,13 +16,6 @@ type Environment struct {
 	// panneaux   map[ZoneID][]alg.Node // Les panneaux de la station, permettant d'aller vers la zone
 }
 
-type ZoneID int
-
-
-
-
-
-
 func NewEnvironment(ags []Agent, carte [20][20]string, agentsCh map[AgentID]chan Request) (env *Environment) {
 	mapControlle := make(map[AgentID]bool)
 	for _, ag := range ags {
@@ -31,7 +24,6 @@ func NewEnvironment(ags []Agent, carte [20][20]string, agentsCh map[AgentID]chan
 	return &Environment{ags: ags, agentCount: len(ags), station: carte, agentsChan: agentsCh, controlledAgents: mapControlle}
 }
 
-
 func (env *Environment) AddAgent(agt Agent) {
 	env.ags = append(env.ags, agt)
 	env.agentCount++
@@ -39,9 +31,10 @@ func (env *Environment) AddAgent(agt Agent) {
 
 func (env *Environment) RemoveAgent(agt Agent) {
 	for i := 0; i < len(env.station); i++ {
-		if env.ags[i].id == agt.id{
+		if env.ags[i].id == agt.id {
 			// Utiliser la syntaxe de découpage pour supprimer l'élément
 			env.ags = append(env.ags[:i], env.ags[i+1:]...)
+			delete(env.agentsChan,agt.id)
 			// Sortir de la boucle après avoir trouvé et supprimé l'élément
 			break
 		}
@@ -78,7 +71,6 @@ func (env *Environment) PI() float64 {
 func (env *Environment) Rect() Coord {
 	return Coord{0, 0}
 }
-
 
 func (env *Environment) GetAgentChan(agt_id AgentID) chan Request {
 	return env.agentsChan[agt_id]
