@@ -364,3 +364,36 @@ func calculateBounds(position Coord, width, height, orientation int) (infRow, su
 	}
 	return borneInfRow, borneSupRow, borneInfCol, borneSupCol
 }
+
+
+func (ag *Agent) findNearestGate(gates [] Coord) (Coord) {
+	// Recherche de la porte la plus proche
+	nearest := Coord{0, 0}
+	min := 1000000
+	for _, gate := range gates {
+		dist := alg.Abs(ag.position[0]-gate[0]) + alg.Abs(ag.position[1]-gate[1])
+		if dist < min {
+			min = dist
+			nearest = gate
+		}
+	}
+	return nearest
+}
+
+func (ag *Agent) findNearestExit() (Coord){
+	// Recherche de la sortie la plus proche
+	nearest := Coord{0, 0}
+	min := 1000000
+	for i := 0; i < 20; i++ {
+		for j := 0; j < 20; j++ {
+			if ag.env.station[i][j] == "S" {
+				dist := alg.Abs(ag.position[0]-i) + alg.Abs(ag.position[1]-j)
+				if dist < min {
+					min = dist
+					nearest = Coord{i, j}
+				}
+			}
+		}
+	}
+	return nearest
+}
