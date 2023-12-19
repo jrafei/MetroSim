@@ -181,10 +181,10 @@ func Heuristic(row, col int, end Node) int {
 	// On introduit de l'aléatoire pour ajouter de la diversité dans la construction des chemins
 	// On évite d'avoir tout le temps le même chemin pour un même point de départ et d'arrivé
 	//return abs(row-end.row) + abs(col-end.col) + rand.Intn(3)
-	return abs(row-end.row) + abs(col-end.col) + rand.Intn(10)
+	return Abs(row-end.row) + Abs(col-end.col) + rand.Intn(10)
 }
 
-func abs(x int) int {
+func Abs(x int) int {
 	if x < 0 {
 		return -x
 	}

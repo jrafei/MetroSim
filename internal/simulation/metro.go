@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+var metro_speed int = 5 // Nombre de seconde de l'entrée en gare
+
 type Metro struct {
 	frequency  time.Duration
 	stopTime   time.Duration
@@ -31,13 +33,14 @@ func (metro *Metro) Start() {
 		//var step int
 		for {
 			//step = <-metro.syncChan
-			if refTime.Add(metro.frequency).Before(time.Now()) {
+			if refTime.Add(metro.frequency).Sub(time.Now()) <= time.Duration(metro_speed)*time.Second {
 				metro.printMetro()
+			}
+			if refTime.Add(metro.frequency).Before(time.Now()) {
+				metro.dropUsers()
 				metro.pickUpUsers()
 				metro.removeMetro()
 				metro.freeSpace = rand.Intn(10)
-				//fmt.Println(metro.way.id, metro.freeSpace)
-				//go metro.dropUsers()
 				refTime = time.Now()
 			}
 			//metro.syncChan <- step
@@ -82,26 +85,106 @@ func (metro *Metro) findAgent(agent AgentID) *Agent {
 
 func (metro *Metro) printMetro() {
 
-	for x := metro.way.upLeftCoord[0]; x <= metro.way.downRightCoord[0]; x++ {
-		for y := metro.way.upLeftCoord[1]; y <= metro.way.downRightCoord[1]; y++ {
-			if metro.way.env.station[x][y] == "Q" {
-				metro.way.env.station[x][y] = "M"
+	if metro.way.horizontal {
+		waiting_time := time.Duration((metro_speed * 1000) / (metro.way.downRightCoord[1] - metro.way.upLeftCoord[1]))
+		if metro.way.goToLeft {
+			for y := metro.way.downRightCoord[1]; y >= metro.way.upLeftCoord[1]; y-- {
+				for x := metro.way.upLeftCoord[0]; x <= metro.way.downRightCoord[0]; x++ {
+					if metro.way.env.station[x][y] == "Q" {
+						metro.way.env.station[x][y] = "M"
+					}
+				}
+				time.Sleep(waiting_time * time.Millisecond)
+			}
+		} else {
+			for y := metro.way.upLeftCoord[1]; y <= metro.way.downRightCoord[1]; y++ {
+				for x := metro.way.upLeftCoord[0]; x <= metro.way.downRightCoord[0]; x++ {
+					if metro.way.env.station[x][y] == "Q" {
+						metro.way.env.station[x][y] = "M"
+					}
+				}
+				time.Sleep(waiting_time * time.Millisecond)
 			}
 		}
+
+	} else {
+		waiting_time := time.Duration((metro_speed * 1000) / (metro.way.downRightCoord[0] - metro.way.upLeftCoord[0]))
+		if metro.way.goToLeft {
+			// de bas en haut
+			for x := metro.way.downRightCoord[0]; x >= metro.way.upLeftCoord[0]; x-- {
+				for y := metro.way.upLeftCoord[1]; y <= metro.way.downRightCoord[1]; y++ {
+					if metro.way.env.station[x][y] == "Q" {
+						metro.way.env.station[x][y] = "M"
+					}
+				}
+				time.Sleep(waiting_time * time.Millisecond)
+			}
+		} else {
+			for x := metro.way.upLeftCoord[0]; x <= metro.way.downRightCoord[0]; x++ {
+				for y := metro.way.upLeftCoord[1]; y <= metro.way.downRightCoord[1]; y++ {
+					if metro.way.env.station[x][y] == "Q" {
+						metro.way.env.station[x][y] = "M"
+					}
+				}
+				time.Sleep(waiting_time * time.Millisecond)
+			}
+		}
+
 	}
+
 }
 
 func (metro *Metro) removeMetro() {
 
-	for x := metro.way.upLeftCoord[0]; x <= metro.way.downRightCoord[0]; x++ {
-		for y := metro.way.upLeftCoord[1]; y <= metro.way.downRightCoord[1]; y++ {
-			if metro.way.env.station[x][y] == "M" {
-				metro.way.env.station[x][y] = "Q"
+	if metro.way.horizontal {
+		waiting_time := time.Duration((metro_speed * 1000) / (metro.way.downRightCoord[1] - metro.way.upLeftCoord[1]))
+
+		if metro.way.goToLeft {
+			for y := metro.way.downRightCoord[1]; y >= metro.way.upLeftCoord[1]; y-- {
+				for x := metro.way.upLeftCoord[0]; x <= metro.way.downRightCoord[0]; x++ {
+					if metro.way.env.station[x][y] == "M" {
+						metro.way.env.station[x][y] = "Q"
+					}
+				}
+				time.Sleep(waiting_time * time.Millisecond)
+			}
+		} else {
+			for y := metro.way.upLeftCoord[1]; y <= metro.way.downRightCoord[1]; y++ {
+				for x := metro.way.upLeftCoord[0]; x <= metro.way.downRightCoord[0]; x++ {
+					if metro.way.env.station[x][y] == "M" {
+						metro.way.env.station[x][y] = "Q"
+					}
+				}
+				time.Sleep(waiting_time * time.Millisecond)
 			}
 		}
+
+	} else {
+		waiting_time := time.Duration((metro_speed * 1000) / (metro.way.downRightCoord[0] - metro.way.upLeftCoord[0]))
+		if metro.way.goToLeft {
+			// de bas en haut
+			for x := metro.way.downRightCoord[0]; x >= metro.way.upLeftCoord[0]; x-- {
+				for y := metro.way.upLeftCoord[1]; y <= metro.way.downRightCoord[1]; y++ {
+					if metro.way.env.station[x][y] == "M" {
+						metro.way.env.station[x][y] = "Q"
+					}
+				}
+				time.Sleep(waiting_time * time.Millisecond)
+			}
+		} else {
+			for x := metro.way.upLeftCoord[0]; x <= metro.way.downRightCoord[0]; x++ {
+				for y := metro.way.upLeftCoord[1]; y <= metro.way.downRightCoord[1]; y++ {
+					if metro.way.env.station[x][y] == "M" {
+						metro.way.env.station[x][y] = "Q"
+					}
+				}
+				time.Sleep(waiting_time * time.Millisecond)
+			}
+		}
+
 	}
 }
 
-func (metro *Metro) dropAgents() {
+func (metro *Metro) dropUsers() {
 
 }
