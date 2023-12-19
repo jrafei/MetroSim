@@ -19,10 +19,12 @@ import (
 type Action int64
 
 const (
-	Noop = iota
+	Noop = iota //No opération, utiliser pour refuser un mouvement
 	Mark
 	Wait
 	Move
+	YouHaveToMove //Utiliser par un usager impoli pour forcer un déplacement
+	Done
 	Disappear
 	Expel // virer l'agent
 	Stop  // arreter l'agent
@@ -73,7 +75,7 @@ func NewRequest(demandeur chan Request, decision int) (req *Request) {
 
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int) *Agent {
 	isOn := make(map[Coord]string)
-	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil,0}
+	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil, 0}
 }
 
 func (ag *Agent) ID() AgentID {
@@ -166,7 +168,7 @@ func IsAgentBlocking(path []alg.Node, agt *Agent, env *Environment) bool {
 			for i := borneInfRow; i < borneSupRow; i++ {
 				for j := borneInfCol; j < borneSupCol; j++ {
 					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && len(env.station[i][j]) > 2 {
-						// Si on n'est pas sur une case atteignable, en dehors de la zone qu'occupe l'agent avant déplacement, on est bloqué
+						// Si on est pas sur une case atteignable, en dehors de la zone qu'occupe l'agent avant déplacement, on est bloqué
 						blocking = true
 					}
 				}
@@ -211,28 +213,20 @@ func (ag *Agent) isStuck() bool {
 	return not_acc == count
 }
 
-func (ag *Agent) WhichAgent() string {
-	if ag.direction == 0 { // vers le haut
+func (ag *Agent) NextCell() string {
+	switch ag.direction {
+	case 0: // vers le haut
 		return ag.env.station[ag.position[0]-1][ag.position[1]]
-	} else if ag.direction == 1 { // vers la droite
-		return ag.env.station[ag.position[0]][ag.position[1]+1]
-	} else if ag.direction == 2 { // vers le bas
+	case 1: // vers la droite
+		return ag.env.station[ag.position[0]-1][ag.position[1]]
+	case 2: // vers le bas
 		return ag.env.station[ag.position[0]+1][ag.position[1]]
-	} else { // vers la gauche
+	default: //vers la gauche
 		return ag.env.station[ag.position[0]][ag.position[1]-1]
 	}
 }
 
-func (env *Environment) FindAgentByID(agtId AgentID) *Agent {
-	for i := range env.ags {
-		if env.ags[i].id == agtId {
-			return &env.ags[i]
-		}
-	}
-	return nil
-}
-
-func (ag *Agent) MoveAgent() {
+func (ag *Agent) MoveAgent() bool {
 	//fmt.Println("[Agent, MoveAgent] destination ", ag.destination)
 
 	// ================== Tentative de calcul du chemin =======================
@@ -245,54 +239,41 @@ func (ag *Agent) MoveAgent() {
 
 	// ================== Etude de faisabilité =======================
 	if IsAgentBlocking(ag.path, ag, ag.env) {
-		
+
 		if ag.politesse {
 			start, end := ag.generatePathExtremities()
 			// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit
 			time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
-			path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false,2*time.Second)
+			path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false, 2*time.Second)
 			ag.path = path
-			return
+			return false
 		} else {
 			//Si individu impoli, demande à l'agent devant de bouger
 			//On récupère le id de la personne devant
-			blockingAgentID := AgentID(ag.WhichAgent())
-			//blockingAgent := ag.env.FindAgentByID(blockingAgentID)
+			blockingAgentID := AgentID(ag.NextCell())
 			var reqToBlockingAgent *Request
-			//var reqToImpoliteAgent *Request
+			var repFromBlockingAgent Request
 			i := 0
 			accept := false
 			for !accept && i < 3 {
 				//Demande à l'agent qui bloque de se pousser (réitère trois fois s'il lui dit pas possible)
 				i += 1
-				reqToBlockingAgent = NewRequest(ag.env.agentsChan[ag.id], 3) //Création "Hello, je suis ag.id, move."
-				ag.env.agentsChan[blockingAgentID] <- *reqToBlockingAgent    //Envoi requête
+				fmt.Printf("Je suis %s, bouge %s iteration %d \n", ag.id, blockingAgentID, i)
+				reqToBlockingAgent = NewRequest(ag.env.agentsChan[ag.id], YouHaveToMove) //Création "Hello, je suis ag.id, move."
+				ag.env.agentsChan[blockingAgentID] <- *reqToBlockingAgent                //Envoi requête
+				repFromBlockingAgent = <-ag.env.agentsChan[blockingAgentID]              //Attend la réponse
 
-				/*
-					1. Faire le moment ou blocking agent recoit qqchose sur son canal
-					2.
-
-
-				*/
-				/*
-				//BlockingAgent cherche si autour de lui c'est vide
-				possible, or := IsMovementSafe(blockingAgent.path, blockingAgent, blockingAgent.env)
-
-				if !possible {
-					reqToImpoliteAgent = NewRequest(ag.id, 0)
-					ag.env.agentsChan[ag.id] <- *reqToImpoliteAgent
-				} else {
-					//Bouge sur la case possible
+				if repFromBlockingAgent.decision == 5 { //BlockingAgent lui a répondu Done, il s'est donc poussé
 					accept = true
-					coordBlockingAgent := blockingAgent.position
-					//Gérer le déplacement de Ag et de BlockingAgent + déplacement en fonction de la force !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 				}
-				*/
+			}
+			if !accept {
+				return false //il ne peut pas bouger, il s'arrête
 			}
 		}
 	}
 
-	// ================== Déplacement si aucun problème ou si blockingAgent se pousse =======================
+	// ================== Déplacement si aucun problème =======================
 	safe, or := IsMovementSafe(ag.path, ag, ag.env)
 	if safe {
 		if len(ag.isOn) > 0 {
@@ -309,10 +290,11 @@ func (ag *Agent) MoveAgent() {
 		}
 		saveCells(&ag.env.station, ag.isOn, ag.position, ag.width, ag.height, ag.orientation)
 		writeAgent(&ag.env.station, ag)
-		// ============ Prise en compte de la vitesse de déplacement ======================
+		// ============ Prise en compte de la vitesse de déplacement ============
 		time.Sleep(ag.vitesse * time.Millisecond)
+		return true
 	}
-
+	return false
 }
 
 func (ag *Agent) generatePathExtremities() (alg.Node, alg.Node) {
@@ -431,3 +413,35 @@ func (ag *Agent) listenForRequests() {
 		}
 	}
 }
+
+func (env *Environment) GetAgentByChannel(channel chan Request) *Agent {
+	env.RLock()
+	defer env.RUnlock()
+
+	for agentID, agentChannel := range env.agentsChan {
+		if agentChannel == channel {
+			return env.FindAgentByID(agentID)
+		}
+	}
+	return nil
+}
+
+/* func (ag *Agent) AgentTakesNextPosition() bool {
+
+	// ================ Récupère la force de l'agent =============
+	ImpoliteAgent := ag.env.GetAgentByChannel(ag.request.demandeur)
+	if ImpoliteAgent == nil {
+		fmt.Printf("Channel not available")
+	}
+	ImpoliteAgentForce := ImpoliteAgent.force
+
+	// ========== Vérifier la sécurité d'une direction ==========
+	for or := 0; or < 4; or++ {
+		safe, _ := IsMovementSafe(ag.path, ag, ag.env)
+		if safe { //Si c'est safe dans une direction, on regarde jusqu'ou ça l'est encore avec la force
+			}
+		}
+	}
+	// Aucune direction n'est sûre, il ne bouge pas
+	return false
+} */

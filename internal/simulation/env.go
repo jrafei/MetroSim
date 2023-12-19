@@ -7,10 +7,10 @@ import (
 
 type Environment struct {
 	sync.RWMutex
-	ags        []Agent
-	agentCount int
-	station    [20][20]string
-	agentsChan map[AgentID]chan Request
+	ags              []Agent
+	agentCount       int
+	station          [20][20]string
+	agentsChan       map[AgentID]chan Request
 	controlledAgents map[AgentID]bool
 	// zones      map[Coord]ZoneID      // Zones de la station
 	// panneaux   map[ZoneID][]alg.Node // Les panneaux de la station, permettant d'aller vers la zone
@@ -34,7 +34,7 @@ func (env *Environment) RemoveAgent(agt Agent) {
 		if env.ags[i].id == agt.id {
 			// Utiliser la syntaxe de découpage pour supprimer l'élément
 			env.ags = append(env.ags[:i], env.ags[i+1:]...)
-			delete(env.agentsChan,agt.id)
+			delete(env.agentsChan, agt.id)
 			// Sortir de la boucle après avoir trouvé et supprimé l'élément
 			break
 		}
@@ -76,16 +76,25 @@ func (env *Environment) GetAgentChan(agt_id AgentID) chan Request {
 	return env.agentsChan[agt_id]
 }
 
+func (env *Environment) FindAgentByID(agtId AgentID) *Agent {
+	for i := range env.ags {
+		if env.ags[i].id == agtId {
+			return &env.ags[i]
+		}
+	}
+	return nil
+}
+
 func existAgent(c string) bool {
-	return c != "X" && c != "E"  &&  c != "S" &&  c != "W" &&  c!= "Q" && c!= "_" &&  c!= "B"
+	return c != "X" && c != "E" && c != "S" && c != "W" && c != "Q" && c != "_" && c != "B"
 }
 
 func calculDirection(depart Coord, arrive Coord) int {
 	if depart[0] == arrive[0] {
 		if depart[1] > arrive[1] {
-			return  3 //Gauche
+			return 3 //Gauche
 		} else {
-			return  1 //droite
+			return 1 //droite
 		}
 	} else {
 		if depart[0] > arrive[0] {

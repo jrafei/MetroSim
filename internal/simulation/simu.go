@@ -110,7 +110,7 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		if i%2 == 0 { //Type Agent
 			id := fmt.Sprintf("Agent%d", i)
 			//NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int)
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, Coord{18, 4}, Coord{13, 4}, 1, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, false, &UsagerLambda{}, Coord{18, 4}, Coord{13, 4}, 1, 1)
 		} else { // Type Controleur
 			//id := fmt.Sprintf("Controleur%d", i)
 			id := fmt.Sprintf("Agent%d", i)
