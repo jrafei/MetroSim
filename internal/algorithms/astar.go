@@ -98,6 +98,8 @@ func FindPath(matrix [50][50]string, start, end Node, forbidenCell Node, orienta
 			closestDistance = currentDistance
 		}
 
+
+
 		if current.row == end.row && current.col == end.col {
 			// Construire le chemin à partir des parents
 			path := []Node{closestPoint}
@@ -286,3 +288,24 @@ func calculateBounds(row, col, width, height, orientation int) (infRow, supRow, 
 	}
 	return borneInfRow, borneSupRow, borneInfCol, borneSupCol
 }
+
+
+func FindNearestExit(matrix [50][50]string, row, col int) (dest_row, dest_col int) {
+	// Recherche de la sortie la plus proche
+	min := 1000000
+	n := len(matrix[0])
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
+			if matrix[i][j] == "S" || matrix[i][j] == "W" {
+				dist := Abs(row-i) + Abs(col-j)
+				if dist < min {
+					min = dist
+					dest_row = i
+					dest_col = j
+				}
+			}
+		}
+	}
+	return dest_row, dest_col
+}
+

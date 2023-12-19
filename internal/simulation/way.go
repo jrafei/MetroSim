@@ -6,6 +6,7 @@ package simulation
 
 import (
 	alg "metrosim/internal/algorithms"
+	"time"
 )
 
 type Way struct {
@@ -15,6 +16,8 @@ type Way struct {
 	goToLeft       bool  // si vrai, le métro se déplace de droite à gauche, si faux de gauche à droite
 	horizontal     bool
 	gates          []Coord //listes des portes associée à la voie
+	nearestExit    []Coord // Chemin vers la sortie la plus proche pour chaque porte (index vers pathsToExit)
+	pathsToExit    [][]alg.Node
 	env            *Environment
 }
 
@@ -33,6 +36,15 @@ func NewWay(wayId WayID, upLeftCoord, downRightCoord Coord, goToLeft bool, gates
 	if alg.Abs(upLeftCoord[0]-downRightCoord[0]) > alg.Abs(upLeftCoord[1]-downRightCoord[1]) {
 		horizontal = false
 	}
+	nearestExit := make([]Coord, len(gates))
+	pathsToExit := make([][]alg.Node, len(gates))
+	for index, gate := range gates {
+		row, col := alg.FindNearestExit(env.station, gates[0][0], gates[0][1])
+		nearestExit[index] = Coord{row, col}
+		pathsToExit[index] = alg.FindPath(env.station, *alg.NewNode(gate[0], gate[1], 0, 0, 1, 1), *alg.NewNode(row, col, 0, 0, 0, 0), *alg.NewNode(-1, -1, 0, 0, 0, 0), false, 5*time.Second)
+		index++
+	}
+
 	return &Way{
 		id:             wayId,
 		upLeftCoord:    upLeftCoord,
@@ -40,5 +52,7 @@ func NewWay(wayId WayID, upLeftCoord, downRightCoord Coord, goToLeft bool, gates
 		goToLeft:       goToLeft,
 		horizontal:     horizontal,
 		gates:          gates,
+		nearestExit:    nearestExit,
+		pathsToExit:    pathsToExit,
 		env:            env}
 }

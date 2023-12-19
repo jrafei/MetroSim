@@ -1,25 +1,33 @@
 package simulation
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"time"
 )
+
+/*
+ * //TODO:Ajouter la capacité max
+ * // Apparition des agents sortant
+ */
 
 var metro_speed int = 5 // Nombre de seconde de l'entrée en gare
 
 type Metro struct {
 	frequency  time.Duration
 	stopTime   time.Duration
+	capacity   int
 	freeSpace  int // nombre de cases disponibles dans le métro
 	comChannel chan Request
 	way        *Way
 }
 
-func NewMetro(freq time.Duration, stopT time.Duration, freeS int, way *Way) *Metro {
+func NewMetro(freq time.Duration, stopT time.Duration, capacity, freeS int, way *Way) *Metro {
 	return &Metro{
 		frequency:  freq,
 		stopTime:   stopT,
+		capacity:   capacity,
 		freeSpace:  freeS,
 		comChannel: make(chan Request),
 		way:        way,
@@ -39,7 +47,9 @@ func (metro *Metro) Start() {
 			if refTime.Add(metro.frequency).Before(time.Now()) {
 				metro.dropUsers()
 				metro.pickUpUsers()
+				log.Println("removing metro", metro.way.id)
 				metro.removeMetro()
+				log.Println("removed metro", metro.way.id)
 				metro.freeSpace = rand.Intn(10)
 				refTime = time.Now()
 			}
@@ -68,7 +78,8 @@ func (metro *Metro) pickUpGate(gate *Coord) {
 		agent := metro.findAgent(AgentID(gate_cell))
 		if agent != nil && agent.width*agent.height <= metro.freeSpace && agent.destination == *gate {
 			metro.way.env.agentsChan[agent.id] <- *NewRequest(metro.comChannel, Disappear)
-			metro.freeSpace--
+			log.Println("message sent")
+			metro.freeSpace = metro.freeSpace - agent.width*agent.height
 		}
 	}
 }
@@ -81,6 +92,26 @@ func (metro *Metro) findAgent(agent AgentID) *Agent {
 		}
 	}
 	return nil
+}
+
+func (metro *Metro) dropUsers() {
+	nb := rand.Intn(metro.capacity - metro.freeSpace) // Nombre de cases à vider du métro
+	for nb > 0 {
+		gate_nb := rand.Intn(len(metro.way.gates)) // Sélection d'une porte aléatoirement
+		width := 1                                 //+ rand.Intn(2)
+		height := 1                                //+ rand.Intn(2)
+		metro.freeSpace = metro.freeSpace + width*height
+		nb = nb - width*height
+		id := fmt.Sprintf("Agent%d", metro.way.env.agentCount)
+		path := metro.way.pathsToExit[gate_nb]
+		ag := NewAgent(id, metro.way.env, make(chan int), 200, 0, true, &UsagerLambda{}, metro.way.gates[gate_nb], metro.way.nearestExit[gate_nb], width, height)
+		ag.path = path
+		metro.way.env.AddAgent(*ag)
+		//log.Println(metro.way.id, nb, metro.way.env.agentCount)
+		//fmt.Println("agent leaving metro", ag.id, ag.departure, ag.destination, width, height)
+		time.Sleep(500 * time.Millisecond)
+	}
+
 }
 
 func (metro *Metro) printMetro() {
@@ -183,8 +214,4 @@ func (metro *Metro) removeMetro() {
 		}
 
 	}
-}
-
-func (metro *Metro) dropUsers() {
-
 }

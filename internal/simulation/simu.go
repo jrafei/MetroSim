@@ -95,15 +95,17 @@ var playground [50][50]string = [50][50]string{
 }
 
 type Simulation struct {
-	env         Environment
-	agents      []Agent
-	maxStep     int
-	maxDuration time.Duration
-	step        int // Stats
-	start       time.Time
-	syncChans   sync.Map
-	metros      []Metro
+	env          Environment
+	maxStep      int
+	maxDuration  time.Duration
+	step         int // Stats
+	start        time.Time
+	syncChans    sync.Map
+	newAgentChan chan Agent // permet la création d'agent en cours de simulation
+	metros       []Metro
 }
+
+// TODO:voir si agents est mis à jour lors de suppression d'agent
 
 func (sim *Simulation) Env() *Environment {
 	return &sim.env
@@ -111,20 +113,18 @@ func (sim *Simulation) Env() *Environment {
 
 func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu *Simulation) {
 	simu = &Simulation{}
-	simu.agents = make([]Agent, 0, agentCount)
 	simu.maxStep = maxStep
 	simu.maxDuration = maxDuration
 
-	// Communication entre agents
-	mapChan := make(map[AgentID]chan Request)
+	simu.newAgentChan = make(chan Agent, 200) // channel avec buffer pour gérer les sorties simultanées
 
 	// Création de l'environement
-	simu.env = *NewEnvironment([]Agent{}, carte, mapChan)
+	simu.env = *NewEnvironment([]Agent{}, carte, simu.newAgentChan, agentCount)
 	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
 
 	// Création du métro
-	metro1 := *NewMetro(10*time.Second, 5*time.Second, 2, NewWay(1, Coord{9, 0}, Coord{10, 39}, true, []Coord{{8, 5}}, &simu.env))
-	metro2 := *NewMetro(10*time.Second, 5*time.Second, 2, NewWay(2, Coord{11, 0}, Coord{12, 39}, false, []Coord{{13, 4}}, &simu.env))
+	metro1 := *NewMetro(10*time.Second, 5*time.Second, 10, 2, NewWay(1, Coord{9, 0}, Coord{10, 39}, true, []Coord{{8, 5}}, &simu.env))
+	metro2 := *NewMetro(10*time.Second, 5*time.Second, 10, 2, NewWay(2, Coord{11, 0}, Coord{12, 39}, false, []Coord{{13, 4}}, &simu.env))
 	simu.metros = []Metro{metro1, metro2}
 
 	// création des agents et des channels
@@ -151,25 +151,20 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{19, 12}, Coord{0, 8}, 2, 1)
 
 		// ajout de l'agent à la simulation
-		simu.agents = append(simu.agents, *ag)
+		simu.env.ags = append(simu.env.ags, *ag)
+
+		simu.env.agentsChan[ag.id] = make(chan Request)
 
 		// ajout du channel de synchro
 		simu.syncChans.Store(ag.ID(), syncChan)
 
-		// ajout de l'agent à l'environnement
-		ag.env.AddAgent(*ag)
-		ag.env.controlledAgents[ag.id] = false
-
-		// ajout du channel de l'agent à l'environnement
-		simu.env.agentsChan[ag.id] = make(chan Request)
 	}
 
 	return simu
 }
 
 func (simu *Simulation) Run() {
-	// A REVOIR si nécessaire de faire appeler simu.env.pi()
-	log.Printf("Démarrage de la simulation [step: %d, π: %f]", simu.step, simu.env.PI())
+	log.Printf("Démarrage de la simulation ")
 	// Démarrage du micro-service de Log
 	go simu.Log()
 	// Démarrage du micro-service d'affichage
@@ -178,7 +173,7 @@ func (simu *Simulation) Run() {
 	// Démarrage des agents
 
 	var wg sync.WaitGroup
-	for _, agt := range simu.agents {
+	for _, agt := range simu.env.ags{
 		wg.Add(1)
 		go func(agent Agent) {
 			defer wg.Done()
@@ -199,8 +194,8 @@ func (simu *Simulation) Run() {
 	}
 
 	// Lancement de l'orchestration de tous les agents
-	// simu.step += 1 // plus de sens
-	for _, agt := range simu.agents {
+
+	for _, agt := range simu.env.ags {
 		go func(agt Agent) {
 			step := 0
 			for {
@@ -213,9 +208,35 @@ func (simu *Simulation) Run() {
 		}(agt)
 	}
 
+	go simu.listenNewAgentChan()
+
 	time.Sleep(simu.maxDuration)
 
-	log.Printf("Fin de la simulation [step: %d, in: %d, out: %d, π: %f]", simu.step, simu.env.PI())
+}
+func (simu *Simulation) listenNewAgentChan() {
+	for {
+		select {
+		case newAgent := <-simu.newAgentChan:
+			//simu.env.ags = append(simu.env.ags, newAgent)
+			simu.syncChans.Store(newAgent.ID(), newAgent.syncChan)
+			go func(agent Agent) {
+				agent.Start()
+			}(newAgent)
+			go func(agent Agent) {
+				step := 0
+				for {
+					step++
+					c, _ := simu.syncChans.Load(agent.ID()) // communiquer les steps aux agents
+					c.(chan int) <- step                    // /!\ utilisation d'un "Type Assertion"
+					time.Sleep(1 * time.Millisecond)        // "cool down"
+					<-c.(chan int)
+				}
+			}(newAgent)
+
+			// Add the new agent to simu.agents
+
+		}
+	}
 }
 
 func (simu *Simulation) Print_v0() {
@@ -233,7 +254,7 @@ func (simu *Simulation) Print_v0() {
 }
 func (simu *Simulation) Print() {
 	for {
-		for i := 0; i < 50; i++ {
+		for i := 0; i < 30; i++ {
 			for j := 0; j < 50; j++ {
 				element := simu.env.station[i][j]
 				if len(element) > 1 {
@@ -248,7 +269,6 @@ func (simu *Simulation) Print() {
 		//fmt.Println("============================================================")
 		//time.Sleep(time.Second / 4) // 60 fps !
 		time.Sleep(500 * time.Millisecond) // 1 fps !
-		//fmt.Print("\033[H\033[2J") // effacement du terminal
 	}
 }
 

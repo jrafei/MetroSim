@@ -3,7 +3,6 @@ package simulation
 import (
 	"fmt"
 	"sync"
-
 )
 
 type Environment struct {
@@ -13,22 +12,32 @@ type Environment struct {
 	station          [50][50]string
 	agentsChan       map[AgentID]chan Request
 	controlledAgents map[AgentID]bool
+	newAgentChan     chan Agent
 }
 
-func NewEnvironment(ags []Agent, carte [50][50]string, agentsCh map[AgentID]chan Request) (env *Environment) {
-	mapControlle := make(map[AgentID]bool)
+func NewEnvironment(ags []Agent, carte [50][50]string, newAgtCh chan Agent, agtCount int) (env *Environment) {
+	agentsCh := make(map[AgentID]chan Request)
+	mapControlled := make(map[AgentID]bool)
 	for _, ag := range ags {
-		mapControlle[ag.id] = false
+		mapControlled[ag.id] = false
+
 	}
-	return &Environment{ags: ags, agentCount: len(ags), station: carte, agentsChan: agentsCh, controlledAgents: mapControlle}
+	return &Environment{ags: ags, agentCount: agtCount, station: carte, agentsChan: agentsCh, controlledAgents: mapControlled, newAgentChan: newAgtCh}
 }
 
 func (env *Environment) AddAgent(agt Agent) {
+	env.Lock()
+	defer env.Unlock()
 	env.ags = append(env.ags, agt)
+	env.controlledAgents[agt.id] = false
+	// ajout du channel de l'agent à l'environnement
+	env.agentsChan[agt.id] = make(chan Request)
 	env.agentCount++
+	env.newAgentChan <- agt
 }
 
 func (env *Environment) RemoveAgent(agt Agent) {
+	// TODO:gérer la suppression dans simu
 	for i := 0; i < len(env.station); i++ {
 		if env.ags[i].id == agt.id {
 			// Utiliser la syntaxe de découpage pour supprimer l'élément
@@ -38,7 +47,7 @@ func (env *Environment) RemoveAgent(agt Agent) {
 			break
 		}
 	}
-	env.agentCount--
+	//env.agentCount--
 }
 
 func (env *Environment) Do(a Action, c Coord) (err error) {
