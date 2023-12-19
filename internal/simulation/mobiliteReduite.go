@@ -8,19 +8,20 @@ import (
 )
 
 type MobiliteReduite struct {
+	faceCase string // case sur laquelle l'agent lambda est face à la porte
 	req *Request
 }
 
-func (ul *MobiliteReduite) Percept(ag *Agent) {
+func (mr *MobiliteReduite) Percept(ag *Agent) {
+	mr.faceCase = ag.UpdateDirection()
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		//print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
-		ul.req = ag.request
+		mr.req = ag.request
 	default:
 		ag.stuck = ag.isStuck()
 		if ag.stuck {
 			return
-
 		}
 	}
 }

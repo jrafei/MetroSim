@@ -77,7 +77,8 @@ func NewRequest(demandeur chan Request, decision int) (req *Request) {
 
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int) *Agent {
 	isOn := make(map[Coord]string)
-	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil, 0}
+	direct := initDirection(departure, len(env.station[0]))
+	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil, direct}
 }
 
 func (ag *Agent) ID() AgentID {
@@ -248,8 +249,6 @@ func (ag *Agent) MoveAgent() {
 		if len(ag.isOn) > 0 {
 			RemoveAgent(&ag.env.station, ag)
 		}
-		rotateAgent(ag, or)
-
 		rotateAgent(ag, or) // mise à jour de l'orientation
 		//ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = ag.isOn
 		
@@ -419,4 +418,77 @@ func (ag *Agent) findNearestExit() (Coord){
 		}
 	}
 	return nearest
+}
+
+/*
+ * Méthode qui met à jour la direction de l'agent en fonction de son mouvement
+*/
+func (ag * Agent) UpdateDirection() string{
+	switch {
+		case ag.direction == 0: // vers le haut
+			if (ag.position[0] - 1) < 0 {
+			return "X" // si le controleur est au bord de la station, alors il fait face à un mur
+			} else {
+			return ag.env.station[ag.position[0]-1][ag.position[1]]
+			}
+		case ag.direction == 1: // vers la droite
+			if (ag.position[1] + 1) > 19 {
+				return  "X" // si le controleur est au bord de la station, alors il fait face à un mur
+			} else {
+				return ag.env.station[ag.position[0]][ag.position[1]+1]
+			}
+		case ag.direction == 2: // vers le bas
+			if (ag.position[0] + 1) > 19 {
+				return "X" // si le controleur est au bord de la station, alors il fait face à un mur
+			} else {
+				return ag.env.station[ag.position[0]+1][ag.position[1]]
+			}
+		
+		case ag.direction == 3: // vers la gauche
+			if (ag.position[1] - 1) < 0 {
+				return "X" // si le controleur est au bord de la station, alors il fait face à un mur
+			} else {
+				return ag.env.station[ag.position[0]][ag.position[1]-1]
+			}
+	}
+	return "X"
+}
+
+
+func initDirection(depart Coord, length int) int {
+	n := rand.Intn(4) // direction aléatoire
+	for !verifyDirection(n,depart, length){
+		n = rand.Intn(4) // direction aléatoire
+	}
+	return n
+}
+
+func verifyDirection( n int ,depart Coord, length int) bool{
+	switch n {
+		case 0: // vers le haut
+			if (depart[0] - 1) < 0 {
+				return false
+			}else {
+				return true
+			}
+		case 1: // vers la droite
+			if (depart[1] + 1) > length {
+				return false
+			}else {
+				return true
+			}
+		case 2: // vers le bas
+			if (depart[0] + 1) > length{
+				return false
+			}else {
+				return true
+			}
+		case 3: // vers la gauche
+			if (depart[1] - 1) < 0 {
+				return false
+			}else {
+				return true
+			}
+	}
+	return false
 }

@@ -23,49 +23,12 @@ type Controleur struct {
 	isExpired bool // true si le controleur est expiré, false sinon
 }
 
-func (c *Controleur) startTimer() {
-	rand.Seed(time.Now().UnixNano()) // le générateur de nombres aléatoires
-	randomSeconds := rand.Intn(9) + 2 // Génère un entier aléatoire entre 2 et 10
-	//randomSeconds := 2
-	lifetime := time.Duration(randomSeconds) * time.Second
-    c.timer = time.NewTimer(lifetime)
-	//fmt.Println("[Controleur , startTimer] Le controleur est créé avec une durée de vie de ", lifetime)
-    go func() {
-        <-c.timer.C // attend que le timer expire
-        c.isExpired = true
-    }()
-}
 
 
 func (c *Controleur) Percept(ag *Agent) {
-	env := ag.env
+	//initialiser le faceCase
+	c.faceCase = ag.UpdateDirection()
 	switch {
-		case ag.direction == 0: // vers le haut
-			if (ag.position[0] - 1) < 0 {
-			c.faceCase = "X" // si le controleur est au bord de la station, alors il fait face à un mur
-			} else {
-			c.faceCase = env.station[ag.position[0]-1][ag.position[1]]
-			}
-		case ag.direction == 1: // vers la droite
-			if (ag.position[1] + 1) > 19 {
-				c.faceCase = "X" // si le controleur est au bord de la station, alors il fait face à un mur
-			} else {
-				c.faceCase = env.station[ag.position[0]][ag.position[1]+1]
-			}
-		case ag.direction == 2: // vers le bas
-			if (ag.position[0] + 1) > 19 {
-				c.faceCase = "X" // si le controleur est au bord de la station, alors il fait face à un mur
-			} else {
-				c.faceCase = env.station[ag.position[0]+1][ag.position[1]]
-			}
-		
-		case ag.direction == 3: // vers la gauche
-			if (ag.position[1] - 1) < 0 {
-				c.faceCase = "X" // si le controleur est au bord de la station, alors il fait face à un mur
-			} else {
-				c.faceCase = env.station[ag.position[0]][ag.position[1]-1]
-			}
-
 		// comportement par défaut (comportement agent Lambda)
 		case ag.request != nil: //verifier si l'agent est communiqué par un autre agent (A VOIR SI IL EXISTE DEJA UN AGENT QUI COMMUNIQUE AVEC LE CONTROLEUR)
 			//print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
@@ -147,4 +110,16 @@ func (c *Controleur) randomDestination(ag *Agent) Coord {
 	return Coord{randomRow, randomCol}
 }
 
+func (c *Controleur) startTimer() {
+	rand.Seed(time.Now().UnixNano()) // le générateur de nombres aléatoires
+	randomSeconds := rand.Intn(9) + 2 // Génère un entier aléatoire entre 2 et 10
+	//randomSeconds := 2
+	lifetime := time.Duration(randomSeconds) * time.Second
+    c.timer = time.NewTimer(lifetime)
+	//fmt.Println("[Controleur , startTimer] Le controleur est créé avec une durée de vie de ", lifetime)
+    go func() {
+        <-c.timer.C // attend que le timer expire
+        c.isExpired = true
+    }()
+}
 

@@ -12,8 +12,6 @@ type UsagerLambda struct {
 }
 
 func (ul *UsagerLambda) Percept(ag *Agent) {
-	// récupérer le channel de l'agent lambda
-
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		//print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
