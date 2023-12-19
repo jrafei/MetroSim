@@ -34,7 +34,7 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 		ag.decision = Wait
 	} else if ul.req.decision == Expel { // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
 		ag.decision = Expel
-	} else if ul.req.decision == Disappear || (ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S")) {
+	} else if ul.req.decision == Disappear || (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") {
 		fmt.Println(ag.id, "disapear")
 		ag.decision = Disappear
 	} else if ul.req.decision == Wait {

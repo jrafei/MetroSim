@@ -202,7 +202,7 @@ func isValidMove(matrix [50][50]string, current Node, forbiddenCell Node, newRow
 		return false
 	}
 	// Check if the absolute coordinates overlap with obstacles in the matrix
-	if matrix[newRow][newCol] == "Q" || matrix[newRow][newCol] == "X" {
+	if matrix[newRow][newCol] == "Q" || matrix[newRow][newCol] == "X" || matrix[newRow][newCol] == "M" {
 		return false
 	}
 
@@ -227,7 +227,7 @@ func isValidMove(matrix [50][50]string, current Node, forbiddenCell Node, newRow
 				}
 
 				// Check if the absolute coordinates overlap with obstacles in the matrix
-				if matrix[absRow][absCol] == "Q" || matrix[absRow][absCol] == "X" {
+				if matrix[absRow][absCol] == "Q" || matrix[absRow][absCol] == "X" || matrix[absRow][absCol] == "M" {
 					return false
 				}
 			}

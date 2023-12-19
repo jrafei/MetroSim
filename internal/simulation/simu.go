@@ -123,8 +123,8 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
 
 	// Création du métro
-	metro1 := *NewMetro(10*time.Second, 5*time.Second, 2, &simu.env, NewWay(1, []Coord{{8, 5}}))
-	metro2 := *NewMetro(10*time.Second, 5*time.Second, 2, &simu.env, NewWay(2, []Coord{{13, 4}}))
+	metro1 := *NewMetro(10*time.Second, 5*time.Second, 2, NewWay(1, Coord{9, 0}, Coord{10, 39}, true, []Coord{{8, 5}}, &simu.env))
+	metro2 := *NewMetro(10*time.Second, 5*time.Second, 2, NewWay(2, Coord{11, 0}, Coord{12, 39}, false, []Coord{{13, 4}}, &simu.env))
 	simu.metros = []Metro{metro1, metro2}
 
 	// création des agents et des channels
@@ -140,11 +140,11 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		if i%2 == 0 { //Type Agent
 			id := fmt.Sprintf("Agent%d", i)
 			//NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int)
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, Coord{49, 32}, Coord{1, 9}, 2, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, Coord{49, 32}, Coord{0, 9}, 2, 1)
 		} else { // Type Controleur
 			//id := fmt.Sprintf("Controleur%d", i)
 			id := fmt.Sprintf("Agent%d", i)
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, Coord{1, 8}, Coord{8, 5}, 1, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, Coord{0, 8}, Coord{8, 5}, 1, 1)
 			//ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &Controleur{}, Coord{18, 12}, Coord{18, 4}, 1, 1)
 		}
 
