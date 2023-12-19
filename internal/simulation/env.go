@@ -13,6 +13,7 @@ type Environment struct {
 	agentsChan       map[AgentID]chan Request
 	controlledAgents map[AgentID]bool
 	newAgentChan     chan Agent
+	metros           []Metro
 }
 
 func NewEnvironment(ags []Agent, carte [50][50]string, newAgtCh chan Agent, agtCount int) (env *Environment) {
@@ -31,7 +32,7 @@ func (env *Environment) AddAgent(agt Agent) {
 	env.ags = append(env.ags, agt)
 	env.controlledAgents[agt.id] = false
 	// ajout du channel de l'agent à l'environnement
-	env.agentsChan[agt.id] = make(chan Request)
+	env.agentsChan[agt.id] = make(chan Request, 5)
 	env.agentCount++
 	env.newAgentChan <- agt
 }

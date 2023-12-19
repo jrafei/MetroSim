@@ -2,7 +2,7 @@ package simulation
 
 import (
 	//"fmt"
-	"fmt"
+
 	"math/rand"
 	alg "metrosim/internal/algorithms"
 	"time"
@@ -15,7 +15,6 @@ type UsagerLambda struct {
 func (ul *UsagerLambda) Percept(ag *Agent) {
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
-		print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
 		ul.req = *ag.request
 	default:
 		ag.stuck = ag.isStuck()
@@ -34,8 +33,7 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 		ag.decision = Wait
 	} else if ul.req.decision == Expel { // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
 		ag.decision = Expel
-	} else if ul.req.decision == Disappear || (ag.position!=ag.departure && ag.position==ag.destination) && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") {
-		fmt.Println(ag.id, "disapear")
+	} else if ul.req.decision == Disappear || (ag.position != ag.departure && ag.position == ag.destination) && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") {
 		ag.decision = Disappear
 	} else if ul.req.decision == Wait {
 		ag.decision = Wait

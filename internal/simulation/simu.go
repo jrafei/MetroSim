@@ -7,17 +7,21 @@ import (
 	"time"
 )
 
+/*
+ * //TODO: Mettre en place un débit d'apparition des agents
+ */
+
 // Déclaration de la matrice
 /*
- * X : Mur, zone inatteignable
- * E : Entrée
- * S : Sortie
- * W : Entrée et Sortie
- * Q : Voie
- * _ : Couloir, case libre
- * B: Bridge/Pont, zone accessible
- * valeur de AgentID : Agent
- */
+  - X : Mur, zone inatteignable
+  - E : Entrée
+  - S : Sortie
+  - W : Entrée et Sortie
+  - Q : Voie
+  - _ : Couloir, case libre
+  - B: Bridge/Pont, zone accessible
+  - valeur de AgentID : Agent
+*/
 var carte [50][50]string = [50][50]string{
 	{"X", "X", "X", "X", "X", "X", "X", "X", "W", "W", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "W", "W", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "W", "W"},
 	{"X", "X", "X", "X", "X", "X", "X", "X", "_", "_", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "_", "_", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "W", "W"},
@@ -101,8 +105,7 @@ type Simulation struct {
 	step         int // Stats
 	start        time.Time
 	syncChans    sync.Map
-	newAgentChan chan Agent // permet la création d'agent en cours de simulation
-	metros       []Metro
+	newAgentChan chan Agent // permet la création d'agent en cours de simulation (canal de com avec env)
 }
 
 // TODO:voir si agents est mis à jour lors de suppression d'agent
@@ -123,9 +126,9 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
 
 	// Création du métro
-	metro1 := *NewMetro(10*time.Second, 5*time.Second, 10, 2, NewWay(1, Coord{9, 0}, Coord{10, 39}, true, []Coord{{8, 5}}, &simu.env))
-	metro2 := *NewMetro(10*time.Second, 5*time.Second, 10, 2, NewWay(2, Coord{11, 0}, Coord{12, 39}, false, []Coord{{13, 4}}, &simu.env))
-	simu.metros = []Metro{metro1, metro2}
+	metro1 := *NewMetro(10*time.Second, 5*time.Second, 20, 2, NewWay(1, Coord{9, 0}, Coord{10, 39}, true, []Coord{{8, 5}, {8, 34}}, &simu.env))
+	metro2 := *NewMetro(10*time.Second, 5*time.Second, 20, 2, NewWay(2, Coord{11, 0}, Coord{12, 39}, false, []Coord{{13, 5}, {13, 34}}, &simu.env))
+	simu.env.metros = []Metro{metro1, metro2}
 
 	// création des agents et des channels
 	for i := 0; i < agentCount; i++ {
@@ -153,7 +156,7 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		// ajout de l'agent à la simulation
 		simu.env.ags = append(simu.env.ags, *ag)
 
-		simu.env.agentsChan[ag.id] = make(chan Request)
+		simu.env.agentsChan[ag.id] = make(chan Request, 5)
 
 		// ajout du channel de synchro
 		simu.syncChans.Store(ag.ID(), syncChan)
@@ -173,7 +176,7 @@ func (simu *Simulation) Run() {
 	// Démarrage des agents
 
 	var wg sync.WaitGroup
-	for _, agt := range simu.env.ags{
+	for _, agt := range simu.env.ags {
 		wg.Add(1)
 		go func(agent Agent) {
 			defer wg.Done()
@@ -185,7 +188,7 @@ func (simu *Simulation) Run() {
 	simu.start = time.Now()
 
 	// Lancement des métros
-	for _, metro := range simu.metros {
+	for _, metro := range simu.env.metros {
 		wg.Add(1)
 		go func(metro Metro) {
 			defer wg.Done()
@@ -268,7 +271,7 @@ func (simu *Simulation) Print() {
 		fmt.Println()
 		//fmt.Println("============================================================")
 		//time.Sleep(time.Second / 4) // 60 fps !
-		time.Sleep(500 * time.Millisecond) // 1 fps !
+		time.Sleep(200 * time.Millisecond) // 1 fps !
 	}
 }
 

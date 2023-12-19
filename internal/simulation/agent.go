@@ -2,15 +2,9 @@ package simulation
 
 /*
  * Classe et méthodes principales de la structure Agent
- * à faire :
- *			// TODO: Gérer les moments où les agents font du quasi-sur place car ils ne peuvent plus bouger
- *			// TODO: Il arrive encore que certains agents soient bloqués, mais c'est quand il n'y a aucun mouvement possible.
- *			// Il faudrait faire en sorte que les agents bougent et laisse passer les autres
  */
 
 import (
-	"fmt"
-	"log"
 	"math/rand"
 	alg "metrosim/internal/algorithms"
 	"time"
@@ -78,7 +72,7 @@ func (ag *Agent) ID() AgentID {
 }
 
 func (ag *Agent) Start() {
-	log.Printf("%s starting...\n", ag.id)
+	//log.Printf("%s starting...\n", ag.id)
 	go ag.listenForRequests()
 	go func() {
 		var step int
@@ -129,7 +123,7 @@ func IsMovementSafe(path []alg.Node, agt *Agent, env *Environment) (bool, int) {
 		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > 50 || borneSupCol > 50) {
 			for i := borneInfRow; i < borneSupRow; i++ {
 				for j := borneInfCol; j < borneSupCol; j++ {
-					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && (env.station[i][j] != "B" && env.station[i][j] != "_" && env.station[i][j] != "W" && env.station[i][j] != "S" && env.station[i][j] != "G") {
+					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && (env.station[i][j] != "B" && env.station[i][j] != "_" && env.station[i][j] != "W" && env.station[i][j] != "S" && env.station[i][j] != "O") {
 						// Si on n'est pas sur une case atteignable, en dehors de la zone qu'occupe l'agent avant déplacement, on est bloqué
 						safe = false
 					}
@@ -234,11 +228,11 @@ func (ag *Agent) MoveAgent() {
 	//fmt.Println("[Agent, MoveAgent] destination ", ag.destination)
 
 	// ================== Tentative de calcul du chemin =======================
-	if len(ag.path) == 0 {
+	if len(ag.path) == 0 || ag.isGoingToExitPath() {
 		start, end := ag.generatePathExtremities()
 		// Recherche d'un chemin si inexistant
-		path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false, 2*time.Second)
-		ag.path = path
+		ag.path = alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false, 2*time.Second)
+		
 	}
 
 	// ================== Etude de faisabilité =======================
@@ -248,7 +242,8 @@ func (ag *Agent) MoveAgent() {
 			start, end := ag.generatePathExtremities()
 			// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit
 			time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
-			path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false, 2*time.Second)
+			//path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false, 2*time.Second)
+			path := alg.FindPath(ag.env.station, start, end, ag.path[0], false, 2*time.Second)
 			ag.path = path
 			return
 		} else {
@@ -421,11 +416,31 @@ func (ag *Agent) listenForRequests() {
 	for {
 		if ag.request == nil {
 			req := <-ag.env.agentsChan[ag.id]
-			fmt.Println("Request received by UsagerLambda:", req.decision)
+			//fmt.Println("Request received by UsagerLambda:", req.decision)
 			ag.request = &req
 			if req.decision == Disappear {
 				return
 			}
 		}
 	}
+}
+
+func (ag *Agent) isGoingToExitPath() bool {
+	if len(ag.path) > 0 {
+		for _, metro := range ag.env.metros {
+			for gate_index, gate := range metro.way.gates {
+				if equalCoord(&ag.destination, &gate) {
+					// Si la destination est une porte de métro, on va essayer de libérer le chemin des agents sortants
+					exit_path := metro.way.pathsToExit[gate_index]
+					for _, cell := range exit_path {
+						if equalCoord(&Coord{cell.Row(), cell.Col()}, &ag.position) {
+							return true
+						}
+					}
+				}
+			}
+		}
+	}
+	return false
+
 }
