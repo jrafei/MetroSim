@@ -38,7 +38,6 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 	} else if ul.req.decision == Wait {
 		ag.decision = Wait
 	} else if ul.req.decision == YouHaveToMove {
-		fmt.Printf("Je vais essayer")
 		movement := ag.MoveAgent()
 		if movement {
 			ag.decision = 5

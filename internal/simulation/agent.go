@@ -9,7 +9,6 @@ package simulation
  */
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
 	alg "metrosim/internal/algorithms"
@@ -258,7 +257,6 @@ func (ag *Agent) MoveAgent() bool {
 			for !accept && i < 3 {
 				//Demande à l'agent qui bloque de se pousser (réitère trois fois s'il lui dit pas possible)
 				i += 1
-				fmt.Printf("Je suis %s, bouge %s iteration %d \n", ag.id, blockingAgentID, i)
 				reqToBlockingAgent = NewRequest(ag.env.agentsChan[ag.id], YouHaveToMove) //Création "Hello, je suis ag.id, move."
 				ag.env.agentsChan[blockingAgentID] <- *reqToBlockingAgent                //Envoi requête
 				repFromBlockingAgent = <-ag.env.agentsChan[blockingAgentID]              //Attend la réponse
@@ -405,7 +403,7 @@ func (ag *Agent) listenForRequests() {
 	for {
 		if ag.request == nil {
 			req := <-ag.env.agentsChan[ag.id]
-			fmt.Println("Request received by UsagerLambda:", req.decision)
+			//fmt.Println("Request received by UsagerLambda:", req.decision)
 			ag.request = &req
 			if req.decision == Disappear {
 				return

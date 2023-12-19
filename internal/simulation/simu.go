@@ -214,6 +214,7 @@ func (simu *Simulation) Print() {
 			}
 			fmt.Println()
 		}
+		fmt.Println("\n \n \n")
 		fmt.Println()
 		//fmt.Println("============================================================")
 		//time.Sleep(time.Second / 4) // 60 fps !
