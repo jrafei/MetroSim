@@ -19,14 +19,12 @@ import (
 type Action int64
 
 const (
-	Noop = iota
-	Mark
-	Wait
-	Move
-	Disappear
-	Expel // virer l'agent
-	Stop  // arreter l'agent
-	GiveInfos
+	Noop      = iota
+	Wait      // Attente
+	Move      // Déplacement de l'agent
+	Disappear // Disparition  de l'agent dans la simulatiin
+	Expel     // virer l'agent
+	Stop      // arreter l'agent
 )
 
 type Coord [2]int
@@ -48,12 +46,11 @@ type Agent struct {
 	stuck       bool
 	width       int
 	height      int
-	orientation int //0 : vers le haut, 1 : vers la droite, 2 : vers le bas, 3 : vers la gauche (sens de deuxieme case occupé par l'agent)
+	orientation int //0 : vers le haut, 1 : vers la droite, 2 : vers le bas, 3 : vers la gauche (sens de construction de l'agent)
 	path        []alg.Node
 	request     *Request
 	direction   int //0 : vers le haut, 1 : vers la droite, 2 : vers le bas, 3 : vers la gauche (sens de son deplacement)
-	// visitedPanneaux map[alg.Node]bool
-	// visiting        *alg.Node
+
 }
 
 type Request struct {

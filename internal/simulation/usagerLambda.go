@@ -13,21 +13,6 @@ type UsagerLambda struct {
 }
 
 func (ul *UsagerLambda) Percept(ag *Agent) {
-	// récupérer le channel de l'agent lambda
-	//fmt.Println("[AgentLambda, Percept] direction ", ag.direction)
-
-	// chan_agt := ag.env.GetAgentChan(ag.id)
-	// select {
-	// case req := <-chan_agt: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
-	// 	print("Requete recue par l'agent lambda : ", req.decision, "\n")
-	// 	ul.req = req
-	// case <-time.After(100 * time.Millisecond):
-	// 	ag.stuck = ag.isStuck()
-	// 	if ag.stuck {
-	// 		return
-
-	// 	}
-	// }
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
@@ -68,11 +53,13 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 		time.Sleep(time.Duration(n) * time.Second)
 	} else if ag.decision == Disappear {
 		RemoveAgent(&ag.env.station, ag)
-	} else { //age.decision == Expel
+	} else if ag.decision == Expel {
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.departure
 		ag.env.controlledAgents[ag.id] = true
 		ag.path = make([]alg.Node, 0)
 		ag.MoveAgent()
+	} else {
+		// nothing to wait
 	}
 }

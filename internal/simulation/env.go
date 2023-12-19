@@ -3,17 +3,16 @@ package simulation
 import (
 	"fmt"
 	"sync"
+
 )
 
 type Environment struct {
 	sync.RWMutex
-	ags        []Agent
-	agentCount int
-	station    [50][50]string
-	agentsChan map[AgentID]chan Request
+	ags              []Agent
+	agentCount       int
+	station          [50][50]string
+	agentsChan       map[AgentID]chan Request
 	controlledAgents map[AgentID]bool
-	// zones      map[Coord]ZoneID      // Zones de la station
-	// panneaux   map[ZoneID][]alg.Node // Les panneaux de la station, permettant d'aller vers la zone
 }
 
 func NewEnvironment(ags []Agent, carte [50][50]string, agentsCh map[AgentID]chan Request) (env *Environment) {
@@ -34,7 +33,7 @@ func (env *Environment) RemoveAgent(agt Agent) {
 		if env.ags[i].id == agt.id {
 			// Utiliser la syntaxe de découpage pour supprimer l'élément
 			env.ags = append(env.ags[:i], env.ags[i+1:]...)
-			delete(env.agentsChan,agt.id)
+			delete(env.agentsChan, agt.id)
 			// Sortir de la boucle après avoir trouvé et supprimé l'élément
 			break
 		}
@@ -47,12 +46,12 @@ func (env *Environment) Do(a Action, c Coord) (err error) {
 	defer env.Unlock()
 
 	switch a {
-	case Mark:
-		if c[0] < 0 || c[0] > 1 || c[1] < 0 || c[1] > 1 {
-			return fmt.Errorf("bad coordinates (%f,%f)", c[0], c[1])
-		}
+	// case Mark:
+	// 	if c[0] < 0 || c[0] > 1 || c[1] < 0 || c[1] > 1 {
+	// 		return fmt.Errorf("bad coordinates (%f,%f)", c[0], c[1])
+	// 	}
 
-		return nil
+	// 	return nil
 
 	case Noop:
 		return nil
@@ -77,15 +76,15 @@ func (env *Environment) GetAgentChan(agt_id AgentID) chan Request {
 }
 
 func existAgent(c string) bool {
-	return c != "X" && c != "E"  &&  c != "S" &&  c != "W" &&  c!= "Q" && c!= "_" &&  c!= "B"
+	return c != "X" && c != "E" && c != "S" && c != "W" && c != "Q" && c != "_" && c != "B"
 }
 
 func calculDirection(depart Coord, arrive Coord) int {
 	if depart[0] == arrive[0] {
 		if depart[1] > arrive[1] {
-			return  3 //Gauche
+			return 3 //Gauche
 		} else {
-			return  1 //droite
+			return 1 //droite
 		}
 	} else {
 		if depart[0] > arrive[0] {
