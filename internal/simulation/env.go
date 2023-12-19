@@ -12,6 +12,7 @@ type Environment struct {
 	station    [20][20]string
 	agentsChan map[AgentID]chan Request
 	controlledAgents map[AgentID]bool
+	metros	 []Metro // Liste des métros de la station , utilisé pour le choix du métro par l'agent à mobilité réduite (A voir si on peut trouver une autre manière de faire)
 	// zones      map[Coord]ZoneID      // Zones de la station
 	// panneaux   map[ZoneID][]alg.Node // Les panneaux de la station, permettant d'aller vers la zone
 }

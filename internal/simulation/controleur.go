@@ -26,8 +26,8 @@ type Controleur struct {
 
 
 func (c *Controleur) Percept(ag *Agent) {
-	//initialiser le faceCase
-	c.faceCase = ag.UpdateDirection()
+	//initialiser le faceCase en fonction de la direction de l'agent
+	c.faceCase = ag.getFaceCase()
 	switch {
 		// comportement par défaut (comportement agent Lambda)
 		case ag.request != nil: //verifier si l'agent est communiqué par un autre agent (A VOIR SI IL EXISTE DEJA UN AGENT QUI COMMUNIQUE AVEC LE CONTROLEUR)
@@ -79,9 +79,13 @@ func (c *Controleur) Act(ag *Agent) {
 	switch ag.decision {
 	case Move:
 		if !c.isExpired {
+			//fmt.Printf("[Controleur, Act, non expiré] Le controleur %s est en mouvement \n", ag.id)
 			ag.destination = c.randomDestination(ag)
+			//fmt.Printf("[Controleur, Act] destination s = %s : %d \n",ag.id,ag.destination)
 		}else {
+			//fmt.Printf("[Controleur, Act] Le controleur %s est expiré \n",ag.id)
 			ag.destination = ag.findNearestExit()
+			//fmt.Printf("[Controleur, Act, Expire] destination de %s = %d \n",ag.id,ag.destination)
 		}
 		ag.MoveAgent()
 
@@ -112,8 +116,8 @@ func (c *Controleur) randomDestination(ag *Agent) Coord {
 
 func (c *Controleur) startTimer() {
 	rand.Seed(time.Now().UnixNano()) // le générateur de nombres aléatoires
-	randomSeconds := rand.Intn(9) + 2 // Génère un entier aléatoire entre 2 et 10
-	//randomSeconds := 2
+	//randomSeconds := rand.Intn(9) + 2 // Génère un entier aléatoire entre 2 et 10
+	randomSeconds := 2
 	lifetime := time.Duration(randomSeconds) * time.Second
     c.timer = time.NewTimer(lifetime)
 	//fmt.Println("[Controleur , startTimer] Le controleur est créé avec une durée de vie de ", lifetime)

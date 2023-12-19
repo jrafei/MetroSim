@@ -30,6 +30,7 @@ const (
 	Expel // virer l'agent
 	Stop  // arreter l'agent
 	GiveInfos
+	MoveAway // déplacer l'agent qui bloque le chemin de l'agent en mobilité réduite
 )
 
 type Coord [2]int
@@ -55,9 +56,6 @@ type Agent struct {
 	path        []alg.Node
 	request     *Request
 	direction   int //0 : vers le haut, 1 : vers la droite, 2 : vers le bas, 3 : vers la gauche (sens de son deplacement)
-	// visitedPanneaux map[alg.Node]bool
-	// visiting        *alg.Node
-
 }
 
 type Request struct {
@@ -139,7 +137,7 @@ func IsMovementSafe(path []alg.Node, agt *Agent, env *Environment) (bool, int) {
 		// Calcul des bornes de position de l'agent après mouvement
 
 		borneInfRow, borneSupRow, borneInfCol, borneSupCol := calculateBounds(ag.position, ag.width, ag.height, ag.orientation)
-		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > 20 || borneSupCol > 20) {
+		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > len(env.station[0]) || borneSupCol > len(env.station[1])) {
 			for i := borneInfRow; i < borneSupRow; i++ {
 				for j := borneInfCol; j < borneSupCol; j++ {
 					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && (env.station[i][j] != "B" && env.station[i][j] != "_" && env.station[i][j] != "W" && env.station[i][j] != "S") {
@@ -174,7 +172,7 @@ func IsAgentBlocking(path []alg.Node, agt *Agent, env *Environment) bool {
 		// Calcul des bornes de position de l'agent après mouvement
 		borneInfRow, borneSupRow, borneInfCol, borneSupCol := calculateBounds(ag.position, ag.width, ag.height, ag.orientation)
 		//fmt.Println(ag.id,borneInfRow,borneInfRow, borneSupRow, borneInfCol, borneSupCol)
-		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > 20 || borneSupCol > 20) {
+		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > len(env.station[0]) || borneSupCol > len(env.station[1])) {
 			for i := borneInfRow; i < borneSupRow; i++ {
 				for j := borneInfCol; j < borneSupCol; j++ {
 					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && len(env.station[i][j]) > 2 {
@@ -211,7 +209,7 @@ func (ag *Agent) isStuck() bool {
 				count++
 			}
 			// Case inaccessible
-			if i < 0 || j < 0 || i > 19 || j > 19 || ag.env.station[i][j] == "X" || ag.env.station[i][j] == "Q" || len(ag.env.station[i][j]) > 2 {
+			if i < 0 || j < 0 || i > len(ag.env.station[0])-1 || j > len(ag.env.station[0])-1 || ag.env.station[i][j] == "X" || ag.env.station[i][j] == "Q" || len(ag.env.station[i][j]) > 2 {
 				not_acc++
 
 			}
@@ -252,7 +250,7 @@ func (ag *Agent) MoveAgent() {
 		rotateAgent(ag, or) // mise à jour de l'orientation
 		//ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = ag.isOn
 		
-		//MODIFICATION DE DIRECTION 
+		//MODIFICATION DE LA DIRECTION 
 		ag.direction = calculDirection(ag.position, Coord{ag.path[0].Row(), ag.path[0].Col()})
 		//fmt.Println("[MoveAgent]Direction : ", ag.direction)
 		ag.position[0] = ag.path[0].Row()
@@ -421,9 +419,9 @@ func (ag *Agent) findNearestExit() (Coord){
 }
 
 /*
- * Méthode qui met à jour la direction de l'agent en fonction de son mouvement
+ * Méthode qui envoie la valeur de case en face de l'agent 
 */
-func (ag * Agent) UpdateDirection() string{
+func (ag * Agent) getFaceCase() string{
 	switch {
 		case ag.direction == 0: // vers le haut
 			if (ag.position[0] - 1) < 0 {
@@ -455,15 +453,15 @@ func (ag * Agent) UpdateDirection() string{
 }
 
 
-func initDirection(depart Coord, length int) int {
+func initDirection(depart Coord, dimensionCarte int) int {
 	n := rand.Intn(4) // direction aléatoire
-	for !verifyDirection(n,depart, length){
+	for !verifyDirection(n,depart, dimensionCarte){
 		n = rand.Intn(4) // direction aléatoire
 	}
 	return n
 }
 
-func verifyDirection( n int ,depart Coord, length int) bool{
+func verifyDirection( n int ,depart Coord, dimensionCarte int) bool{
 	switch n {
 		case 0: // vers le haut
 			if (depart[0] - 1) < 0 {
@@ -472,13 +470,13 @@ func verifyDirection( n int ,depart Coord, length int) bool{
 				return true
 			}
 		case 1: // vers la droite
-			if (depart[1] + 1) > length {
+			if (depart[1] + 1) > dimensionCarte {
 				return false
 			}else {
 				return true
 			}
 		case 2: // vers le bas
-			if (depart[0] + 1) > length{
+			if (depart[0] + 1) > dimensionCarte{
 				return false
 			}else {
 				return true

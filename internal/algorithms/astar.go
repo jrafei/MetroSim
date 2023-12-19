@@ -214,7 +214,7 @@ func isValidMove(matrix [20][20]string, current Node, forbiddenCell Node, newRow
 			for j := lColBound; j < uColBound; j++ {
 
 				// Calculate the absolute coordinates in the matrix
-				absRow, absCol := i, j
+				absRow, absCol := i, j 
 
 				// Check if the absolute coordinates are within the bounds of the matrix
 				if absRow < 0 || absRow >= len(matrix) || absCol < 0 || absCol >= len(matrix[0]) {
