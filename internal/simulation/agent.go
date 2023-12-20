@@ -30,7 +30,6 @@ const (
 	Expel // virer l'agent
 	Stop  // arreter l'agent
 	GiveInfos
-	MoveAway // déplacer l'agent qui bloque le chemin de l'agent en mobilité réduite
 )
 
 type Coord [2]int

@@ -1,7 +1,7 @@
 package simulation
 
 import (
-	//"fmt"
+	"fmt"
 	"sync"
 	"math/rand"
 	"time"
@@ -19,7 +19,9 @@ type MobiliteReduite struct {
 */
 func (mr * MobiliteReduite) setUpPath(ag *Agent) {
 	choix_voie := rand.Intn(2) // choix de la voie de départ aléatoire
+	fmt.Println("[MobiliteReduite, setUpPath] choix_voie = ",choix_voie)
 	dest_porte := ag.findNearestGate(ag.env.metros[choix_voie].way.gates)
+	fmt.Println("[MobiliteReduite, setUpPath] dest_porte = ",dest_porte)
 	ag.destination = dest_porte
 	start, end := ag.generatePathExtremities()
 	// Recherche d'un chemin si inexistant
@@ -56,15 +58,14 @@ func (mr *MobiliteReduite) Deliberate(ag *Agent) {
 				ag.decision = Expel
 				mr.req = nil //demande traitée
 		}
-	}else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") {
-			//fmt.Println(ag.id, "disapear")
+	}else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si l'agent est arrivé à sa destination et qu'il est sur une sortie
+			//fmt.Println(ag.id, "disappear")
 			ag.decision = Disappear
-			} else if mr.faceCase != "E" && mr.faceCase != "S" && mr.faceCase != "_" && mr.faceCase != "W" && mr.faceCase != "B"{ // si l'agent est arrivé à sa destination et qu'il est sur une sortie
-				//si il existe un agent qui bloque son chemin
-				ag.decision = MoveAway
-				} else {
-					ag.decision = Move
-				}	
+		} else if ag.stuck{ // si l'agent est bloqué
+			ag.decision = Wait
+			}else {
+			ag.decision = Move
+			}	
 }
 
 func (mr *MobiliteReduite) Act(ag *Agent) {
@@ -72,16 +73,12 @@ func (mr *MobiliteReduite) Act(ag *Agent) {
 	switch ag.decision {
 	case Move:
 		mr.MoveMR(ag)
-	case MoveAway:
-		agt_face_id := AgentID(mr.faceCase) //id de l'agent qui se trouve devant le controleur
-		//fmt.Print("L'agent ", agt_face_id, " a été expulsé\n")
-		ag.env.agentsChan[agt_face_id] <- *NewRequest(ag.env.agentsChan[ag.id], ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
 	case Wait:
 		n := rand.Intn(2) // temps d'attente aléatoire
 		time.Sleep(time.Duration(n) * time.Second)
 	case Disappear:
 		RemoveAgent(&ag.env.station, ag)
-	default : //Expel
+	case Expel : 
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.findNearestExit()
 		//fmt.Println("[AgentLambda, Act] destination = ",ag.destination)
