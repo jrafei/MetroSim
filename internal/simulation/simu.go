@@ -20,6 +20,9 @@ import (
   - Q : Voie
   - _ : Couloir, case libre
   - B: Bridge/Pont, zone accessible
+  - G: gate/porte de métro
+  - O : Porte ouverte
+  - M : rame de métro
   - valeur de AgentID : Agent
 */
 var carte [50][50]string = [50][50]string{

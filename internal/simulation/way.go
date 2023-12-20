@@ -27,7 +27,7 @@ func NewWay(wayId WayID, upLeftCoord, downRightCoord Coord, goToLeft bool, gates
 	/* Affichage des portes */
 	for _, gate := range gates {
 		if !(gate[0] < 0 || gate[1] > 49) && env.station[gate[0]][gate[1]] != "X" && env.station[gate[0]][gate[1]] != "Q" {
-			env.station[gate[0]][gate[1]] = "C"
+			env.station[gate[0]][gate[1]] = "G"
 		}
 
 	}
@@ -67,6 +67,6 @@ func (way *Way) openGates() {
 func (way *Way) closeGates() {
 	// Fin d'autorisation d'entrer dans le métro
 	for _, gate := range way.gates {
-		way.env.station[gate[0]][gate[1]] = "C"
+		way.env.station[gate[0]][gate[1]] = "G"
 	}
 }
