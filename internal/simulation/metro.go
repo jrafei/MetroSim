@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -37,50 +38,59 @@ func NewMetro(freq time.Duration, stopT time.Duration, capacity, freeS int, way 
 func (metro *Metro) Start() {
 	log.Printf("Metro starting...\n")
 	refTime := time.Now()
-	go func() {
-		//var step int
-		for {
-			//step = <-metro.syncChan
-			if refTime.Add(metro.frequency).Sub(time.Now()) <= time.Duration(metro_speed)*time.Second {
-				metro.printMetro()
-			}
-			if refTime.Add(metro.frequency).Before(time.Now()) {
-				metro.dropUsers()
-				metro.way.openGates()
-				metro.pickUpUsers()
-				metro.way.closeGates()
-				metro.removeMetro()
-				metro.freeSpace = rand.Intn(10)
-				refTime = time.Now()
-			}
-			//metro.syncChan <- step
-
+	//var step int
+	for {
+		//step = <-metro.syncChan
+		if refTime.Add(metro.frequency).Sub(time.Now()) <= time.Duration(metro_speed)*time.Second {
+			metro.printMetro()
 		}
-	}()
+		if refTime.Add(metro.frequency).Before(time.Now()) {
+			metro.dropUsers()
+			metro.way.openGates()
+			metro.pickUpUsers()
+			metro.way.closeGates()
+			metro.removeMetro()
+			metro.freeSpace = rand.Intn(10)
+			refTime = time.Now()
+		}
+		//metro.syncChan <- step
+
+	}
 }
 
 func (metro *Metro) pickUpUsers() {
-	// Faire monter les usagers dans le métro
-	t := time.Now()
-	for time.Now().Before(t.Add(metro.stopTime)) {
-		if metro.freeSpace > 0 {
-			for _, gate := range metro.way.gates {
-				go metro.pickUpGate(&gate)
+	var wg sync.WaitGroup
+	for _, gate := range metro.way.gates {
+		wg.Add(1)
+		go func(gate Coord) {
+			defer wg.Done()
+			metro.pickUpGate(&gate, time.Now().Add(metro.stopTime))
+		}(gate)
+	}
+	wg.Wait()
+}
+
+func (metro *Metro) pickUpGate(gate *Coord, endTime time.Time) {
+	// Récupérer les usagers à une porte spécifique
+	for {
+		if !time.Now().Before(endTime) {
+			return
+		} else {
+			gate_cell := metro.way.env.station[gate[0]][gate[1]]
+			//fmt.Println("gate cell", gate[0], gate[1])
+			if gate_cell != "O" {
+				agent := metro.findAgent(AgentID(gate_cell))
+				if agent != nil && agent.width*agent.height <= metro.freeSpace && equalCoord(&agent.destination, gate) {
+					fmt.Println("agent entering metro : ", agent.id)
+					metro.way.env.agentsChan[agent.id] <- *NewRequest(metro.comChannel, Disappear)
+					<-metro.comChannel
+					metro.freeSpace = metro.freeSpace - agent.width*agent.height
+					fmt.Println("leaving", agent.id)
+				}
 			}
 		}
 	}
-}
 
-func (metro *Metro) pickUpGate(gate *Coord) {
-	// Récupérer les usagers à une porte spécifique
-	gate_cell := metro.way.env.station[gate[0]][gate[1]]
-	if len(gate_cell) > 1 {
-		agent := metro.findAgent(AgentID(gate_cell))
-		if agent != nil && agent.width*agent.height <= metro.freeSpace && agent.destination == *gate {
-			metro.way.env.agentsChan[agent.id] <- *NewRequest(metro.comChannel, Disappear)
-			metro.freeSpace = metro.freeSpace - agent.width*agent.height
-		}
-	}
 }
 
 func (metro *Metro) findAgent(agent AgentID) *Agent {
@@ -105,7 +115,7 @@ func (metro *Metro) dropUsers() {
 		path := metro.way.pathsToExit[gate_nb]
 		ag := NewAgent(id, metro.way.env, make(chan int), 200, 0, true, &UsagerLambda{}, metro.way.gates[gate_nb], metro.way.nearestExit[gate_nb], width, height)
 		ag.path = path
-		writeAgent(&ag.env.station,ag)
+		writeAgent(&ag.env.station, ag)
 		metro.way.env.AddAgent(*ag)
 		//log.Println(metro.way.id, nb, metro.way.env.agentCount)
 		//fmt.Println("agent leaving metro", ag.id, ag.departure, ag.destination, width, height)

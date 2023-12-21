@@ -5,6 +5,7 @@ package simulation
  */
 
 import (
+	"fmt"
 	"math/rand"
 	alg "metrosim/internal/algorithms"
 	"time"
@@ -13,12 +14,14 @@ import (
 type Action int64
 
 const (
-	Noop      = iota
-	Wait      // Attente
-	Move      // Déplacement de l'agent
-	Disappear // Disparition  de l'agent dans la simulatiin
-	Expel     // virer l'agent
-	Stop      // arreter l'agent
+	Noop       = iota
+	Wait       // Attente
+	Move       // Déplacement de l'agent
+	EnterMetro //Entrer dans le métro
+	Disappear  // Disparition  de l'agent dans la simulation
+	Expel      // virer l'agent
+	Stop       // arreter l'agent
+	ACK        // acquittement
 )
 
 type Coord [2]int
@@ -83,7 +86,7 @@ func (ag *Agent) Start() {
 			ag.behavior.Act(ag)
 			ag.syncChan <- step
 			//fmt.Println(ag.id, ag.path)
-			if ag.decision == Disappear {
+			if ag.decision == Disappear || ag.decision == EnterMetro {
 				ag.env.RemoveAgent(*ag)
 				return
 			}
@@ -232,7 +235,7 @@ func (ag *Agent) MoveAgent() {
 		start, end := ag.generatePathExtremities()
 		// Recherche d'un chemin si inexistant
 		ag.path = alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false, 2*time.Second)
-		
+
 	}
 
 	// ================== Etude de faisabilité =======================
@@ -416,11 +419,8 @@ func (ag *Agent) listenForRequests() {
 	for {
 		if ag.request == nil {
 			req := <-ag.env.agentsChan[ag.id]
-			//fmt.Println("Request received by UsagerLambda:", req.decision)
+			fmt.Println("Request received by UsagerLambda:", req.decision)
 			ag.request = &req
-			if req.decision == Disappear {
-				return
-			}
 		}
 	}
 }
