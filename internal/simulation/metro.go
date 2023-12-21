@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	alg "metrosim/internal/algorithms"
 	"sync"
 	"time"
 )
 
 /*
  * //TODO:Ajouter la capacité max
+ * //TODO:Parfois agents bloqués
  * // Apparition des agents sortant
  */
 
@@ -62,31 +64,34 @@ func (metro *Metro) pickUpUsers() {
 	var wg sync.WaitGroup
 	for _, gate := range metro.way.gates {
 		wg.Add(1)
-		go func(gate Coord) {
+		go func(gate alg.Coord) {
 			defer wg.Done()
 			metro.pickUpGate(&gate, time.Now().Add(metro.stopTime))
 		}(gate)
 	}
+
 	wg.Wait()
 }
 
-func (metro *Metro) pickUpGate(gate *Coord, endTime time.Time) {
+func (metro *Metro) pickUpGate(gate *alg.Coord, endTime time.Time) {
 	// Récupérer les usagers à une porte spécifique
 	for {
+
 		if !time.Now().Before(endTime) {
 			return
 		} else {
+
 			gate_cell := metro.way.env.station[gate[0]][gate[1]]
 
 			if len(gate_cell) > 1 {
 				agent := metro.findAgent(AgentID(gate_cell))
 				//fmt.Println("gate cell", gate[0],gate[1], "agent", agent)
 				if agent != nil && agent.width*agent.height <= metro.freeSpace && equalCoord(&agent.destination, gate) {
-					fmt.Println("agent entering metro : ", agent.id)
+					//fmt.Println("agent entering metro : ", agent.id)
 					metro.way.env.agentsChan[agent.id] <- *NewRequest(metro.comChannel, EnterMetro)
 					<-metro.comChannel
 					metro.freeSpace = metro.freeSpace - agent.width*agent.height
-					fmt.Println("leaving", agent.id)
+					//fmt.Println("leaving", agent.id)
 				}
 			}
 		}
@@ -120,7 +125,7 @@ func (metro *Metro) dropUsers() {
 		writeAgent(&ag.env.station, ag)
 		//log.Println(metro.way.id, nb, metro.way.env.agentCount)
 		//fmt.Println("agent leaving metro", ag.id, ag.departure, ag.destination, width, height)
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 	}
 
 }

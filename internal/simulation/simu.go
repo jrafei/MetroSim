@@ -3,6 +3,7 @@ package simulation
 import (
 	"fmt"
 	"log"
+	alg "metrosim/internal/algorithms"
 	"sync"
 	"time"
 )
@@ -129,8 +130,8 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
 
 	// Création du métro
-	metro1 := *NewMetro(10*time.Second, 5*time.Second, 10, 5, NewWay(1, Coord{9, 0}, Coord{10, 39}, true, []Coord{{8, 5}, {8, 34}}, &simu.env))
-	metro2 := *NewMetro(10*time.Second, 5*time.Second, 10, 5, NewWay(2, Coord{11, 0}, Coord{12, 39}, false, []Coord{{13, 5}, {13, 34}}, &simu.env))
+	metro1 := *NewMetro(10*time.Second, 5*time.Second, 10, 5, NewWay(1, alg.Coord{9, 0}, alg.Coord{10, 39}, true, []alg.Coord{{8, 5}, {8, 34}}, &simu.env))
+	metro2 := *NewMetro(10*time.Second, 5*time.Second, 10, 5, NewWay(2, alg.Coord{11, 0}, alg.Coord{12, 39}, false, []alg.Coord{{13, 5}, {13, 34}}, &simu.env))
 	simu.env.metros = []Metro{metro1, metro2}
 
 	// création des agents et des channels
@@ -146,11 +147,11 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		if i%2 == 0 { //Type Agent
 			id := fmt.Sprintf("Agent%d", i)
 			//NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int)
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, Coord{49, 32}, Coord{0, 9}, 2, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, alg.Coord{49, 32}, alg.Coord{0, 9}, 2, 1)
 		} else { // Type Controleur
 			//id := fmt.Sprintf("Controleur%d", i)
 			id := fmt.Sprintf("Agent%d", i)
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, Coord{0, 8}, Coord{8, 5}, 1, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, alg.Coord{0, 8}, alg.Coord{8, 5}, 1, 1)
 			//ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &Controleur{}, Coord{18, 12}, Coord{18, 4}, 1, 1)
 		}
 

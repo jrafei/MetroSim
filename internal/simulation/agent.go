@@ -24,7 +24,6 @@ const (
 	ACK        // acquittement
 )
 
-type Coord [2]int
 type AgentID string
 
 type Agent struct {
@@ -32,14 +31,14 @@ type Agent struct {
 	vitesse     time.Duration
 	force       int
 	politesse   bool
-	position    Coord // Coordonnées de référence, width et height on compte width et height à partir de cette position
-	departure   Coord
-	destination Coord
+	position    alg.Coord // Coordonnées de référence, width et height on compte width et height à partir de cette position
+	departure   alg.Coord
+	destination alg.Coord
 	behavior    Behavior
 	env         *Environment
 	syncChan    chan int
 	decision    int
-	isOn        map[Coord]string // Contenu de la case sur laquelle il se trouve
+	isOn        map[alg.Coord]string // Contenu de la case sur laquelle il se trouve
 	stuck       bool
 	width       int
 	height      int
@@ -65,8 +64,8 @@ func NewRequest(demandeur chan Request, decision int) (req *Request) {
 	return &Request{demandeur, decision}
 }
 
-func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int) *Agent {
-	isOn := make(map[Coord]string)
+func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination alg.Coord, width, height int) *Agent {
+	isOn := make(map[alg.Coord]string)
 	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil, 0}
 }
 
@@ -96,7 +95,7 @@ func (ag *Agent) Start() {
 
 func (ag *Agent) Act(env *Environment) {
 	if ag.decision == Noop {
-		env.Do(Noop, Coord{})
+		env.Do(Noop, alg.Coord{})
 	}
 }
 
@@ -115,7 +114,7 @@ func IsMovementSafe(path []alg.Node, agt *Agent, env *Environment) (bool, int) {
 	}
 	// Simulation du déplacement
 	ag := *agt
-	ag.position = Coord{path[0].Row(), path[0].Col()}
+	ag.position = alg.Coord{path[0].Row(), path[0].Col()}
 	for or := 0; or < 4; or++ {
 		rotateAgent(&ag, or)
 		safe := true
@@ -150,7 +149,7 @@ func IsAgentBlocking(path []alg.Node, agt *Agent, env *Environment) bool {
 	infRow, supRow, infCol, supCol := calculateBounds(agt.position, agt.width, agt.height, agt.orientation)
 	// Simulation du déplacement
 	ag := *agt
-	ag.position = Coord{path[0].Row(), path[0].Col()}
+	ag.position = alg.Coord{path[0].Row(), path[0].Col()}
 	for or := 0; or < 4; or++ {
 		rotateAgent(&ag, or)
 		blocking := false
@@ -295,7 +294,7 @@ func (ag *Agent) MoveAgent() {
 			RemoveAgent(&ag.env.station, ag)
 		}
 		rotateAgent(ag, or)
-		ag.direction = calculDirection(ag.position, Coord{ag.path[0].Row(), ag.path[0].Col()})
+		ag.direction = calculDirection(ag.position, alg.Coord{ag.path[0].Row(), ag.path[0].Col()})
 		ag.position[0] = ag.path[0].Row()
 		ag.position[1] = ag.path[0].Col()
 		if len(ag.path) > 1 {
@@ -327,8 +326,8 @@ func RemoveAgent(matrix *[50][50]string, agt *Agent) {
 
 	for i := borneInfRow; i < borneSupRow; i++ {
 		for j := borneInfCol; j < borneSupCol; j++ {
-			matrix[i][j] = agt.isOn[Coord{i, j}]
-			removeCoord(Coord{i, j}, agt.isOn)
+			matrix[i][j] = agt.isOn[alg.Coord{i, j}]
+			removeCoord(alg.Coord{i, j}, agt.isOn)
 		}
 	}
 }
@@ -347,18 +346,18 @@ func writeAgent(matrix *[50][50]string, agt *Agent) {
 
 }
 
-func saveCells(matrix *[50][50]string, savedCells map[Coord]string, position Coord, width, height, orientation int) {
+func saveCells(matrix *[50][50]string, savedCells map[alg.Coord]string, position alg.Coord, width, height, orientation int) {
 	// Enregistrement des valeurs des cellules de la matrice
 	borneInfRow, borneSupRow, borneInfCol, borneSupCol := calculateBounds(position, width, height, orientation)
 
 	for i := borneInfRow; i < borneSupRow; i++ {
 		for j := borneInfCol; j < borneSupCol; j++ {
-			savedCells[Coord{i, j}] = matrix[i][j]
+			savedCells[alg.Coord{i, j}] = matrix[i][j]
 		}
 	}
 }
 
-func removeCoord(to_remove Coord, mapping map[Coord]string) {
+func removeCoord(to_remove alg.Coord, mapping map[alg.Coord]string) {
 	// Suppression d'une clé dans une map
 	for coord, _ := range mapping {
 		if equalCoord(&coord, &to_remove) {
@@ -367,7 +366,7 @@ func removeCoord(to_remove Coord, mapping map[Coord]string) {
 	}
 }
 
-func equalCoord(coord1, coord2 *Coord) bool {
+func equalCoord(coord1, coord2 *alg.Coord) bool {
 	// Vérifie l'égalité de 2 objets Coord
 	return coord1[0] == coord2[0] && coord1[1] == coord2[1]
 }
@@ -377,7 +376,7 @@ func rotateAgent(agt *Agent, orientation int) {
 	agt.orientation = orientation
 }
 
-func calculateBounds(position Coord, width, height, orientation int) (infRow, supRow, infCol, supCol int) {
+func calculateBounds(position alg.Coord, width, height, orientation int) (infRow, supRow, infCol, supCol int) {
 	// Fonction de génération des frontières d'un objet ayant une largeur et une hauteur, en focntion de son orientation
 	borneInfRow := 0
 	borneSupRow := 0
@@ -436,7 +435,7 @@ func (ag *Agent) isGoingToExitPath() bool {
 					// Si la destination est une porte de métro, on va essayer de libérer le chemin des agents sortants
 					exit_path := metro.way.pathsToExit[gate_index]
 					for _, cell := range exit_path {
-						if equalCoord(&Coord{cell.Row(), cell.Col()}, &ag.position) {
+						if equalCoord(&alg.Coord{cell.Row(), cell.Col()}, &ag.position) {
 							return true
 						}
 					}
@@ -446,4 +445,15 @@ func (ag *Agent) isGoingToExitPath() bool {
 	}
 	return false
 
+}
+
+func findMetro(env *Environment, gateToFind *alg.Coord) *Metro {
+	for _, metro := range env.metros {
+		for _, gate := range metro.way.gates {
+			if equalCoord(&gate, gateToFind) {
+				return &metro
+			}
+		}
+	}
+	return nil
 }

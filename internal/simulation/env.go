@@ -2,8 +2,11 @@ package simulation
 
 import (
 	"fmt"
+	alg "metrosim/internal/algorithms"
 	"sync"
 )
+
+//TODO:rajouter les entrées et sorties
 
 type Environment struct {
 	sync.RWMutex
@@ -51,7 +54,7 @@ func (env *Environment) RemoveAgent(agt Agent) {
 	//env.agentCount--
 }
 
-func (env *Environment) Do(a Action, c Coord) (err error) {
+func (env *Environment) Do(a Action, c alg.Coord) (err error) {
 	env.Lock()
 	defer env.Unlock()
 
@@ -77,8 +80,8 @@ func (env *Environment) PI() float64 {
 	return 4
 }
 
-func (env *Environment) Rect() Coord {
-	return Coord{0, 0}
+func (env *Environment) Rect() alg.Coord {
+	return alg.Coord{0, 0}
 }
 
 func (env *Environment) GetAgentChan(agt_id AgentID) chan Request {
@@ -89,7 +92,7 @@ func existAgent(c string) bool {
 	return c != "X" && c != "E" && c != "S" && c != "W" && c != "Q" && c != "_" && c != "B"
 }
 
-func calculDirection(depart Coord, arrive Coord) int {
+func calculDirection(depart alg.Coord, arrive alg.Coord) int {
 	if depart[0] == arrive[0] {
 		if depart[1] > arrive[1] {
 			return 3 //Gauche
