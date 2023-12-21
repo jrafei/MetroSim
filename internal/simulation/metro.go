@@ -77,12 +77,13 @@ func (metro *Metro) pickUpGate(gate *Coord, endTime time.Time) {
 			return
 		} else {
 			gate_cell := metro.way.env.station[gate[0]][gate[1]]
-			//fmt.Println("gate cell", gate[0], gate[1])
-			if gate_cell != "O" {
+
+			if len(gate_cell) > 1 {
 				agent := metro.findAgent(AgentID(gate_cell))
+				//fmt.Println("gate cell", gate[0],gate[1], "agent", agent)
 				if agent != nil && agent.width*agent.height <= metro.freeSpace && equalCoord(&agent.destination, gate) {
 					fmt.Println("agent entering metro : ", agent.id)
-					metro.way.env.agentsChan[agent.id] <- *NewRequest(metro.comChannel, Disappear)
+					metro.way.env.agentsChan[agent.id] <- *NewRequest(metro.comChannel, EnterMetro)
 					<-metro.comChannel
 					metro.freeSpace = metro.freeSpace - agent.width*agent.height
 					fmt.Println("leaving", agent.id)
@@ -115,11 +116,11 @@ func (metro *Metro) dropUsers() {
 		path := metro.way.pathsToExit[gate_nb]
 		ag := NewAgent(id, metro.way.env, make(chan int), 200, 0, true, &UsagerLambda{}, metro.way.gates[gate_nb], metro.way.nearestExit[gate_nb], width, height)
 		ag.path = path
-		writeAgent(&ag.env.station, ag)
 		metro.way.env.AddAgent(*ag)
+		writeAgent(&ag.env.station, ag)
 		//log.Println(metro.way.id, nb, metro.way.env.agentCount)
 		//fmt.Println("agent leaving metro", ag.id, ag.departure, ag.destination, width, height)
-		//time.Sleep(500 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 
 }

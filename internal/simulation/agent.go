@@ -419,8 +419,11 @@ func (ag *Agent) listenForRequests() {
 	for {
 		if ag.request == nil {
 			req := <-ag.env.agentsChan[ag.id]
-			fmt.Println("Request received by UsagerLambda:", req.decision)
+			fmt.Println("Request received by :", ag.id, req.decision)
 			ag.request = &req
+		}
+		if ag.request.decision == Disappear || ag.request.decision == EnterMetro {
+			return
 		}
 	}
 }
