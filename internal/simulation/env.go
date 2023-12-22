@@ -7,43 +7,52 @@ import (
 
 type Environment struct {
 	sync.RWMutex
-	ags        []Agent
-	agentCount int
-	station    [20][20]string
-	agentsChan map[AgentID]chan Request
+	ags              []Agent
+	agentCount       int
+	station          [50][50]string
+	agentsChan       map[AgentID]chan Request
 	controlledAgents map[AgentID]bool
-	metros	 []Metro // Liste des métros de la station , utilisé pour le choix du métro par l'agent à mobilité réduite (A voir si on peut trouver une autre manière de faire)
-	// zones      map[Coord]ZoneID      // Zones de la station
-	// panneaux   map[ZoneID][]alg.Node // Les panneaux de la station, permettant d'aller vers la zone
+	newAgentChan     chan Agent
+	metros           []Metro
 }
 
 type ZoneID int
 
 
-func NewEnvironment(ags []Agent, carte [20][20]string, agentsCh map[AgentID]chan Request) (env *Environment) {
-	mapControlle := make(map[AgentID]bool)
+
+func NewEnvironment(ags []Agent, carte [50][50]string, newAgtCh chan Agent, agtCount int) (env *Environment) {
+	agentsCh := make(map[AgentID]chan Request)
+	mapControlled := make(map[AgentID]bool)
 	for _, ag := range ags {
-		mapControlle[ag.id] = false
+		mapControlled[ag.id] = false
+
 	}
-	return &Environment{ags: ags, agentCount: len(ags), station: carte, agentsChan: agentsCh, controlledAgents: mapControlle}
+	return &Environment{ags: ags, agentCount: agtCount, station: carte, agentsChan: agentsCh, controlledAgents: mapControlled, newAgentChan: newAgtCh}
 }
 
 func (env *Environment) AddAgent(agt Agent) {
+	env.Lock()
+	defer env.Unlock()
 	env.ags = append(env.ags, agt)
+	env.controlledAgents[agt.id] = false
+	// ajout du channel de l'agent à l'environnement
+	env.agentsChan[agt.id] = make(chan Request, 5)
 	env.agentCount++
+	env.newAgentChan <- agt
 }
 
 func (env *Environment) RemoveAgent(agt Agent) {
+	// TODO:gérer la suppression dans simu
 	for i := 0; i < len(env.station); i++ {
 		if env.ags[i].id == agt.id {
 			// Utiliser la syntaxe de découpage pour supprimer l'élément
 			env.ags = append(env.ags[:i], env.ags[i+1:]...)
-			delete(env.agentsChan,agt.id)
+			delete(env.agentsChan, agt.id)
 			// Sortir de la boucle après avoir trouvé et supprimé l'élément
 			break
 		}
 	}
-	env.agentCount--
+	//env.agentCount--
 }
 
 func (env *Environment) Do(a Action, c Coord) (err error) {
@@ -51,12 +60,12 @@ func (env *Environment) Do(a Action, c Coord) (err error) {
 	defer env.Unlock()
 
 	switch a {
-	case Mark:
-		if c[0] < 0 || c[0] > 1 || c[1] < 0 || c[1] > 1 {
-			return fmt.Errorf("bad coordinates (%f,%f)", c[0], c[1])
-		}
+	// case Mark:
+	// 	if c[0] < 0 || c[0] > 1 || c[1] < 0 || c[1] > 1 {
+	// 		return fmt.Errorf("bad coordinates (%f,%f)", c[0], c[1])
+	// 	}
 
-		return nil
+	// 	return nil
 
 	case Noop:
 		return nil
@@ -85,15 +94,15 @@ func (env *Environment) verifyEmptyCase(c Coord) bool {
 }
 
 func existAgent(c string) bool {
-	return c != "X" && c != "E"  &&  c != "S" &&  c != "W" &&  c!= "Q" && c!= "_" &&  c!= "B"
+	return c != "X" && c != "E" && c != "S" && c != "W" && c != "Q" && c != "_" && c != "B"
 }
 
 func calculDirection(depart Coord, arrive Coord) int {
 	if depart[0] == arrive[0] {
 		if depart[1] > arrive[1] {
-			return  3 //Gauche
+			return 3 //Gauche
 		} else {
-			return  1 //droite
+			return 1 //droite
 		}
 	} else {
 		if depart[0] > arrive[0] {
@@ -103,3 +112,17 @@ func calculDirection(depart Coord, arrive Coord) int {
 		}
 	}
 }
+
+func (env *Environment) getNbAgentsAround(pos Coord) int {
+	nb := 0
+	for i := 0; i < 4; i++ {
+		for j := 0; j < 4; j++ {
+			c := env.station[pos[0]+i][pos[1]+j]
+			if existAgent(c) {
+				nb++
+			}
+		}
+	}
+	return nb
+}
+

@@ -53,15 +53,15 @@ func (c *Controleur) Deliberate(ag *Agent) {
 	matchedFraud, err2 := regexp.MatchString(regexFraudeur, c.faceCase)
 	//fmt.Println("faceCase : ", c.faceCase)
 	//fmt.Println("matchedAgt : ", matchedAgt)
-	
+
 	if err1 != nil || err2 != nil {
 		fmt.Println("Erreur lors de l'analyse de la regex :", err1, err2)
 		return
 	} else {
-		if matchedAgt  && ag.env.controlledAgents[AgentID(c.faceCase)] == false { // si l'agent devant le controleur est un agent et qu'il n'a pas encore été controlé
+		if matchedAgt && ag.env.controlledAgents[AgentID(c.faceCase)] == false { // si l'agent devant le controleur est un agent et qu'il n'a pas encore été controlé
 			//fmt.Println("L'agent ", c.face, " a été détecté par le controleur")
 			ag.decision = Stop // arreter l'agent devant lui
-		} else if matchedFraud && !ag.env.controlledAgents[AgentID(c.faceCase)]{
+		} else if matchedFraud && !ag.env.controlledAgents[AgentID(c.faceCase)] {
 			ag.decision = Expel // virer l'agent devant lui
 			//sinon comportement par défaut (comportement de l'usager lambda)
 			}else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si l'agent est arrivé à sa destination et qu'il est sur une sortie

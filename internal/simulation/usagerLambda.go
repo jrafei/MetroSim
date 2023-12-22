@@ -2,9 +2,10 @@ package simulation
 
 import (
 	//"fmt"
+
 	"math/rand"
-	"time"
 	alg "metrosim/internal/algorithms"
+	"time"
 )
 
 type UsagerLambda struct {
@@ -23,7 +24,6 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 
 		}
 	}
-
 }
 
 func (ul *UsagerLambda) Deliberate(ag *Agent) {
@@ -32,12 +32,19 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 		if ul.req.decision == Stop{
 			ag.decision = Wait
 			ul.req = nil //demande traitée
-		} else { // sinon alors la requete est de type "Viré" cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
+			return
+		} else if ul.req.decision == Expel { // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
 				//fmt.Println("[AgentLambda, Deliberate] Expel")
 				ag.decision = Expel
 				ul.req = nil //demande traitée
+				return
+		}else if ul.req.decision == Disappear {
+			ag.decision = Disappear
+			return
+		}else if ul.req.decision == Wait {
+			ag.decision = Wait
 		}
-	}else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si l'agent est arrivé à sa destination et qu'il est sur une sortie
+	}else if (ag.position != ag.departure && ag.position == ag.destination) && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si l'agent est arrivé à sa destination et qu'il est sur une sortie
 			//fmt.Println(ag.id, "disappear")
 			ag.decision = Disappear
 		} else if ag.stuck{ // si l'agent est bloqué
@@ -56,12 +63,14 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 		time.Sleep(time.Duration(n) * time.Second)
 	} else if ag.decision == Disappear {
 		RemoveAgent(&ag.env.station, ag)
-	} else { //age.decision == Expel
+	} else if ag.decision == Expel {
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.findNearestExit()
 		//fmt.Println("[AgentLambda, Act] destination = ",ag.destination)
 		ag.env.controlledAgents[ag.id] = true
-		ag.path = make([]alg.Node,0)
+		ag.path = make([]alg.Node, 0)
 		ag.MoveAgent()
+	} else {
+		// nothing to wait
 	}
 }

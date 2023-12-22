@@ -8,33 +8,38 @@ import (
 	alg "metrosim/internal/algorithms"
 )
 
-var once sync.Once
+
 type MobiliteReduite struct {
-	faceCase string 
 	req *Request
+	once sync.Once
 }
 
+
+/*
+* Fonction qui permet de définir la destination d'un agent à mobilité réduite
+*/
+func (mr *MobiliteReduite)setUpDestination(ag *Agent){
+	choix_voie := rand.Intn(2) // choix de la voie de départ aléatoire
+	//fmt.Println("[MobiliteReduite, setUpPath] choix_voie = ",choix_voie)
+	dest_porte := (ag.findNearestGates(ag.env.metros[choix_voie].way.gates))[0].Gate
+	fmt.Println("[MobiliteReduite, setUpPath] dest_porte = ",dest_porte)
+	ag.destination = dest_porte
+	mr.setUpPath(ag)
+}
 /*
 	Calcule le chemin de l'agent à mobilité réduite vers la porte la plus proche
 */
 func (mr * MobiliteReduite) setUpPath(ag *Agent) {
-	choix_voie := rand.Intn(2) // choix de la voie de départ aléatoire
-	fmt.Println("[MobiliteReduite, setUpPath] choix_voie = ",choix_voie)
-	dest_porte := ag.findNearestGate(ag.env.metros[choix_voie].way.gates)
-	fmt.Println("[MobiliteReduite, setUpPath] dest_porte = ",dest_porte)
-	ag.destination = dest_porte
 	start, end := ag.generatePathExtremities()
 	// Recherche d'un chemin si inexistant
 	path := alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false, 2*time.Second)
 	ag.path = path
+	fmt.Println("[MobiliteReduite, setUpPath] path = ",ag.path)
 	ag.direction = calculDirection(ag.position, Coord{ag.path[0].Row(), ag.path[0].Col()})
 }
 
 func (mr *MobiliteReduite) Percept(ag *Agent) {
-	once.Do(func(){mr.setUpPath(ag)}) // la fonction setUp est executé à la premiere appel de la fonction Percept()
-	
-	mr.faceCase = ag.getFaceCase() // mettre à jour la case en face de l'agent en fonction de son attribut direction de deplacement
-	
+	mr.once.Do(func(){mr.setUpDestination(ag)}) // la fonction setUp est executé à la premiere appel de la fonction Percept()
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		//print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
@@ -53,11 +58,13 @@ func (mr *MobiliteReduite) Deliberate(ag *Agent) {
 		if mr.req.decision == Stop{
 			ag.decision = Wait
 			mr.req = nil //demande traitée
-		} else { // sinon alors la requete est de type "Viré" cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
+		} else if mr.req.decision == Expel { // sinon alors la requete est de type "Viré" cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
 				//fmt.Println("[AgentLambda, Deliberate] Expel")
 				ag.decision = Expel
 				mr.req = nil //demande traitée
-		}
+			}else if mr.req.decision == Disappear {
+				ag.decision = Disappear
+			}
 	}else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si l'agent est arrivé à sa destination et qu'il est sur une sortie
 			//fmt.Println(ag.id, "disappear")
 			ag.decision = Disappear
@@ -93,6 +100,9 @@ func (mr *MobiliteReduite) Act(ag *Agent) {
 */
 func (mr *MobiliteReduite) MoveMR(ag *Agent) {
 	// ================== Déplacement si aucun problème =======================
+	if(len(ag.path) <= 0){
+		mr.setUpPath(ag)
+	}
 	safe, or := IsMovementSafe(ag.path, ag, ag.env)
 	if safe {
 		if len(ag.isOn) > 0 {

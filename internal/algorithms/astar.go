@@ -64,7 +64,7 @@ func (pq *PriorityQueue) Pop() interface{} {
 type ZoneID int
 type Coord [2]int
 
-func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orientation bool, timeout time.Duration) []Node {
+func FindPath(matrix [50][50]string, start, end Node, forbidenCell Node, orientation bool, timeout time.Duration) []Node {
 	// Création d'un context avec timeout, pour limiter le calcul
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -77,7 +77,7 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orienta
 	parents := make(map[Node]Node)
 
 	closestPoint := start // Initialisation avec le point de départ
-	closestDistance := Heuristic(start.row, start.col, end)
+	closestDistance := Heuristic(matrix, start.row, start.col, end)
 
 	foundPath := false
 
@@ -92,7 +92,7 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orienta
 		current := heap.Pop(&pq).(*Node)
 
 		// Mise à jour du point le plus proche si le point actuel est plus proche
-		currentDistance := Heuristic(current.row, current.col, end)
+		currentDistance := Heuristic(matrix, current.row, current.col, end)
 		if currentDistance < closestDistance {
 			closestPoint = *current
 			closestDistance = currentDistance
@@ -132,7 +132,7 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orienta
 	return nil // Aucun chemin trouvé
 }
 
-func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, orientation bool) []*Node {
+func getNeighbors(matrix [50][50]string, current, end Node, forbiddenCell Node, orientation bool) []*Node {
 	neighbors := make([]*Node, 0)
 
 	// Déplacements possibles: up, down, left, right
@@ -149,7 +149,7 @@ func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, 
 						row:         newRow,
 						col:         newCol,
 						cost:        current.cost + 1,
-						heuristic:   Heuristic(newRow, newCol, end),
+						heuristic:   Heuristic(matrix, newRow, newCol, end),
 						width:       current.width,
 						height:      current.height,
 						orientation: current.orientation,
@@ -163,7 +163,7 @@ func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, 
 					row:         newRow,
 					col:         newCol,
 					cost:        current.cost + 1,
-					heuristic:   Heuristic(newRow, newCol, end),
+					heuristic:   Heuristic(matrix, newRow, newCol, end),
 					width:       current.width,
 					height:      current.height,
 					orientation: current.orientation,
@@ -176,12 +176,16 @@ func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, 
 	return neighbors
 }
 
-func Heuristic(row, col int, end Node) int {
+func Heuristic(matrix [50][50]string, row, col int, end Node) int {
 	// Heuristique simple : distance de Manhattan
 	// On introduit de l'aléatoire pour ajouter de la diversité dans la construction des chemins
 	// On évite d'avoir tout le temps le même chemin pour un même point de départ et d'arrivé
 	//return abs(row-end.row) + abs(col-end.col) + rand.Intn(3)
-	return Abs(row-end.row) + Abs(col-end.col) + rand.Intn(10)
+	malus := 0
+	if len(matrix[row][col]) > 1 {
+		malus += 10
+	}
+	return Abs(row-end.row) + Abs(col-end.col) + rand.Intn(10) + malus
 }
 
 func Abs(x int) int {
@@ -191,7 +195,7 @@ func Abs(x int) int {
 	return x
 }
 
-func isValidMove(matrix [20][20]string, current Node, forbiddenCell Node, newRow, newCol int, orientation bool) bool {
+func isValidMove(matrix [50][50]string, current Node, forbiddenCell Node, newRow, newCol int, orientation bool) bool {
 	// Check if the new position is within the bounds of the matrix
 	if newRow < 0 || newRow >= len(matrix) || newCol < 0 || newCol >= len(matrix[0]) {
 		return false
@@ -199,10 +203,11 @@ func isValidMove(matrix [20][20]string, current Node, forbiddenCell Node, newRow
 
 	// Check if the new position overlaps with forbidden cells or obstacles
 	if forbiddenCell.row == newRow && forbiddenCell.col == newCol {
-		return false
+		//return false
+		current.heuristic = current.heuristic + 100
 	}
 	// Check if the absolute coordinates overlap with obstacles in the matrix
-	if matrix[newRow][newCol] == "Q" || matrix[newRow][newCol] == "X" {
+	if matrix[newRow][newCol] == "Q" || matrix[newRow][newCol] == "X" || matrix[newRow][newCol] == "M" {
 		return false
 	}
 
@@ -223,11 +228,12 @@ func isValidMove(matrix [20][20]string, current Node, forbiddenCell Node, newRow
 
 				// Check if the absolute coordinates overlap with forbidden cells or obstacles
 				if forbiddenCell.row == absRow && forbiddenCell.col == absCol {
-					return false
+					//return false
+					current.heuristic = current.heuristic + 100
 				}
 
 				// Check if the absolute coordinates overlap with obstacles in the matrix
-				if matrix[absRow][absCol] == "Q" || matrix[absRow][absCol] == "X" {
+				if matrix[absRow][absCol] == "Q" || matrix[absRow][absCol] == "X" || matrix[absRow][absCol] == "M" {
 					return false
 				}
 			}
@@ -285,4 +291,23 @@ func calculateBounds(row, col, width, height, orientation int) (infRow, supRow, 
 
 	}
 	return borneInfRow, borneSupRow, borneInfCol, borneSupCol
+}
+
+func FindNearestExit(matrix [50][50]string, row, col int) (dest_row, dest_col int) {
+	// Recherche de la sortie la plus proche
+	min := 1000000
+	n := len(matrix[0])
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
+			if matrix[i][j] == "S" || matrix[i][j] == "W" {
+				dist := Abs(row-i) + Abs(col-j)
+				if dist < min {
+					min = dist
+					dest_row = i
+					dest_col = j
+				}
+			}
+		}
+	}
+	return dest_row, dest_col
 }
