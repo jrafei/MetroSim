@@ -257,21 +257,17 @@ func rotateCoordinates(i, j, orientation int) (rotatedI, rotatedJ int) {
 	return rotatedI, rotatedJ
 }
 
-func FindNearestExit(matrix [50][50]string, row, col int) (dest_row, dest_col int) {
+func FindNearestExit(exits *[]Coord, row, col int) (dest_row, dest_col int) {
 	// Recherche de la sortie la plus proche
 	min := 1000000
-	n := len(matrix[0])
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
-			if matrix[i][j] == "S" || matrix[i][j] == "W" {
-				dist := Abs(row-i) + Abs(col-j)
-				if dist < min {
-					min = dist
-					dest_row = i
-					dest_col = j
-				}
-			}
+	for _, exit := range *exits {
+		dist := Abs(row-exit[0]) + Abs(col-exit[1])
+		if dist < min {
+			min = dist
+			dest_row = exit[0]
+			dest_col = exit[1]
 		}
 	}
+
 	return dest_row, dest_col
 }

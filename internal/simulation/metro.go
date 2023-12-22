@@ -42,6 +42,8 @@ func (metro *Metro) Start() {
 	log.Printf("Metro starting...\n")
 	refTime := time.Now()
 	//var step int
+	// affichage des portes au départ
+	metro.closeGates()
 	for {
 		//step = <-metro.syncChan
 		if refTime.Add(metro.frequency).Sub(time.Now()) <= time.Duration(metro_speed)*time.Second {
@@ -116,9 +118,10 @@ func (metro *Metro) dropUsers() {
 		metro.freeSpace = metro.freeSpace + width*height
 		nb = nb - width*height
 		id := fmt.Sprintf("Agent%d", metro.way.env.agentCount)
-		path := metro.way.pathsToExit[gate_nb]
-		ag := NewAgent(id, metro.way.env, make(chan int), 200, 0, true, &UsagerLambda{}, metro.way.gates[gate_nb], metro.way.nearestExit[gate_nb], width, height)
-		ag.path = path
+		//path := metro.way.pathsToExit[gate_nb]
+		// Attribution d'une sortie aléatoire en destination
+		ag := NewAgent(id, metro.way.env, make(chan int), 200, 0, true, &UsagerLambda{}, metro.way.gates[gate_nb], metro.way.env.exits[rand.Intn(len(metro.way.env.exits))], width, height)
+		//ag.path = path
 		metro.way.env.AddAgent(*ag)
 		ag.env.writeAgent(ag)
 		//log.Println(metro.way.id, nb, metro.way.env.agentCount)

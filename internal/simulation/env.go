@@ -18,16 +18,58 @@ type Environment struct {
 	controlledAgents map[AgentID]bool
 	newAgentChan     chan Agent
 	metros           []Metro
+	exits            []alg.Coord
+	entries          []alg.Coord
+	gates            []alg.Coord
 }
 
-func NewEnvironment(ags []Agent, carte [50][50]string, newAgtCh chan Agent, agtCount int) (env *Environment) {
+func NewEnvironment(ags []Agent, carte [50][50]string, metros []Metro, newAgtCh chan Agent, agtCount int) (env *Environment) {
 	agentsCh := make(map[AgentID]chan req.Request)
 	mapControlled := make(map[AgentID]bool)
+
+	// Récupération des entrées et sorties
+	entries := make([]alg.Coord, 0)
+	exits := make([]alg.Coord, 0)
+	for i := 0; i < 50; i++ {
+		for j := 0; j < 50; j++ {
+			switch carte[i][j] {
+			case "E":
+				entries = append(entries, alg.Coord{i, j})
+			case "S":
+				exits = append(exits, alg.Coord{i, j})
+			case "W":
+				entries = append(entries, alg.Coord{i, j})
+				exits = append(exits, alg.Coord{i, j})
+			}
+		}
+	}
+
+	// Récupération des portes
+
+	gates := make([]alg.Coord, 0)
+	for _, metro := range metros {
+		fmt.Println(metro.way.gates)
+		for _, gate := range metro.way.gates {
+			gates = append(gates, gate)
+		}
+	}
+
 	for _, ag := range ags {
 		mapControlled[ag.id] = false
-
 	}
-	return &Environment{ags: ags, agentCount: agtCount, station: carte, agentsChan: agentsCh, controlledAgents: mapControlled, newAgentChan: newAgtCh}
+
+	return &Environment{
+		ags:              ags,
+		agentCount:       agtCount,
+		station:          carte,
+		agentsChan:       agentsCh,
+		controlledAgents: mapControlled,
+		newAgentChan:     newAgtCh,
+		exits:            exits,
+		entries:          entries,
+		gates:            gates,
+		metros:           metros,
+	}
 }
 
 func (env *Environment) AddAgent(agt Agent) {
@@ -42,7 +84,7 @@ func (env *Environment) AddAgent(agt Agent) {
 }
 
 func (env *Environment) DeleteAgent(agt Agent) {
-	// TODO:gérer la suppression dans simu
+	// Suppression d'un agent de l'environnement
 	env.Lock()
 	defer env.Unlock()
 	for i := 0; i < len(env.station); i++ {
@@ -54,7 +96,7 @@ func (env *Environment) DeleteAgent(agt Agent) {
 			break
 		}
 	}
-	//env.agentCount--
+
 }
 
 func (env *Environment) Do(a Action, c alg.Coord) (err error) {

@@ -40,7 +40,7 @@ func NewWay(wayId WayID, upLeftCoord, downRightCoord alg.Coord, goToLeft bool, g
 	nearestExit := make([]alg.Coord, len(gates))
 	pathsToExit := make([][]alg.Node, len(gates))
 	for index, gate := range gates {
-		row, col := alg.FindNearestExit(env.station, gate[0], gate[1])
+		row, col := alg.FindNearestExit(&env.exits, gate[0], gate[1])
 		nearestExit[index] = alg.Coord{row, col}
 		pathsToExit[index] = alg.FindPath(env.station, *alg.NewNode(gate[0], gate[1], 0, 0, 1, 1), *alg.NewNode(row, col, 0, 0, 0, 0), *alg.NewNode(-1, -1, 0, 0, 0, 0), false, 5*time.Second)
 		index++
@@ -57,4 +57,3 @@ func NewWay(wayId WayID, upLeftCoord, downRightCoord alg.Coord, goToLeft bool, g
 		pathsToExit:    pathsToExit,
 		env:            env}
 }
-
