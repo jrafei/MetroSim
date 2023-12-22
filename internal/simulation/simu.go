@@ -130,8 +130,8 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
 
 	// Création du métro
-	metro1 := *NewMetro(10*time.Second, 5*time.Second, 10, 5, NewWay(1, alg.Coord{9, 0}, alg.Coord{10, 39}, true, []alg.Coord{{8, 5}, {8, 34}}, &simu.env))
-	metro2 := *NewMetro(10*time.Second, 5*time.Second, 10, 5, NewWay(2, alg.Coord{11, 0}, alg.Coord{12, 39}, false, []alg.Coord{{13, 5}, {13, 34}}, &simu.env))
+	metro1 := *NewMetro(10*time.Second, 5*time.Second, 10, 5, NewWay(1, alg.Coord{9, 0}, alg.Coord{10, 39}, true, []alg.Coord{{8, 5}, {8, 6}, {8, 34}}, &simu.env))
+	metro2 := *NewMetro(10*time.Second, 5*time.Second, 10, 5, NewWay(2, alg.Coord{11, 0}, alg.Coord{12, 39}, false, []alg.Coord{{13, 5}, {13, 6}, {13, 34}}, &simu.env))
 	simu.env.metros = []Metro{metro1, metro2}
 
 	// création des agents et des channels
