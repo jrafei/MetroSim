@@ -117,7 +117,17 @@ func (agt *Agent) IsMovementSafe() (bool, int) {
 		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > 50 || borneSupCol > 50) {
 			for i := borneInfRow; i < borneSupRow; i++ {
 				for j := borneInfCol; j < borneSupCol; j++ {
-					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && (agt.env.station[i][j] != "B" && agt.env.station[i][j] != "_" && agt.env.station[i][j] != "W" && agt.env.station[i][j] != "S" && agt.env.station[i][j] != "O") {
+					if agt.env.station[i][j] == "O" {
+						// Vérification si porte de métro
+						metro := findMetro(ag.env, &alg.Coord{i, j})
+						if metro != nil && !metro.way.gatesClosed && alg.EqualCoord(&ag.destination, &alg.Coord{i, j}) {
+							// On s'assure que les portes ne sont pas fermées et que c'est la destination
+							return true, or
+						} else {
+							safe = false
+						}
+					}
+					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && (agt.env.station[i][j] != "B" && agt.env.station[i][j] != "_" && agt.env.station[i][j] != "W" && agt.env.station[i][j] != "S") {
 						// Si on n'est pas sur une case atteignable, en dehors de la zone qu'occupe l'agent avant déplacement, on est bloqué
 						safe = false
 					}
@@ -216,8 +226,11 @@ func (ag *Agent) MoveAgent() {
 	if len(ag.path) == 0 || ag.isGoingToExitPath() {
 		start, end := ag.generatePathExtremities()
 		// Recherche d'un chemin si inexistant
-		ag.path = alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false, 2*time.Second)
-
+		if len(ag.path) > 0 {
+			ag.path = alg.FindPath(ag.env.station, start, end, ag.path[0], false, 2*time.Second)
+		} else {
+			ag.path = alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false, 2*time.Second)
+		}
 	}
 
 	// ================== Etude de faisabilité =======================
@@ -333,7 +346,7 @@ func (ag *Agent) isGoingToExitPath() bool {
 					// Si la destination est une porte de métro, on va essayer de libérer le chemin des agents sortants
 					exit_path := metro.way.pathsToExit[gate_index]
 					for _, cell := range exit_path {
-						if alg.EqualCoord(&alg.Coord{cell.Row(), cell.Col()}, &ag.position) {
+						if alg.EqualCoord(&alg.Coord{cell.Row(), cell.Col()}, &alg.Coord{ag.path[0].Row(), ag.path[0].Col()}) {
 							return true
 						}
 					}
@@ -342,4 +355,15 @@ func (ag *Agent) isGoingToExitPath() bool {
 		}
 	}
 	return false
+}
+
+func findMetro(env *Environment, gateToFind *alg.Coord) *Metro {
+	for _, metro := range env.metros {
+		for _, gate := range metro.way.gates {
+			if alg.EqualCoord(&gate, gateToFind) {
+				return &metro
+			}
+		}
+	}
+	return nil
 }

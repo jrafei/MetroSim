@@ -13,11 +13,12 @@ type Way struct {
 	id             WayID
 	upLeftCoord    alg.Coord // inclus
 	downRightCoord alg.Coord // inclus
-	goToLeft       bool  // si vrai, le métro se déplace de droite à gauche, si faux de gauche à droite
+	goToLeft       bool      // si vrai, le métro se déplace de droite à gauche, si faux de gauche à droite
 	horizontal     bool
 	gates          []alg.Coord //listes des portes associée à la voie
 	nearestExit    []alg.Coord // Chemin vers la sortie la plus proche pour chaque porte (index vers pathsToExit)
 	pathsToExit    [][]alg.Node
+	gatesClosed    bool
 	env            *Environment
 }
 
@@ -57,16 +58,3 @@ func NewWay(wayId WayID, upLeftCoord, downRightCoord alg.Coord, goToLeft bool, g
 		env:            env}
 }
 
-func (way *Way) openGates() {
-	// Début d'autorisation d'entrer dans le métro
-	for _, gate := range way.gates {
-		way.env.station[gate[0]][gate[1]] = "O"
-	}
-}
-
-func (way *Way) closeGates() {
-	// Fin d'autorisation d'entrer dans le métro
-	for _, gate := range way.gates {
-		way.env.station[gate[0]][gate[1]] = "G"
-	}
-}

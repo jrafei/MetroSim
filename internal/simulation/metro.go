@@ -49,9 +49,9 @@ func (metro *Metro) Start() {
 		}
 		if refTime.Add(metro.frequency).Before(time.Now()) {
 			metro.dropUsers()
-			metro.way.openGates()
+			metro.openGates()
 			metro.pickUpUsers()
-			metro.way.closeGates()
+			metro.closeGates()
 			metro.removeMetro()
 			metro.freeSpace = rand.Intn(10)
 			refTime = time.Now()
@@ -81,14 +81,11 @@ func (metro *Metro) pickUpGate(gate *alg.Coord, endTime time.Time) {
 		if !time.Now().Before(endTime) {
 			return
 		} else {
-
 			gate_cell := metro.way.env.station[gate[0]][gate[1]]
-
 			if len(gate_cell) > 1 {
 				agent := metro.findAgent(AgentID(gate_cell))
-				//fmt.Println("gate cell", gate[0],gate[1], "agent", agent)
 				if agent != nil && agent.width*agent.height <= metro.freeSpace && alg.EqualCoord(&agent.destination, gate) {
-					//fmt.Println("agent entering metro : ", agent.id)
+					fmt.Println("agent entering metro : ", agent.id, "at gate ", gate)
 					metro.way.env.agentsChan[agent.id] <- *req.NewRequest(metro.comChannel, EnterMetro)
 					<-metro.comChannel
 					metro.freeSpace = metro.freeSpace - agent.width*agent.height
@@ -231,4 +228,25 @@ func (metro *Metro) removeMetro() {
 		}
 
 	}
+}
+
+func (metro *Metro) openGates() {
+	// Début d'autorisation d'entrer dans le métro
+	for _, gate := range metro.way.gates {
+		metro.way.env.station[gate[0]][gate[1]] = "O"
+	}
+	metro.way.gatesClosed = false
+}
+
+func (metro *Metro) closeGates() {
+	// Fin d'autorisation d'entrer dans le métro
+	metro.way.gatesClosed = true
+	for _, gate := range metro.way.gates {
+		if len(metro.way.env.station[gate[0]][gate[1]]) > 1 {
+			// On autorise les agents déjà sur la case à rentrer dans le métro
+			metro.pickUpGate(&gate, time.Now().Add(time.Duration(1*time.Second)))
+		}
+		metro.way.env.station[gate[0]][gate[1]] = "G"
+	}
+
 }
