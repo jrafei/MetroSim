@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	alg "metrosim/internal/algorithms"
+	req "metrosim/internal/request"
 	"sync"
 	"time"
 )
@@ -160,7 +161,7 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		// ajout de l'agent à la simulation
 		simu.env.ags = append(simu.env.ags, *ag)
 
-		simu.env.agentsChan[ag.id] = make(chan Request, 5)
+		simu.env.agentsChan[ag.id] = make(chan req.Request, 5)
 
 		// ajout du channel de synchro
 		simu.syncChans.Store(ag.ID(), syncChan)

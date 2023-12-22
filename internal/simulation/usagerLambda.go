@@ -5,11 +5,12 @@ import (
 
 	"math/rand"
 	alg "metrosim/internal/algorithms"
+	req "metrosim/internal/request"
 	"time"
 )
 
 type UsagerLambda struct {
-	req Request
+	req req.Request
 }
 
 func (ul *UsagerLambda) Percept(ag *Agent) {
@@ -29,15 +30,15 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 func (ul *UsagerLambda) Deliberate(ag *Agent) {
 	//fmt.Println("[AgentLambda Deliberate] decision :", ul.req.decision)
 
-	if ul.req.decision == Stop {
+	if ul.req.Decision() == Stop {
 		ag.decision = Wait
-	} else if ul.req.decision == Expel { // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
+	} else if ul.req.Decision() == Expel { // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
 		ag.decision = Expel
-	} else if ul.req.decision == Disappear || (ag.position != ag.departure && ag.position == ag.destination) && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") {
+	} else if ul.req.Decision() == Disappear || (ag.position != ag.departure && ag.position == ag.destination) && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") {
 		ag.decision = Disappear
-	} else if ul.req.decision == EnterMetro {
+	} else if ul.req.Decision() == EnterMetro {
 		ag.decision = EnterMetro
-	} else if ul.req.decision == Wait {
+	} else if ul.req.Decision() == Wait {
 		ag.decision = Wait
 	} else {
 		ag.decision = Move
@@ -52,10 +53,10 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 		n := rand.Intn(2) // temps d'attente aléatoire
 		time.Sleep(time.Duration(n) * time.Second)
 	} else if ag.decision == Disappear {
-		RemoveAgent(&ag.env.station, ag)
+		ag.env.RemoveAgent(ag)
 	} else if ag.decision == EnterMetro {
-		RemoveAgent(&ag.env.station, ag)
-		ul.req.demandeur <- *NewRequest(ag.env.agentsChan[ag.id], ACK)
+		ag.env.RemoveAgent(ag)
+		ul.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
 	} else if ag.decision == Expel {
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.departure

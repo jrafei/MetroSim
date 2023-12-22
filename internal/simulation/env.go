@@ -3,6 +3,7 @@ package simulation
 import (
 	"fmt"
 	alg "metrosim/internal/algorithms"
+	req "metrosim/internal/request"
 	"sync"
 )
 
@@ -13,14 +14,14 @@ type Environment struct {
 	ags              []Agent
 	agentCount       int
 	station          [50][50]string
-	agentsChan       map[AgentID]chan Request
+	agentsChan       map[AgentID]chan req.Request
 	controlledAgents map[AgentID]bool
 	newAgentChan     chan Agent
 	metros           []Metro
 }
 
 func NewEnvironment(ags []Agent, carte [50][50]string, newAgtCh chan Agent, agtCount int) (env *Environment) {
-	agentsCh := make(map[AgentID]chan Request)
+	agentsCh := make(map[AgentID]chan req.Request)
 	mapControlled := make(map[AgentID]bool)
 	for _, ag := range ags {
 		mapControlled[ag.id] = false
@@ -35,13 +36,15 @@ func (env *Environment) AddAgent(agt Agent) {
 	env.ags = append(env.ags, agt)
 	env.controlledAgents[agt.id] = false
 	// ajout du channel de l'agent à l'environnement
-	env.agentsChan[agt.id] = make(chan Request, 5)
+	env.agentsChan[agt.id] = make(chan req.Request, 5)
 	env.agentCount++
 	env.newAgentChan <- agt
 }
 
-func (env *Environment) RemoveAgent(agt Agent) {
+func (env *Environment) DeleteAgent(agt Agent) {
 	// TODO:gérer la suppression dans simu
+	env.Lock()
+	defer env.Unlock()
 	for i := 0; i < len(env.station); i++ {
 		if env.ags[i].id == agt.id {
 			// Utiliser la syntaxe de découpage pour supprimer l'élément
@@ -73,18 +76,7 @@ func (env *Environment) Do(a Action, c alg.Coord) (err error) {
 	return fmt.Errorf("bad action number %d", a)
 }
 
-func (env *Environment) PI() float64 {
-	env.RLock()
-	defer env.RUnlock()
-
-	return 4
-}
-
-func (env *Environment) Rect() alg.Coord {
-	return alg.Coord{0, 0}
-}
-
-func (env *Environment) GetAgentChan(agt_id AgentID) chan Request {
+func (env *Environment) GetAgentChan(agt_id AgentID) chan req.Request {
 	return env.agentsChan[agt_id]
 }
 
@@ -106,4 +98,44 @@ func calculDirection(depart alg.Coord, arrive alg.Coord) int {
 			return 2 //bas
 		}
 	}
+}
+
+func (env *Environment) RemoveAgent(agt *Agent) {
+	// Supprime l'agent de la matrice
+
+	// Calcul des bornes de position de l'agent
+	borneInfRow, borneSupRow, borneInfCol, borneSupCol := alg.CalculateBounds(agt.position, agt.width, agt.height, agt.orientation)
+
+	for i := borneInfRow; i < borneSupRow; i++ {
+		for j := borneInfCol; j < borneSupCol; j++ {
+			env.station[i][j] = agt.isOn[alg.Coord{i, j}]
+			alg.RemoveCoord(alg.Coord{i, j}, agt.isOn)
+		}
+	}
+}
+
+func (env *Environment) writeAgent(agt *Agent) {
+	// Ecris l'agent dans la matrice
+
+	env.Lock()
+	defer env.Unlock()
+
+	// Calcul des bornes de position de l'agent
+	borneInfRow, borneSupRow, borneInfCol, borneSupCol := alg.CalculateBounds(agt.position, agt.width, agt.height, agt.orientation)
+
+	for i := borneInfRow; i < borneSupRow; i++ {
+		for j := borneInfCol; j < borneSupCol; j++ {
+			env.station[i][j] = string(agt.id)
+		}
+	}
+
+}
+
+func (env *Environment) FindAgentByID(agtId AgentID) *Agent {
+	for i := range env.ags {
+		if env.ags[i].id == agtId {
+			return &env.ags[i]
+		}
+	}
+	return nil
 }

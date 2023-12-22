@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	alg "metrosim/internal/algorithms"
+	req "metrosim/internal/request"
 	"sync"
 	"time"
 )
@@ -22,7 +23,7 @@ type Metro struct {
 	stopTime   time.Duration
 	capacity   int
 	freeSpace  int // nombre de cases disponibles dans le métro
-	comChannel chan Request
+	comChannel chan req.Request
 	way        *Way
 }
 
@@ -32,7 +33,7 @@ func NewMetro(freq time.Duration, stopT time.Duration, capacity, freeS int, way 
 		stopTime:   stopT,
 		capacity:   capacity,
 		freeSpace:  freeS,
-		comChannel: make(chan Request),
+		comChannel: make(chan req.Request),
 		way:        way,
 	}
 }
@@ -86,9 +87,9 @@ func (metro *Metro) pickUpGate(gate *alg.Coord, endTime time.Time) {
 			if len(gate_cell) > 1 {
 				agent := metro.findAgent(AgentID(gate_cell))
 				//fmt.Println("gate cell", gate[0],gate[1], "agent", agent)
-				if agent != nil && agent.width*agent.height <= metro.freeSpace && equalCoord(&agent.destination, gate) {
+				if agent != nil && agent.width*agent.height <= metro.freeSpace && alg.EqualCoord(&agent.destination, gate) {
 					//fmt.Println("agent entering metro : ", agent.id)
-					metro.way.env.agentsChan[agent.id] <- *NewRequest(metro.comChannel, EnterMetro)
+					metro.way.env.agentsChan[agent.id] <- *req.NewRequest(metro.comChannel, EnterMetro)
 					<-metro.comChannel
 					metro.freeSpace = metro.freeSpace - agent.width*agent.height
 					//fmt.Println("leaving", agent.id)
@@ -122,7 +123,7 @@ func (metro *Metro) dropUsers() {
 		ag := NewAgent(id, metro.way.env, make(chan int), 200, 0, true, &UsagerLambda{}, metro.way.gates[gate_nb], metro.way.nearestExit[gate_nb], width, height)
 		ag.path = path
 		metro.way.env.AddAgent(*ag)
-		writeAgent(&ag.env.station, ag)
+		ag.env.writeAgent(ag)
 		//log.Println(metro.way.id, nb, metro.way.env.agentCount)
 		//fmt.Println("agent leaving metro", ag.id, ag.departure, ag.destination, width, height)
 		time.Sleep(500 * time.Millisecond)
