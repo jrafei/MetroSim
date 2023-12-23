@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	alg "metrosim/internal/algorithms"
+	"sync"
 	"time"
 )
 
 /*
  * //TODO:Ajouter la capacité max
+ * //TODO:Parfois agents bloqués
  * // Apparition des agents sortant
  */
 
@@ -37,57 +40,73 @@ func NewMetro(freq time.Duration, stopT time.Duration, capacity, freeS int, way 
 func (metro *Metro) Start() {
 	log.Printf("Metro starting...\n")
 	refTime := time.Now()
-	go func() {
-		//var step int
-		for {
-			//step = <-metro.syncChan
-			if refTime.Add(metro.frequency).Sub(time.Now()) <= time.Duration(metro_speed)*time.Second {
-				metro.printMetro()
-			}
-			if refTime.Add(metro.frequency).Before(time.Now()) {
-				//metro.dropUsers()
-				metro.way.openGates()
-				metro.pickUpUsers()
-				metro.way.closeGates()
-				metro.removeMetro()
-				metro.freeSpace = rand.Intn(10)
-				refTime = time.Now()
-			}
-			//metro.syncChan <- step
-
+	//var step int
+	for {
+		//step = <-metro.syncChan
+		if refTime.Add(metro.frequency).Sub(time.Now()) <= time.Duration(metro_speed)*time.Second {
+			metro.printMetro()
 		}
-	}()
+		if refTime.Add(metro.frequency).Before(time.Now()) {
+			metro.dropUsers()
+			metro.way.openGates()
+			metro.pickUpUsers()
+			metro.way.closeGates()
+			metro.removeMetro()
+			metro.freeSpace = rand.Intn(10)
+			refTime = time.Now()
+		}
+		//metro.syncChan <- step
+
+	}
 }
 
 func (metro *Metro) pickUpUsers() {
-	// Faire monter les usagers dans le métro
-	t := time.Now()
-	for time.Now().Before(t.Add(metro.stopTime)) {
-		if metro.freeSpace > 0 {
-			for _, gate := range metro.way.gates {
-				go metro.pickUpGate(&gate)
+	var wg sync.WaitGroup
+	for _, gate := range metro.way.gates {
+		wg.Add(1)
+		go func(gate alg.Coord) {
+			defer wg.Done()
+			metro.pickUpGate(&gate, time.Now().Add(metro.stopTime))
+		}(gate)
+	}
+
+	wg.Wait()
+}
+
+func (metro *Metro) pickUpGate(gate *alg.Coord, endTime time.Time) {
+	// Récupérer les usagers à une porte spécifique
+	for {
+
+		if !time.Now().Before(endTime) {
+			return
+		} else {
+
+			gate_cell := metro.way.env.station[gate[0]][gate[1]]
+			//fmt.Printf("[pickUpGate, %d ] gate cell %s \n",gate,  gate_cell)
+			if len(gate_cell) > 1 {
+				agent := metro.findAgent(AgentID(gate_cell))
+				//fmt.Printf("[pickUpGate, %d ] agent.dest %d \n",gate, &agent.destination)
+				//fmt.Println("[pickUpGate] gate ", gate)
+				//fmt.Println("gate cell", gate[0],gate[1], "agent", agent)
+				if agent != nil && agent.width*agent.height <= metro.freeSpace && equalCoord(&agent.destination, gate) {
+					fmt.Println("agent entering metro : ", agent.id)
+					metro.way.env.agentsChan[agent.id] <- *NewRequest(metro.comChannel, EnterMetro)
+					fmt.Printf("[pickUpGate, %d ]agent entering metro : %s \n",gate,agent.id)
+					<-metro.comChannel
+					metro.freeSpace = metro.freeSpace - agent.width*agent.height
+					//fmt.Println("leaving", agent.id)
+				}
 			}
 		}
 	}
-}
 
-func (metro *Metro) pickUpGate(gate *Coord) {
-	// Récupérer les usagers à une porte spécifique
-	gate_cell := metro.way.env.station[gate[0]][gate[1]]
-	if len(gate_cell) > 1 {
-		agent := metro.findAgent(AgentID(gate_cell))
-		if agent != nil && agent.width*agent.height <= metro.freeSpace && agent.destination == *gate {
-			metro.way.env.agentsChan[agent.id] <- *NewRequest(metro.comChannel, Disappear)
-			fmt.Println("[pickUpGate] requete envoyée à l'agent ", agent.id)
-			metro.freeSpace = metro.freeSpace - agent.width*agent.height
-		}
-	}
 }
 
 func (metro *Metro) findAgent(agent AgentID) *Agent {
 	// Trouver l'adresse de l'agent
 	for _, agt := range metro.way.env.ags {
 		if agt.id == agent {
+			//fmt.Println("found agent", agt.id)
 			return &agt
 		}
 	}
@@ -106,11 +125,11 @@ func (metro *Metro) dropUsers() {
 		path := metro.way.pathsToExit[gate_nb]
 		ag := NewAgent(id, metro.way.env, make(chan int), 200, 0, true, &UsagerLambda{}, metro.way.gates[gate_nb], metro.way.nearestExit[gate_nb], width, height)
 		ag.path = path
-		writeAgent(&ag.env.station,ag)
 		metro.way.env.AddAgent(*ag)
+		writeAgent(&ag.env.station, ag)
 		//log.Println(metro.way.id, nb, metro.way.env.agentCount)
 		//fmt.Println("agent leaving metro", ag.id, ag.departure, ag.destination, width, height)
-		//time.Sleep(500 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 	}
 
 }

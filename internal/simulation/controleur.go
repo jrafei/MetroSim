@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"regexp"
 	"time"
+	alg "metrosim/internal/algorithms"
 )
 
 /*
@@ -103,7 +104,7 @@ func (c *Controleur) Act(ag *Agent) {
 	}
 }
 
-func (c *Controleur) randomDestination(ag *Agent) Coord {
+func (c *Controleur) randomDestination(ag *Agent) alg.Coord {
 	rand.Seed(time.Now().UnixNano()) // le générateur de nombres aléatoires
 	randomRow := rand.Intn(20) // Génère un entier aléatoire entre 0 et 19
 	randomCol := rand.Intn(20) // Génère un entier aléatoire entre 0 et 19
@@ -111,7 +112,7 @@ func (c *Controleur) randomDestination(ag *Agent) Coord {
 		randomRow = rand.Intn(20) // Génère un entier aléatoire entre 0 et 19
 		randomCol = rand.Intn(20) // Génère un entier aléatoire entre 0 et 19
 	}
-	return Coord{randomRow, randomCol}
+	return alg.Coord{randomRow, randomCol}
 }
 
 func (c *Controleur) startTimer() {

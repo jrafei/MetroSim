@@ -2,8 +2,11 @@ package simulation
 
 import (
 	"fmt"
+	alg "metrosim/internal/algorithms"
 	"sync"
 )
+
+//TODO:rajouter les entrées et sorties
 
 type Environment struct {
 	sync.RWMutex
@@ -55,7 +58,7 @@ func (env *Environment) RemoveAgent(agt Agent) {
 	//env.agentCount--
 }
 
-func (env *Environment) Do(a Action, c Coord) (err error) {
+func (env *Environment) Do(a Action, c alg.Coord) (err error) {
 	env.Lock()
 	defer env.Unlock()
 
@@ -81,23 +84,23 @@ func (env *Environment) PI() float64 {
 	return 4
 }
 
-func (env *Environment) Rect() Coord {
-	return Coord{0, 0}
+func (env *Environment) Rect() alg.Coord {
+	return alg.Coord{0, 0}
 }
 
 func (env *Environment) GetAgentChan(agt_id AgentID) chan Request {
 	return env.agentsChan[agt_id]
 }
 
-func (env *Environment) verifyEmptyCase(c Coord) bool {
+func (env *Environment) verifyEmptyCase(c alg.Coord) bool {
 	return env.station[c[0]][c[1]] == "_" //|| env.station[c[0]][c[1]] == "E" || env.station[c[0]][c[1]] == "S" || env.station[c[0]][c[1]] == "W" 
 }
 
 func existAgent(c string) bool {
-	return c != "X" && c != "E" && c != "S" && c != "W" && c != "Q" && c != "_" && c != "B"
+	return c != "X" && c != "E" && c != "S" && c != "W" && c != "Q" && c != "_" && c != "B" && c != "G" && c != "O"
 }
 
-func calculDirection(depart Coord, arrive Coord) int {
+func calculDirection(depart alg.Coord, arrive alg.Coord) int {
 	if depart[0] == arrive[0] {
 		if depart[1] > arrive[1] {
 			return 3 //Gauche
@@ -113,16 +116,69 @@ func calculDirection(depart Coord, arrive Coord) int {
 	}
 }
 
-func (env *Environment) getNbAgentsAround(pos Coord) int {
+func (env *Environment) getNbAgentsAround(pos alg.Coord) int {
+	//pos est la position de la porte
+	way := env.getWay(pos)
+	upleft := way.upLeftCoord
+	//downright := way.downRightCoord
+
+	upmetro := false
+	if pos[0] == upleft[0] - 1 { //si la porte est en haut du métro
+		upmetro = true
+	}
+
 	nb := 0
-	for i := 0; i < 4; i++ {
-		for j := 0; j < 4; j++ {
-			c := env.station[pos[0]+i][pos[1]+j]
-			if existAgent(c) {
-				nb++
+	if upmetro {
+		for i := 0; i < 4; i++ {
+			for j := 0; j < 4; j++ {
+				a := pos[0]-i
+				b := pos[1]+j
+				if a >= 0 && b >= 0 && a < len(env.station[0]) && b < len(env.station[1]) {
+					c := env.station[a][b]
+					if existAgent(c) {
+						nb++
+					}
+				}
+				b = pos[1]-j
+				if a >= 0 && b >= 0 && a < len(env.station[0]) && b < len(env.station[1]) {
+					c := env.station[a][b]
+					if existAgent(c) {
+						nb++
+					}
+				}
+			}
+		}
+	} else { //si la porte est en bas du métro
+		for i := 0; i < 4; i++ {
+			for j := 0; j < 4; j++ {
+				a := pos[0]+i
+				b := pos[1]+j
+				if a >= 0 && b >= 0 && a < len(env.station[0]) && b < len(env.station[1]) {
+					c := env.station[a][b]
+					if existAgent(c) {
+						nb++
+					}
+				}
+				b = pos[1]-j
+				if a >= 0 && b >= 0 && a < len(env.station[0]) && b < len(env.station[1]) {
+					c := env.station[a][b]
+					if existAgent(c) {
+						nb++
+					}
+				}
 			}
 		}
 	}
 	return nb
 }
 
+func (env *Environment) getWay(pos alg.Coord) *Way {
+	for _, metro := range env.metros {
+		for _, gate := range metro.way.gates {
+			if gate[0] == pos[0] && gate[1] == pos[1] {
+				return metro.way
+			}
+		}
+	}
+	return nil
+}

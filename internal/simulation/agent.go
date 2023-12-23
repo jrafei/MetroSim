@@ -11,6 +11,7 @@ import (
 
 	//"log"
 	"math/rand"
+	"math"
 	alg "metrosim/internal/algorithms"
 	"time"
 	"sort"
@@ -19,15 +20,16 @@ import (
 type Action int64
 
 const (
-	Noop      = iota
-	Wait      // Attente
-	Move      // Déplacement de l'agent
-	Disappear // Disparition  de l'agent dans la simulatiin
-	Expel     // virer l'agent
-	Stop      // arreter l'agent
+	Noop       = iota
+	Wait       // Attente
+	Move       // Déplacement de l'agent
+	EnterMetro //Entrer dans le métro
+	Disappear  // Disparition  de l'agent dans la simulation
+	Expel      // virer l'agent
+	Stop       // arreter l'agent
+	ACK        // acquittement
 )
 
-type Coord [2]int
 type AgentID string
 
 type Agent struct {
@@ -35,14 +37,14 @@ type Agent struct {
 	vitesse     time.Duration
 	force       int
 	politesse   bool
-	position    Coord // Coordonnées de référence, width et height on compte width et height à partir de cette position
-	departure   Coord
-	destination Coord
+	position    alg.Coord // Coordonnées de référence, width et height on compte width et height à partir de cette position
+	departure   alg.Coord
+	destination alg.Coord
 	behavior    Behavior
 	env         *Environment
 	syncChan    chan int
 	decision    int
-	isOn        map[Coord]string // Contenu de la case sur laquelle il se trouve
+	isOn        map[alg.Coord]string // Contenu de la case sur laquelle il se trouve
 	stuck       bool
 	width       int
 	height      int
@@ -68,8 +70,8 @@ func NewRequest(demandeur chan Request, decision int) (req *Request) {
 	return &Request{demandeur, decision}
 }
 
-func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int) *Agent {
-	isOn := make(map[Coord]string)
+func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination alg.Coord, width, height int) *Agent {
+	isOn := make(map[alg.Coord]string)
 	direct := initDirection(departure, len(env.station[0]))
 	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil, direct}
 }
@@ -86,9 +88,6 @@ func (ag *Agent) Start() {
 	if (ag.id[0] == 'C') {
 		ag.behavior.(*Controleur).startTimer()
 	}
-	if (ag.id[0] == 'M') {
-		ag.behavior.(*MobiliteReduite).setUpPath(ag)
-	}
 
 	go func() {
 		var step int
@@ -99,7 +98,7 @@ func (ag *Agent) Start() {
 			ag.behavior.Act(ag)
 			ag.syncChan <- step
 			//fmt.Println(ag.id, ag.path)
-			if ag.decision == Disappear {
+			if ag.decision == Disappear || ag.decision == EnterMetro {
 				ag.env.RemoveAgent(*ag)
 				return
 			}
@@ -109,7 +108,7 @@ func (ag *Agent) Start() {
 
 func (ag *Agent) Act(env *Environment) {
 	if ag.decision == Noop {
-		env.Do(Noop, Coord{})
+		env.Do(Noop, alg.Coord{})
 	}
 }
 
@@ -117,7 +116,7 @@ func IsMovementSafe(path []alg.Node, agt *Agent, env *Environment) (bool, int) {
 	// Détermine si le movement est faisable
 
 	if len(path) <= 0 {
-		fmt.Println("[isMovementSafe] path vide : ", agt.id)
+		//fmt.Println("[isMovementSafe] path vide : ", agt.id)
 		return false, agt.orientation
 	}
 	// Calcul des bornes de position de l'agent avant mouvement
@@ -130,7 +129,7 @@ func IsMovementSafe(path []alg.Node, agt *Agent, env *Environment) (bool, int) {
 	}
 	// Simulation du déplacement
 	ag := *agt
-	ag.position = Coord{path[0].Row(), path[0].Col()}
+	ag.position = alg.Coord{path[0].Row(), path[0].Col()}
 	for or := 0; or < 4; or++ {
 		rotateAgent(&ag, or)
 		safe := true
@@ -166,7 +165,7 @@ func IsAgentBlocking(path []alg.Node, agt *Agent, env *Environment) bool {
 	infRow, supRow, infCol, supCol := calculateBounds(agt.position, agt.width, agt.height, agt.orientation)
 	// Simulation du déplacement
 	ag := *agt
-	ag.position = Coord{path[0].Row(), path[0].Col()}
+	ag.position = alg.Coord{path[0].Row(), path[0].Col()}
 	for or := 0; or < 4; or++ {
 		rotateAgent(&ag, or)
 		blocking := false
@@ -250,7 +249,7 @@ func (ag *Agent) MoveAgent() {
 		start, end := ag.generatePathExtremities()
 		// Recherche d'un chemin si inexistant
 		ag.path = alg.FindPath(ag.env.station, start, end, *alg.NewNode(-1, -1, 0, 0, 0, 0), false, 2*time.Second)
-		
+
 	}
 
 	// ================== Etude de faisabilité =======================
@@ -304,7 +303,7 @@ func (ag *Agent) MoveAgent() {
 	}
 
 	// ================== Déplacement si aucun problème ou si blockingAgent se pousse =======================
-	safe, or := IsMovementSafe(ag.path, ag, ag.env)
+	safe, or := IsMovementSafe(ag.path, ag, ag.env) //isMovementSafe vérifie si le deplacement est faisable , qu'il ya autant de case vide que de taille de l'agent 
 	if safe {
 		if len(ag.isOn) > 0 {
 			RemoveAgent(&ag.env.station, ag)
@@ -313,7 +312,7 @@ func (ag *Agent) MoveAgent() {
 		//ag.env.station[ag.coordBasOccupation[0]][ag.coordBasOccupation[1]] = ag.isOn
 		
 		//MODIFICATION DE LA DIRECTION 
-		ag.direction = calculDirection(ag.position, Coord{ag.path[0].Row(), ag.path[0].Col()})
+		ag.direction = calculDirection(ag.position, alg.Coord{ag.path[0].Row(), ag.path[0].Col()})
 		//fmt.Println("[MoveAgent]Direction : ", ag.direction)
 		ag.position[0] = ag.path[0].Row()
 		ag.position[1] = ag.path[0].Col()
@@ -346,8 +345,8 @@ func RemoveAgent(matrix *[50][50]string, agt *Agent) {
 
 	for i := borneInfRow; i < borneSupRow; i++ {
 		for j := borneInfCol; j < borneSupCol; j++ {
-			matrix[i][j] = agt.isOn[Coord{i, j}]
-			removeCoord(Coord{i, j}, agt.isOn)
+			matrix[i][j] = agt.isOn[alg.Coord{i, j}]
+			removeCoord(alg.Coord{i, j}, agt.isOn)
 		}
 	}
 }
@@ -366,18 +365,18 @@ func writeAgent(matrix *[50][50]string, agt *Agent) {
 
 }
 
-func saveCells(matrix *[50][50]string, savedCells map[Coord]string, position Coord, width, height, orientation int) {
+func saveCells(matrix *[50][50]string, savedCells map[alg.Coord]string, position alg.Coord, width, height, orientation int) {
 	// Enregistrement des valeurs des cellules de la matrice
 	borneInfRow, borneSupRow, borneInfCol, borneSupCol := calculateBounds(position, width, height, orientation)
 
 	for i := borneInfRow; i < borneSupRow; i++ {
 		for j := borneInfCol; j < borneSupCol; j++ {
-			savedCells[Coord{i, j}] = matrix[i][j]
+			savedCells[alg.Coord{i, j}] = matrix[i][j]
 		}
 	}
 }
 
-func removeCoord(to_remove Coord, mapping map[Coord]string) {
+func removeCoord(to_remove alg.Coord, mapping map[alg.Coord]string) {
 	// Suppression d'une clé dans une map
 	for coord, _ := range mapping {
 		if equalCoord(&coord, &to_remove) {
@@ -386,7 +385,7 @@ func removeCoord(to_remove Coord, mapping map[Coord]string) {
 	}
 }
 
-func equalCoord(coord1, coord2 *Coord) bool {
+func equalCoord(coord1, coord2 *alg.Coord) bool {
 	// Vérifie l'égalité de 2 objets Coord
 	return coord1[0] == coord2[0] && coord1[1] == coord2[1]
 }
@@ -396,7 +395,7 @@ func rotateAgent(agt *Agent, orientation int) {
 	agt.orientation = orientation
 }
 
-func calculateBounds(position Coord, width, height, orientation int) (infRow, supRow, infCol, supCol int) {
+func calculateBounds(position alg.Coord, width, height, orientation int) (infRow, supRow, infCol, supCol int) {
 	// Fonction de génération des frontières d'un objet ayant une largeur et une hauteur, en focntion de son orientation
 	borneInfRow := 0
 	borneSupRow := 0
@@ -438,11 +437,11 @@ func (ag *Agent) listenForRequests() {
 	for {
 		if ag.request == nil {
 			req := <-ag.env.agentsChan[ag.id]
-			//fmt.Println("Request received by UsagerLambda:", req.decision)
+			fmt.Println("Request received by :", ag.id, req.decision)
 			ag.request = &req
-			if req.decision == Disappear {
-				return
-			}
+		}
+		if ag.request.decision == Disappear || ag.request.decision == EnterMetro {
+			return
 		}
 	}
 }
@@ -455,7 +454,7 @@ func (ag *Agent) isGoingToExitPath() bool {
 					// Si la destination est une porte de métro, on va essayer de libérer le chemin des agents sortants
 					exit_path := metro.way.pathsToExit[gate_index]
 					for _, cell := range exit_path {
-						if equalCoord(&Coord{cell.Row(), cell.Col()}, &ag.position) {
+						if equalCoord(&alg.Coord{cell.Row(), cell.Col()}, &ag.position) {
 							return true
 						}
 					}
@@ -467,49 +466,6 @@ func (ag *Agent) isGoingToExitPath() bool {
 
 }
 
-// Structure pour associer une Coord et sa distance par rapport au position d'un agent
-type GateDistance struct {
-	Gate   Coord
-	Distance int
-}
-
-func (ag *Agent) findNearestGates(gates []Coord) []GateDistance {
-	var gateDistances []GateDistance
-
-	// Calcul de la distance pour chaque porte
-	for _, gate := range gates {
-		dist := alg.Abs(ag.position[0]-gate[0]) + alg.Abs(ag.position[1]-gate[1])
-		gateDistances = append(gateDistances, GateDistance{Gate: gate, Distance: dist})
-	}
-
-	// Tri des Coords par distance
-	sort.Slice(gateDistances, func(i, j int) bool {
-		return gateDistances[i].Distance < gateDistances[j].Distance
-	})
-
-	return gateDistances
-}
-
-
-
-func (ag *Agent) findNearestExit() (Coord){
-	// Recherche de la sortie la plus proche
-	nearest := Coord{0, 0}
-	min := 1000000
-	n := len(ag.env.station[0])
-	for i := 0; i < n ; i++ {
-		for j := 0; j < n ; j++ {
-			if ag.env.station[i][j] == "S" || ag.env.station[i][j] == "W" {
-				dist := alg.Abs(ag.position[0]-i) + alg.Abs(ag.position[1]-j)
-				if dist < min {
-					min = dist
-					nearest = Coord{i, j}
-				}
-			}
-		}
-	}
-	return nearest
-}
 
 /*
  * Méthode qui envoie la valeur de case en face de l'agent 
@@ -546,7 +502,7 @@ func (ag * Agent) getFaceCase() string{
 }
 
 
-func initDirection(depart Coord, dimensionCarte int) int {
+func initDirection(depart alg.Coord, dimensionCarte int) int {
 	n := rand.Intn(4) // direction aléatoire
 	for !verifyDirection(n,depart, dimensionCarte){
 		n = rand.Intn(4) // direction aléatoire
@@ -554,7 +510,7 @@ func initDirection(depart Coord, dimensionCarte int) int {
 	return n
 }
 
-func verifyDirection( n int ,depart Coord, dimensionCarte int) bool{
+func verifyDirection( n int ,depart alg.Coord, dimensionCarte int) bool{
 	switch n {
 		case 0: // vers le haut
 			if (depart[0] - 1) < 0 {
@@ -584,18 +540,127 @@ func verifyDirection( n int ,depart Coord, dimensionCarte int) bool{
 	return false
 }
 
+/*============================FONCTION POUR TROUVER UN DESTINATION ============================*/
 
-func (ag *Agent) bestGate(gates[] Coord) (Coord) {
-	mapNb := make(map[Coord]int)
+// Structure pour associer une Coord et sa distance par rapport au position d'un agent
+type Gate struct {
+	Position   alg.Coord // Coordonnées de la porte
+	Distance float64
+	NbAgents float64
+}
+
+
+
+func (ag *Agent) findNearestExit() (alg.Coord){
+	// Recherche de la sortie la plus proche
+	nearest := alg.Coord{0, 0}
+	min := 1000000
+	n := len(ag.env.station[0])
+	for i := 0; i < n ; i++ {
+		for j := 0; j < n ; j++ {
+			if ag.env.station[i][j] == "S" || ag.env.station[i][j] == "W" {
+				dist := alg.Abs(ag.position[0]-i) + alg.Abs(ag.position[1]-j)
+				if dist < min {
+					min = dist
+					nearest = alg.Coord{i, j}
+				}
+			}
+		}
+	}
+	return nearest
+}
+
+func (ag *Agent) findNearestGates(gates []alg.Coord) []Gate {
+	var gateDistances []Gate
+	// Calcul de la distance pour chaque porte
 	for _, gate := range gates {
-		nb :=ag.env.getNbAgentsAround(gate)
-		mapNb[gate] = nb
+		dist := alg.Abs(ag.position[0]-gate[0]) + alg.Abs(ag.position[1]-gate[1])
+		gateDistances = append(gateDistances, Gate{Position: gate, Distance: float64(dist)})
 	}
 
-	listDist := ag.findNearestGates(gates) //Type []GateDistance
+	// Tri des Coords par distance
+	sort.Slice(gateDistances, func(i, j int) bool {
+		return gateDistances[i].Distance < gateDistances[j].Distance
+	})
 
-	for _, couple := range listDist {
-		mapNb[couple.Gate] = mapNb[couple.Gate] / couple.Distance // il faut trouver le gate ayant une valeur le plus proche à 1
+	return gateDistances
+}
+
+// Normalise les valeurs d'un ensemble de portes
+func normalizeGates(gates []Gate) ([]Gate, float64, float64) {
+    var minAgents, maxAgents float64 = math.MaxFloat64, 0
+    var minDistance, maxDistance float64 = math.MaxFloat64, 0
+
+    // Trouver les valeurs max et min pour la normalisation
+    for _, gate := range gates {
+        if gate.NbAgents > maxAgents {
+            maxAgents = gate.NbAgents
+        }
+        if gate.NbAgents < minAgents {
+            minAgents = gate.NbAgents
+        }
+        if gate.Distance > maxDistance {
+            maxDistance = gate.Distance
+        }
+        if gate.Distance < minDistance {
+            minDistance = gate.Distance
+        }
+    }
+
+    // Normaliser les valeurs
+	d_agt := (maxAgents - minAgents) 
+	if  d_agt == 0 {
+		d_agt = 1.0
 	}
-	return mapNb
+	d_dist := (maxDistance - minDistance)
+	if d_dist == 0 {
+		d_dist = 1.0
+	}
+	fmt.Println("[normalizeGates] d_dist : ",d_dist)
+    for i := range gates {
+        gates[i].NbAgents = (gates[i].NbAgents - minAgents) / d_agt
+		//fmt.Println("[normalizeGates] gates[i].Distance : ",gates[i].Distance)
+		//fmt.Println("[normalizeGates] minDistance : ",minDistance)
+		//fmt.Println("[normalizeGates] d_dist : ",d_dist)
+        gates[i].Distance = (gates[i].Distance - minDistance) / d_dist
+	}
+    return gates, float64(maxAgents - minAgents), maxDistance - minDistance
+}
+
+
+
+func (ag *Agent) findBestGate(gates []alg.Coord) alg.Coord {
+	gatesDistances := make([]Gate, len(gates))
+	for i, gate := range gates {
+		dist := alg.Abs(ag.position[0]-gate[0]) + alg.Abs(ag.position[1]-gate[1])
+		nbAgents := float64(ag.env.getNbAgentsAround(gate))
+		gatesDistances[i] = Gate{Position: gate, Distance: float64(dist), NbAgents: nbAgents}
+	}
+	fmt.Println("[findBestGate] gates non normalisé : ",gatesDistances)
+	normalizedGates, _, _ := normalizeGates(gatesDistances)
+	fmt.Println("[findBestGate] gates normalisé : ",normalizedGates)
+	var bestGate Gate
+	lowestScore := 2.0 // Puisque la somme des scores normalisés ne peut pas dépasser 2
+
+	for _, gate := range normalizedGates {
+		score := float64(gate.NbAgents) + gate.Distance
+		if score < lowestScore {
+			lowestScore = score
+			bestGate = gate
+		}
+	}
+
+	return bestGate.Position
+}
+
+
+func findMetro(env *Environment, gateToFind *alg.Coord) *Metro {
+	for _, metro := range env.metros {
+		for _, gate := range metro.way.gates {
+			if equalCoord(&gate, gateToFind) {
+				return &metro
+			}
+		}
+	}
+	return nil
 }
