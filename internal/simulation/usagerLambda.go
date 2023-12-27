@@ -1,7 +1,7 @@
 package simulation
 
 import (
-	//"fmt"
+	"fmt"
 
 	"math/rand"
 	alg "metrosim/internal/algorithms"
@@ -16,7 +16,7 @@ type UsagerLambda struct {
 func (ul *UsagerLambda) Percept(ag *Agent) {
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
-		print("Requete recue par %d : %d", ag.id, ag.request.decision, "\n")
+		print("Requete recue par %d : %d", ag.id, ag.request.Decision(), "\n")
 		ul.req = *ag.request
 	default:
 		ag.stuck = ag.isStuck()
@@ -39,9 +39,9 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 		ag.decision = EnterMetro
 	} else if ul.req.Decision() == Wait {
 		ag.decision = Wait
-	} else if ul.req.decision == YouHaveToMove {
+	} else if ul.req.Decision() == YouHaveToMove {
 		fmt.Println("J'essaye de bouger")
-		movement := ag.MoveAgent()
+		movement := ag.MoveAgent() // 
 		fmt.Printf("Je suis agent %s Resultat du mouvement de la personne %t \n", ag.id, movement)
 		if movement {
 			ag.decision = Done
@@ -74,18 +74,18 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 		ag.MoveAgent()
 	case Noop :
 		//Cas ou un usager impoli demande a un usager de bouger et il refuse
-		ag.request.demandeur <- *NewRequest(ag.env.agentsChan[ag.id], 0)
+		ag.request.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)
 		// nothing to do
 	case Done : 
 		//Cas ou un usager impoli demande a un usager de bouger et il le fait
-		ag.request.demandeur <- *NewRequest(ag.env.agentsChan[ag.id], 5)
+		ag.request.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Done)
 	case TryToMove :
 		movement := ag.MoveAgent()
 		fmt.Printf("Je suis %s est-ce que j'ai bougé? %t \n", ag.id, movement)
 		if movement {
-			ag.request.demandeur <- *NewRequest(ag.env.agentsChan[ag.id], Done)
+			ag.request.Demandeur()<- *req.NewRequest(ag.env.agentsChan[ag.id], Done)
 		} else {
-			ag.request.demandeur <- *NewRequest(ag.env.agentsChan[ag.id], Noop)
+			ag.request.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)
 		}
 	default:
 		//age.decision == Expel

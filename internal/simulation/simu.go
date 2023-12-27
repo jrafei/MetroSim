@@ -153,9 +153,9 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		}*/
 
 		if i != 2 {
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, false, &UsagerLambda{}, Coord{18, 4}, Coord{13, 4}, 1, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, false, &UsagerLambda{}, alg.Coord{18, 4}, alg.Coord{13, 4}, 1, 1)
 		} else {
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, Coord{18, 4}, Coord{13, 4}, 1, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, alg.Coord{18, 4}, alg.Coord{13, 4}, 1, 1)
 		}
 
 		// ajout de l'agent à la simulation
@@ -265,7 +265,7 @@ func (simu *Simulation) Print_v0() {
 }
 func (simu *Simulation) Print() {
 	for {
-		for i := 0; i < 30; i++ {
+		for i := 0; i < 20; i++ {
 			for j := 0; j < 50; j++ {
 				element := simu.env.station[i][j]
 				if len(element) > 1 {

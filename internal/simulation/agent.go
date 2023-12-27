@@ -19,6 +19,7 @@ const (
 	Wait       // Attente
 	Move       // Déplacement de l'agent
 	EnterMetro //Entrer dans le métro
+	TryToMove
 	YouHaveToMove //Utiliser par un usager impoli pour forcer un déplacement
 	Done
 	Disappear  // Disparition  de l'agent dans la simulation
@@ -239,7 +240,7 @@ func (ag *Agent) MoveAgent() bool {
 
 	// ================== Etude de faisabilité =======================
 	if ag.IsAgentBlocking() {
-
+		fmt.Printf("[Agent, MoveAgent] %s est bloqué", ag.id)
 		if ag.politesse {
 			start, end := ag.generatePathExtremities()
 			// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit
@@ -251,7 +252,7 @@ func (ag *Agent) MoveAgent() bool {
 		} else {
 			//Si individu impoli, demande à l'agent devant de bouger
 			//On récupère le id de la personne devant
-			blockingAgentID := AgentID(ag.WhichAgent())
+			blockingAgentID := AgentID(ag.NextCell())
 			//blockingAgent := ag.env.FindAgentByID(blockingAgentID)
 			var reqToBlockingAgent *req.Request
 			//var reqToImpoliteAgent *Request
@@ -263,9 +264,9 @@ func (ag *Agent) MoveAgent() bool {
 				fmt.Printf("You have to move %s for the %d time \n", blockingAgentID, i)
 				reqToBlockingAgent = req.NewRequest(ag.env.agentsChan[ag.id], YouHaveToMove) //Création "Hello, je suis ag.id, move."
 				ag.env.agentsChan[blockingAgentID] <- *reqToBlockingAgent                //Envoi requête
-				repFromBlockingAgent = <-ag.env.agentsChan[blockingAgentID]              //Attend la réponse
+				repFromBlockingAgent := <-ag.env.agentsChan[ag.id]           //Attend la réponse
 
-				if repFromBlockingAgent.decision == 5 { //BlockingAgent lui a répondu Done, il s'est donc poussé
+				if repFromBlockingAgent.Decision() == Done { //BlockingAgent lui a répondu Done, il s'est donc poussé
 					fmt.Printf("okay i will move agent %s \n", ag.id)
 					accept = true
 				}
@@ -333,6 +334,9 @@ func (ag *Agent) listenForRequests() {
 	}
 }
 
+
+
+
 func (ag *Agent) isGoingToExitPath() bool {
 	if len(ag.path) > 0 {
 		for _, metro := range ag.env.metros {
@@ -363,7 +367,7 @@ func findMetro(env *Environment, gateToFind *alg.Coord) *Metro {
 	return nil
 }
 
-func (env *Environment) GetAgentByChannel(channel chan Request) *Agent {
+func (env *Environment) GetAgentByChannel(channel chan req.Request) *Agent {
 	env.RLock()
 	defer env.RUnlock()
 

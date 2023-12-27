@@ -182,11 +182,3 @@ func (env *Environment) writeAgent(agt *Agent) {
 
 }
 
-func (env *Environment) FindAgentByID(agtId AgentID) *Agent {
-	for i := range env.ags {
-		if env.ags[i].id == agtId {
-			return &env.ags[i]
-		}
-	}
-	return nil
-}
