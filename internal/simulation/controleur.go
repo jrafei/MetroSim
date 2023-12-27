@@ -5,6 +5,7 @@ package simulation
 import (
 	"fmt"
 	"math/rand"
+	req "metrosim/internal/request"
 	"regexp"
 	"time"
 	//"time"
@@ -77,6 +78,6 @@ func (c *Controleur) Act(ag *Agent) {
 	} else {
 		agt_face_id := AgentID(c.faceCase) //id de l'agent qui se trouve devant le controleur
 		fmt.Print("L'agent ", agt_face_id, " a été expulsé\n")
-		ag.env.agentsChan[agt_face_id] <- *NewRequest(ag.env.agentsChan[ag.id], ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
+		ag.env.agentsChan[agt_face_id] <- *req.NewRequest(ag.env.agentsChan[ag.id], ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
 	}
 }
