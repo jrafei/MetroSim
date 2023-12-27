@@ -15,7 +15,7 @@ type UsagerLambda struct {
 func (ul *UsagerLambda) Percept(ag *Agent) {
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
-		print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
+		print("Requete recue par %d : %d", ag.id, ag.request.decision, "\n")
 		ul.req = *ag.request
 	default:
 		ag.stuck = ag.isStuck()
@@ -38,11 +38,13 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 	} else if ul.req.decision == Wait {
 		ag.decision = Wait
 	} else if ul.req.decision == YouHaveToMove {
+		fmt.Println("J'essaye de bouger")
 		movement := ag.MoveAgent()
+		fmt.Printf("Je suis agent %s Resultat du mouvement de la personne %t \n", ag.id, movement)
 		if movement {
-			ag.decision = 5
+			ag.decision = Done
 		} else {
-			ag.decision = 0
+			ag.decision = Noop
 		}
 	} else {
 		ag.decision = Move
