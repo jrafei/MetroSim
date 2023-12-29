@@ -12,12 +12,12 @@ import (
 func StartAPI(sim *sim.Simulation) {
 	mux := http.NewServeMux()
 
-	pi := func(w http.ResponseWriter, r *http.Request) {
-		//msg, _ := json.Marshal(sim.Env().PI())
+	station := func(w http.ResponseWriter, r *http.Request) {
+		msg, _ := json.Marshal(sim.Print())
 		fmt.Fprintf(w, "%s", msg)
 	}
 
-	mux.HandleFunc("/pi", pi)
+	mux.HandleFunc("/sim", station)
 
 	s := &http.Server{
 		Addr:           ":12000",

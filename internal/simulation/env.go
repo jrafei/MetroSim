@@ -181,3 +181,10 @@ func (env *Environment) FindAgentByID(agtId AgentID) *Agent {
 	}
 	return nil
 }
+
+
+func (env *Environment) Station() [50][50]string {
+	env.RLock()
+	defer env.RUnlock()
+	return env.station
+}

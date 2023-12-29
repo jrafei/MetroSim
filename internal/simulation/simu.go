@@ -262,24 +262,25 @@ func (simu *Simulation) Print_v0() {
 		//fmt.Print("\033[H\033[2J") // effacement du terminal
 	}
 }
-func (simu *Simulation) Print() {
-	for {
-		for i := 0; i < 30; i++ {
-			for j := 0; j < 50; j++ {
-				element := simu.env.station[i][j]
-				if len(element) > 1 {
-					fmt.Print(element[len(element)-1:] + " ") // Afficher le premier caractère si la longueur est supérieure à 1
-				} else {
-					fmt.Print(element + " ")
-				}
+func (simu *Simulation) Print() [][]string {
+	result := make([][]string, 50)
+	for i := 0; i < 50; i++ {
+		result[i] = make([]string, 50)
+		for j := 0; j < 50; j++ {
+			element := simu.env.station[i][j]
+			if len(element) > 1 {
+				result[i][j] = element[len(element)-1:] // Stocker le premier caractère si la longueur est supérieure à 1
+				fmt.Print(result[i][j] + " ")
+			} else {
+				result[i][j] = element
+				fmt.Print(result[i][j] + " ")
 			}
-			fmt.Println()
 		}
 		fmt.Println()
-		//fmt.Println("============================================================")
-		//time.Sleep(time.Second / 4) // 60 fps !
-		time.Sleep(200 * time.Millisecond) // 1 fps !
 	}
+	fmt.Println()
+	time.Sleep(200 * time.Millisecond) // 1 fps !
+	return result
 }
 
 func (simu *Simulation) Log() {

@@ -7,11 +7,12 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"time"
+	"metrosim/api"
 )
 
 func main() {
 	s := simulation.NewSimulation(20, -1, 600*time.Second)
-	//go simulation.StartAPI(s)
+	go api.StartAPI(s)
 	go func() {
 		for {
 			time.Sleep(2 * time.Second)
