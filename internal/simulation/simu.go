@@ -269,7 +269,7 @@ func (simu *Simulation) Print() [][]string {
 		for j := 0; j < 50; j++ {
 			element := simu.env.station[i][j]
 			if len(element) > 1 {
-				result[i][j] = element[len(element)-1:] // Stocker le premier caractère si la longueur est supérieure à 1
+				result[i][j] = element[:1] // Stocker le premier caractère si la longueur est supérieure à 1
 				fmt.Print(result[i][j] + " ")
 			} else {
 				result[i][j] = element
