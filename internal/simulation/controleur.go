@@ -1,6 +1,10 @@
 package simulation
 
-//ajouter liste des agents déjà controllés
+/*
+	Le controleur se déplace aléatoirement dans la station pendant un certain temps
+	et controle les agents qui se trouvent devant lui si ils ne sont pas déjà controllés par un autre controleur,
+	si l'agent est un fraudeur alors il est expulsé, sinon il est arreté pendant un certain temps
+*/
 
 import (
 	"fmt"
@@ -10,13 +14,6 @@ import (
 	alg "metrosim/internal/algorithms"
 )
 
-/*
-	Je suppose que l'id du controleur est de format "Cont + un chiffre"
-	Exemple : "Cont1"
-	et l'id du l'agent est de format "Agent + un chiffre"
-	Exemple : "Agent1"
-*/
-
 type Controleur struct {
 	req *Request // requete reçue par le controleur
 	faceCase string // chaine de caractère qui contient l'id de l'agent qui se trouve devant le controleur, exemple : "Agent1", "Fraudeur1", "X" ,etc.
@@ -24,14 +21,12 @@ type Controleur struct {
 	isExpired bool // true si le controleur est expiré, false sinon
 }
 
-
-
 func (c *Controleur) Percept(ag *Agent) {
 	//initialiser le faceCase en fonction de la direction de l'agent
 	c.faceCase = ag.getFaceCase()
 	switch {
 		// comportement par défaut (comportement agent Lambda)
-		case ag.request != nil: //verifier si l'agent est communiqué par un autre agent (A VOIR SI IL EXISTE DEJA UN AGENT QUI COMMUNIQUE AVEC LE CONTROLEUR)
+		case ag.request != nil: //verifier si l'agent est communiqué par un autre agent
 			//print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
 			c.req = ag.request
 		default:
@@ -46,29 +41,29 @@ func (c *Controleur) Percept(ag *Agent) {
 func (c *Controleur) Deliberate(ag *Agent) {
 	// Verifier si la case devant lui contient un agent ou un fraudeur
 	// Créer l'expression régulière
-	regexAgent := `^Agent\d+$` // \d+ correspond à un ou plusieurs chiffres
+	//regexAgent := `^Agent\d+$` // \d+ correspond à un ou plusieurs chiffres
 	regexFraudeur := `^Fraudeur\d+$`
 
+	existAgt := existAgent(c.faceCase) // true si l'agent existe dans la case en face , false sinon 
 	// Vérifier si la valeur de faceCase ne correspond pas au motif
-	matchedAgt, err1 := regexp.MatchString(regexAgent, c.faceCase)
-	matchedFraud, err2 := regexp.MatchString(regexFraudeur, c.faceCase)
+	//matchedAgt, err1 := regexp.MatchString(regexAgent, c.faceCase)
+	matchedFraud, err := regexp.MatchString(regexFraudeur, c.faceCase)
 	//fmt.Println("faceCase : ", c.faceCase)
 	//fmt.Println("matchedAgt : ", matchedAgt)
 
-	if err1 != nil || err2 != nil {
-		fmt.Println("Erreur lors de l'analyse de la regex :", err1, err2)
+	if err!= nil {
+		fmt.Println("Erreur lors de l'analyse de la regex :",err)
 		return
 	} else {
-		if matchedAgt && ag.env.controlledAgents[AgentID(c.faceCase)] == false { // si l'agent devant le controleur est un agent et qu'il n'a pas encore été controlé
-			//fmt.Println("L'agent ", c.face, " a été détecté par le controleur")
-			ag.decision = Stop // arreter l'agent devant lui
-		} else if matchedFraud && !ag.env.controlledAgents[AgentID(c.faceCase)] {
+		if matchedFraud && !ag.env.controlledAgents[AgentID(c.faceCase)] {
 			ag.decision = Expel // virer l'agent devant lui
-			//sinon comportement par défaut (comportement de l'usager lambda)
-			}else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si l'agent est arrivé à sa destination et qu'il est sur une sortie
+		}else if existAgt && !ag.env.controlledAgents[AgentID(c.faceCase)] { // si l'agent devant le controleur est un agent et qu'il n'a pas encore été controlé
+			//fmt.Println("L'agent ", c.face, " a été détecté par le controleur")
+			ag.decision = Stop // arreter l'agent 
+		}else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si le controleur est arrivé à sa destination et qu'il est sur une sortie
 				//fmt.Println(ag.id, "disappear")
 				ag.decision = Disappear
-				} else if ag.stuck{ // si l'agent est bloqué
+				} else if ag.stuck{ // si le controleur est bloqué
 					ag.decision = Wait
 					}else {
 					ag.decision = Move
@@ -97,7 +92,7 @@ func (c *Controleur) Act(ag *Agent) {
 	case Disappear:
 		RemoveAgent(&ag.env.station, ag)
 
-	default : //Expel ou Wait
+	case Expel, Stop : //Expel ou Stop
 		agt_face_id := AgentID(c.faceCase) //id de l'agent qui se trouve devant le controleur
 		//fmt.Print("L'agent ", agt_face_id, " a été expulsé\n")
 		ag.env.agentsChan[agt_face_id] <- *NewRequest(ag.env.agentsChan[ag.id], ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
@@ -106,11 +101,11 @@ func (c *Controleur) Act(ag *Agent) {
 
 func (c *Controleur) randomDestination(ag *Agent) alg.Coord {
 	rand.Seed(time.Now().UnixNano()) // le générateur de nombres aléatoires
-	randomRow := rand.Intn(20) // Génère un entier aléatoire entre 0 et 19
-	randomCol := rand.Intn(20) // Génère un entier aléatoire entre 0 et 19
+	randomRow := rand.Intn(len(ag.env.station[0])) // Génère un entier aléatoire entre 0 et 19
+	randomCol := rand.Intn(len(ag.env.station[1])) // Génère un entier aléatoire entre 0 et 19
 	for ag.env.station[randomRow][randomCol] != "_" {
-		randomRow = rand.Intn(20) // Génère un entier aléatoire entre 0 et 19
-		randomCol = rand.Intn(20) // Génère un entier aléatoire entre 0 et 19
+		randomRow = rand.Intn(len(ag.env.station[0])) // Génère un entier aléatoire entre 0 et 19
+		randomCol = rand.Intn(len(ag.env.station[1])) // Génère un entier aléatoire entre 0 et 19
 	}
 	return alg.Coord{randomRow, randomCol}
 }

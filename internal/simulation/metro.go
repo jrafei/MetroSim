@@ -47,7 +47,7 @@ func (metro *Metro) Start() {
 			metro.printMetro()
 		}
 		if refTime.Add(metro.frequency).Before(time.Now()) {
-			metro.dropUsers()
+			//metro.dropUsers()
 			metro.way.openGates()
 			metro.pickUpUsers()
 			metro.way.closeGates()

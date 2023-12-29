@@ -140,17 +140,25 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		// création de l'agent
 
 		syncChan := make(chan int)
+		ag := &Agent{}
 		//ag := NewAgent(id, &simu.env, syncChan, time.Duration(time.Second), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
 		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{},  Coord{18, 4}, Coord{0, 8}, 2, 1)
 		//ag := &Agent{}
-		
+		/*
 		id := fmt.Sprintf("Agent%d", i)
 		ag := NewAgent(id, &simu.env, syncChan, 400, 0, true, &UsagerLambda{}, alg.Coord{0, 28}, alg.Coord{8, 5}, 1, 1)
+		*/
+
+		id := fmt.Sprintf("Cont%d", i)
+		//NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int)
+		ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &Controleur{}, alg.Coord{0, 28}, alg.Coord{0, 9}, 1, 1)
+
 		/*
+		
 		if i%2 == 0 { //Type Agent
-			id := fmt.Sprintf("MR%d", i)
+			id := fmt.Sprintf("Cont%d", i)
 			//NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int)
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, alg.Coord{49, 32}, alg.Coord{0, 9}, 2, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &Controleur{}, alg.Coord{0, 28}, alg.Coord{0, 9}, 2, 1)
 		} else { // Type Controleur
 			//id := fmt.Sprintf("Controleur%d", i)
 			id := fmt.Sprintf("Agent%d", i)
@@ -256,11 +264,13 @@ func (simu *Simulation) Print() {
 		for i := 0; i < 20; i++ {
 			for j := 0; j < 50; j++ {
 				element := simu.env.station[i][j]
+				
 				if len(element) > 1 {
-					fmt.Print(element[len(element)-1:] + " ") // Afficher le premier caractère si la longueur est supérieure à 1
-				} else {
-					fmt.Print(element + " ")
-				}
+					//fmt.Print(element[len(element)-1:] + " ") // Afficher le premier caractère si la longueur est supérieure à 1
+					fmt.Print(element[0:1] + " ")
+					} else {
+						fmt.Print(element + " ")
+					}
 			}
 			fmt.Println()
 		}

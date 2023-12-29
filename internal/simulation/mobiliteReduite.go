@@ -1,4 +1,7 @@
 package simulation
+/*
+	L'agent à Mobilité Reduite cherche la porte du metro la plus proche de lui
+*/
 
 import (
 	"fmt"
@@ -6,6 +9,7 @@ import (
 	"math/rand"
 	"time"
 	alg "metrosim/internal/algorithms"
+	"sort"
 )
 
 
@@ -16,7 +20,7 @@ type MobiliteReduite struct {
 
 
 func (mr *MobiliteReduite) Percept(ag *Agent) {
-	mr.once.Do(func(){mr.setUpDestination(ag)}) // la fonction setUp est executé à la premiere appel de la fonction Percept()
+	mr.once.Do(func(){mr.setUpDestination(ag)}) // la fonction setUp est executé à la premiere appel à la fonction Percept()
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		fmt.Printf("Requete recue par l'agent mR : %d \n", ag.request.decision)
@@ -101,7 +105,24 @@ func (mr *MobiliteReduite) Act(ag *Agent) {
 */
 func (mr *MobiliteReduite)setUpDestination(ag *Agent){
 	choix_voie := rand.Intn(2) // choix de la voie de métro aléatoire
-	dest_porte := (ag.findNearestGates(ag.env.metros[choix_voie].way.gates))
+	dest_porte := (mr.findNearestGates(ag, ag.env.metros[choix_voie].way.gates))
 	//fmt.Println("[MobiliteReduite, setUpDestination] dest_porte = ",dest_porte)
 	ag.destination = dest_porte[0].Position
+}
+
+
+func (mr *MobiliteReduite) findNearestGates(ag *Agent, gates []alg.Coord) []Gate {
+	var gateDistances []Gate
+	// Calcul de la distance pour chaque porte
+	for _, gate := range gates {
+		dist := alg.Abs(ag.position[0]-gate[0]) + alg.Abs(ag.position[1]-gate[1])
+		gateDistances = append(gateDistances, Gate{Position: gate, Distance: float64(dist)})
+	}
+
+	// Tri des Coords par distance
+	sort.Slice(gateDistances, func(i, j int) bool {
+		return gateDistances[i].Distance < gateDistances[j].Distance
+	})
+
+	return gateDistances
 }

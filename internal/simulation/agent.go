@@ -11,10 +11,8 @@ import (
 
 	//"log"
 	"math/rand"
-	"math"
 	alg "metrosim/internal/algorithms"
 	"time"
-	"sort"
 )
 
 type Action int64
@@ -570,88 +568,7 @@ func (ag *Agent) findNearestExit() (alg.Coord){
 	return nearest
 }
 
-func (ag *Agent) findNearestGates(gates []alg.Coord) []Gate {
-	var gateDistances []Gate
-	// Calcul de la distance pour chaque porte
-	for _, gate := range gates {
-		dist := alg.Abs(ag.position[0]-gate[0]) + alg.Abs(ag.position[1]-gate[1])
-		gateDistances = append(gateDistances, Gate{Position: gate, Distance: float64(dist)})
-	}
 
-	// Tri des Coords par distance
-	sort.Slice(gateDistances, func(i, j int) bool {
-		return gateDistances[i].Distance < gateDistances[j].Distance
-	})
-
-	return gateDistances
-}
-
-// Normalise les valeurs d'un ensemble de portes
-func normalizeGates(gates []Gate) ([]Gate, float64, float64) {
-    var minAgents, maxAgents float64 = math.MaxFloat64, 0
-    var minDistance, maxDistance float64 = math.MaxFloat64, 0
-
-    // Trouver les valeurs max et min pour la normalisation
-    for _, gate := range gates {
-        if gate.NbAgents > maxAgents {
-            maxAgents = gate.NbAgents
-        }
-        if gate.NbAgents < minAgents {
-            minAgents = gate.NbAgents
-        }
-        if gate.Distance > maxDistance {
-            maxDistance = gate.Distance
-        }
-        if gate.Distance < minDistance {
-            minDistance = gate.Distance
-        }
-    }
-
-    // Normaliser les valeurs
-	d_agt := (maxAgents - minAgents) 
-	if  d_agt == 0 {
-		d_agt = 1.0
-	}
-	d_dist := (maxDistance - minDistance)
-	if d_dist == 0 {
-		d_dist = 1.0
-	}
-	fmt.Println("[normalizeGates] d_dist : ",d_dist)
-    for i := range gates {
-        gates[i].NbAgents = (gates[i].NbAgents - minAgents) / d_agt
-		//fmt.Println("[normalizeGates] gates[i].Distance : ",gates[i].Distance)
-		//fmt.Println("[normalizeGates] minDistance : ",minDistance)
-		//fmt.Println("[normalizeGates] d_dist : ",d_dist)
-        gates[i].Distance = (gates[i].Distance - minDistance) / d_dist
-	}
-    return gates, float64(maxAgents - minAgents), maxDistance - minDistance
-}
-
-
-
-func (ag *Agent) findBestGate(gates []alg.Coord) alg.Coord {
-	gatesDistances := make([]Gate, len(gates))
-	for i, gate := range gates {
-		dist := alg.Abs(ag.position[0]-gate[0]) + alg.Abs(ag.position[1]-gate[1])
-		nbAgents := float64(ag.env.getNbAgentsAround(gate))
-		gatesDistances[i] = Gate{Position: gate, Distance: float64(dist), NbAgents: nbAgents}
-	}
-	fmt.Println("[findBestGate] gates non normalisé : ",gatesDistances)
-	normalizedGates, _, _ := normalizeGates(gatesDistances)
-	fmt.Println("[findBestGate] gates normalisé : ",normalizedGates)
-	var bestGate Gate
-	lowestScore := 2.0 // Puisque la somme des scores normalisés ne peut pas dépasser 2
-
-	for _, gate := range normalizedGates {
-		score := float64(gate.NbAgents) + gate.Distance
-		if score < lowestScore {
-			lowestScore = score
-			bestGate = gate
-		}
-	}
-
-	return bestGate.Position
-}
 
 
 func findMetro(env *Environment, gateToFind *alg.Coord) *Metro {
