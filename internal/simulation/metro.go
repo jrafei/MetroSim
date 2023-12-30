@@ -86,6 +86,7 @@ func (metro *Metro) pickUpGate(gate *alg.Coord, endTime time.Time) {
 			gate_cell := metro.way.env.station[gate[0]][gate[1]]
 			if len(gate_cell) > 1 {
 				agent := metro.findAgent(AgentID(gate_cell))
+				
 				if agent != nil && agent.width*agent.height <= metro.freeSpace && alg.EqualCoord(&agent.destination, gate) {
 					fmt.Println("agent entering metro : ", agent.id, "at gate ", gate)
 					metro.way.env.agentsChan[agent.id] <- *req.NewRequest(metro.comChannel, EnterMetro)
