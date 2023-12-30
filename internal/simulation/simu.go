@@ -134,45 +134,29 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 	simu.env = *NewEnvironment([]Agent{}, carte, []Metro{metro1, metro2}, simu.newAgentChan, agentCount)
 	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
 
+
 	fmt.Println("agCount : ", agentCount)
 	// création des agents et des channels
 	for i := 0; i < agentCount; i++ {
 
 		syncChan := make(chan int)
-		ag := &Agent{}
 		//ag := NewAgent(id, &simu.env, syncChan, time.Duration(time.Second), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
 		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{},  Coord{18, 4}, Coord{0, 8}, 2, 1)
-		//ag := &Agent{}
-		/*
-		id := fmt.Sprintf("Agent%d", i)
-		ag := NewAgent(id, &simu.env, syncChan, 400, 0, true, &UsagerLambda{}, alg.Coord{0, 28}, alg.Coord{8, 5}, 1, 1)
-		*/
 
-		
-		//NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int)
-		//ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &Controleur{}, alg.Coord{0, 28}, alg.Coord{0, 9}, 1, 1)
+		ag := &Agent{}
 
-		/*
-		
 		if i%2 == 0 { //Type Agent
-			id := fmt.Sprintf("Cont%d", i)
+			id := fmt.Sprintf("Agent%d", i)
 			//NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int)
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &Controleur{}, alg.Coord{0, 28}, alg.Coord{0, 9}, 2, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, alg.Coord{49, 32}, alg.Coord{0, 9}, 2, 1)
 		} else { // Type Controleur
 			//id := fmt.Sprintf("Controleur%d", i)
 			id := fmt.Sprintf("Agent%d", i)
 			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, alg.Coord{0, 8}, alg.Coord{8, 5}, 1, 1)
 			//ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &Controleur{}, Coord{18, 12}, Coord{18, 4}, 1, 1)
 		}
-		*/
 
-		if i != 0 {
-			id := fmt.Sprintf("Fraudeur%d", i)
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, alg.Coord{0, 8}, alg.Coord{13, 4}, 1, 1)
-		} else {
-			id := fmt.Sprintf("Cont%d", i)
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &Controleur{}, alg.Coord{0, 9}, alg.Coord{13, 4}, 1, 1)
-		}
+		//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{19, 12}, Coord{0, 8}, 2, 1)
 
 		// ajout de l'agent à la simulation
 		simu.env.ags = append(simu.env.ags, *ag)

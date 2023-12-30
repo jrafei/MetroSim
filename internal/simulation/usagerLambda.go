@@ -11,7 +11,7 @@ import (
 )
 
 type UsagerLambda struct {
-	req *req.Request
+	requete *req.Request
 	once sync.Once
 }
 
@@ -20,7 +20,8 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		//print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
-		ul.req = ag.request
+		ul.requete = ag.request
+		ag.request = nil // la requete est traitée
 	default:
 		ag.stuck = ag.isStuck()
 		if ag.stuck {
@@ -32,8 +33,8 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 func (ul *UsagerLambda) Deliberate(ag *Agent) {
 	//fmt.Println("[AgentLambda Deliberate] decision :", ul.req.decision)
 
-	if ul.req != nil {
-		switch ul.req.Decision() {
+	if ul.requete != nil {
+		switch ul.requete.Decision() {
 		case Stop :
 		ag.decision = Stop
 		case Expel: // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
@@ -60,7 +61,6 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 		ag.decision = Move
 
 		}
-		ul.req = nil //demande traitée
 	}else if (ag.position != ag.departure && ag.position == ag.destination) && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si l'agent est arrivé à sa destination et qu'il est sur une sortie
 			//fmt.Println(ag.id, "disappear")
 			ag.decision = Disappear
@@ -86,8 +86,8 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 	case EnterMetro :
 		fmt.Printf("[UsagerLambda, Act] agent %s entre dans le Metro \n",ag.id)
 		ag.env.RemoveAgent(ag)
-		fmt.Printf("Demandeur d'entrer le metro : %s \n",ag.request.Demandeur())
-		ul.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
+		fmt.Printf("Demandeur d'entrer le metro : %s \n",ul.requete.Demandeur())
+		ul.requete.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
 	case Expel :
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.findNearestExit()
@@ -112,6 +112,7 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 			ag.request.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)
 		}
 	}
+	ul.requete = nil //demande traitée
 }
 
 
