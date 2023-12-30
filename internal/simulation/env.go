@@ -23,7 +23,8 @@ type Environment struct {
 	gates            []alg.Coord
 }
 
-func NewEnvironment(ags []Agent, carte [50][50]string, metros []Metro, newAgtCh chan Agent, agtCount int) (env *Environment) {
+func NewEnvironment(ags []Agent, carte [50][50]string, metros []Metro, newAgtCh chan Agent, agtCount int, sim *Simulation) (env *Environment) {
+
 	agentsCh := make(map[AgentID]chan req.Request)
 	mapControlled := make(map[AgentID]bool)
 
@@ -81,6 +82,7 @@ func (env *Environment) AddAgent(agt Agent) {
 	env.agentsChan[agt.id] = make(chan req.Request, 5)
 	env.agentCount++
 	env.newAgentChan <- agt
+
 }
 
 func (env *Environment) DeleteAgent(agt Agent) {
@@ -181,7 +183,6 @@ func (env *Environment) FindAgentByID(agtId AgentID) *Agent {
 	}
 	return nil
 }
-
 
 func (env *Environment) Station() [50][50]string {
 	env.RLock()
