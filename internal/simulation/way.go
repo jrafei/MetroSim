@@ -13,11 +13,12 @@ type Way struct {
 	id             WayID
 	upLeftCoord    alg.Coord // inclus
 	downRightCoord alg.Coord // inclus
-	goToLeft       bool  // si vrai, le métro se déplace de droite à gauche, si faux de gauche à droite
+	goToLeft       bool      // si vrai, le métro se déplace de droite à gauche, si faux de gauche à droite
 	horizontal     bool
 	gates          []alg.Coord //listes des portes associée à la voie
 	nearestExit    []alg.Coord // Chemin vers la sortie la plus proche pour chaque porte (index vers pathsToExit)
 	pathsToExit    [][]alg.Node
+	gatesClosed    bool
 	env            *Environment
 }
 
@@ -39,7 +40,7 @@ func NewWay(wayId WayID, upLeftCoord, downRightCoord alg.Coord, goToLeft bool, g
 	nearestExit := make([]alg.Coord, len(gates))
 	pathsToExit := make([][]alg.Node, len(gates))
 	for index, gate := range gates {
-		row, col := alg.FindNearestExit(env.station, gate[0], gate[1])
+		row, col := alg.FindNearestExit(&env.exits, gate[0], gate[1])
 		nearestExit[index] = alg.Coord{row, col}
 		pathsToExit[index] = alg.FindPath(env.station, *alg.NewNode(gate[0], gate[1], 0, 0, 1, 1), *alg.NewNode(row, col, 0, 0, 0, 0), *alg.NewNode(-1, -1, 0, 0, 0, 0), false, 5*time.Second)
 		index++
@@ -55,18 +56,4 @@ func NewWay(wayId WayID, upLeftCoord, downRightCoord alg.Coord, goToLeft bool, g
 		nearestExit:    nearestExit,
 		pathsToExit:    pathsToExit,
 		env:            env}
-}
-
-func (way *Way) openGates() {
-	// Début d'autorisation d'entrer dans le métro
-	for _, gate := range way.gates {
-		way.env.station[gate[0]][gate[1]] = "O"
-	}
-}
-
-func (way *Way) closeGates() {
-	// Fin d'autorisation d'entrer dans le métro
-	for _, gate := range way.gates {
-		way.env.station[gate[0]][gate[1]] = "G"
-	}
 }

@@ -61,9 +61,6 @@ func (pq *PriorityQueue) Pop() interface{} {
 	return item
 }
 
-type ZoneID int
-type Coord [2]int
-
 func FindPath(matrix [50][50]string, start, end Node, forbidenCell Node, orientation bool, timeout time.Duration) []Node {
 	// Création d'un context avec timeout, pour limiter le calcul
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -213,7 +210,7 @@ func isValidMove(matrix [50][50]string, current Node, forbiddenCell Node, newRow
 
 	// Check if the agent fits in the new position, considering its dimensions and rotation
 	if orientation {
-		lRowBound, uRowBound, lColBound, uColBound := calculateBounds(newRow, newCol, current.width, current.height, current.orientation)
+		lRowBound, uRowBound, lColBound, uColBound := CalculateBounds(Coord{newRow, newCol}, current.width, current.height, current.orientation)
 
 		for i := lRowBound; i < uRowBound; i++ {
 			for j := lColBound; j < uColBound; j++ {
@@ -260,54 +257,17 @@ func rotateCoordinates(i, j, orientation int) (rotatedI, rotatedJ int) {
 	return rotatedI, rotatedJ
 }
 
-func calculateBounds(row, col, width, height, orientation int) (infRow, supRow, infCol, supCol int) {
-	borneInfRow := 0
-	borneSupRow := 0
-	borneInfCol := 0
-	borneSupCol := 0
-
-	// Calcul des bornes de position de l'agent après mouvement
-	switch orientation {
-	case 0:
-		borneInfRow = row - width + 1
-		borneSupRow = row + 1
-		borneInfCol = col
-		borneSupCol = col + height
-	case 1:
-		borneInfRow = row
-		borneSupRow = row + height
-		borneInfCol = col
-		borneSupCol = col + width
-	case 2:
-		borneInfRow = row
-		borneSupRow = row + width
-		borneInfCol = col
-		borneSupCol = col + height
-	case 3:
-		borneInfRow = row
-		borneSupRow = row + height
-		borneInfCol = col - width + 1
-		borneSupCol = col + 1
-
-	}
-	return borneInfRow, borneSupRow, borneInfCol, borneSupCol
-}
-
-func FindNearestExit(matrix [50][50]string, row, col int) (dest_row, dest_col int) {
+func FindNearestExit(exits *[]Coord, row, col int) (dest_row, dest_col int) {
 	// Recherche de la sortie la plus proche
 	min := 1000000
-	n := len(matrix[0])
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
-			if matrix[i][j] == "S" || matrix[i][j] == "W" {
-				dist := Abs(row-i) + Abs(col-j)
-				if dist < min {
-					min = dist
-					dest_row = i
-					dest_col = j
-				}
-			}
+	for _, exit := range *exits {
+		dist := Abs(row-exit[0]) + Abs(col-exit[1])
+		if dist < min {
+			min = dist
+			dest_row = exit[0]
+			dest_col = exit[1]
 		}
 	}
+
 	return dest_row, dest_col
 }
