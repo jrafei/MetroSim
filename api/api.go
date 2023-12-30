@@ -67,9 +67,9 @@ func simHandler(action string) http.HandlerFunc {
 				msg, _ := json.Marshal(simulation.Print())
 				fmt.Fprintf(w, "%s", msg)
 			}
-		// case "stop":
-		// 	// TODO
-		// }
+		case "stop":
+			// TODO
+		}
 	}
 }
 
