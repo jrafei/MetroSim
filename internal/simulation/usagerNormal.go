@@ -10,13 +10,14 @@ import (
 
 	"math/rand"
 	alg "metrosim/internal/algorithms"
+	req "metrosim/internal/request"
 	"time"
 	"sync"
 	"math"
 )
 
 type UsagerNormal struct {
-	req *Request // requete recue par l'agent lambda
+	req *req.Request // requete recue par l'agent lambda
 	once sync.Once
 }
 
@@ -38,23 +39,26 @@ func (ul *UsagerNormal) Percept(ag *Agent) {
 func (ul *UsagerNormal) Deliberate(ag *Agent) {
 	//fmt.Println("[AgentLambda Deliberate] decision :", ul.req.decision)
 	if (ul.req != nil ) {
-		if ul.req.decision == Stop{
-			ag.decision = Wait
-			ul.req = nil //demande traitée
-			return
-		} else if ul.req.decision == Expel { // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
+		switch ul.req.Decision() {
+			case Stop :
+				ag.decision = Wait
+				ul.req = nil //demande traitée
+				return
+			case Expel : // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
 				//fmt.Println("[AgentLambda, Deliberate] Expel")
 				ag.decision = Expel
 				ul.req = nil //demande traitée
 				return
-		}else if ul.req.decision == Disappear {
-			ag.decision = Disappear
-			return
-		}else if ul.req.decision == Wait {
-			ag.decision = Wait
-		}else if ul.req.decision == EnterMetro {
-			ag.decision = EnterMetro
-			}
+			case Disappear :
+				ag.decision = Disappear
+				return
+			case Wait :
+				ag.decision = Wait
+				return
+			case EnterMetro :
+				ag.decision = EnterMetro
+				return
+		}
 	}else if (ag.position != ag.departure && ag.position == ag.destination) && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si l'agent est arrivé à sa destination et qu'il est sur une sortie
 			//fmt.Println(ag.id, "disappear")
 			ag.decision = Disappear
@@ -73,11 +77,11 @@ func (ul *UsagerNormal) Act(ag *Agent) {
 		n := rand.Intn(2) // temps d'attente aléatoire
 		time.Sleep(time.Duration(n) * time.Second)
 	} else if ag.decision == Disappear {
-		RemoveAgent(&ag.env.station, ag)
+		ag.env.RemoveAgent(ag)
 	} else if ag.decision == EnterMetro {
 		fmt.Println("[UsagerNormal, Act] EnterMetro")
-		RemoveAgent(&ag.env.station, ag)
-		ul.req.demandeur <- *NewRequest(ag.env.agentsChan[ag.id], ACK)
+		ag.env.RemoveAgent(ag)
+		ul.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
 	} else if ag.decision == Expel {
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.findNearestExit()

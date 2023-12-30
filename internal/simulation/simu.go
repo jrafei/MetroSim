@@ -134,12 +134,7 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 	simu.env = *NewEnvironment([]Agent{}, carte, []Metro{metro1, metro2}, simu.newAgentChan, agentCount)
 	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
 
-	// Création du métro
-	//NewWay(wayId WayID, upLeftCoord, downRightCoord Coord, goToLeft bool, gates []Coord, env *Environment)
-	metro1 := *NewMetro(10*time.Second, 5*time.Second, 20, 2, NewWay(1, alg.Coord{9, 0}, alg.Coord{10, 39}, true, []alg.Coord{{8, 5}, {8, 34}}, &simu.env))
-	metro2 := *NewMetro(10*time.Second, 5*time.Second, 20, 2, NewWay(2, alg.Coord{11, 0}, alg.Coord{12, 39}, false, []alg.Coord{{13, 5}, {13, 34}}, &simu.env))
-	simu.env.metros = []Metro{metro1, metro2}
-
+	fmt.Println("agCount : ", agentCount)
 	// création des agents et des channels
 	for i := 0; i < agentCount; i++ {
 
@@ -153,9 +148,9 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		ag := NewAgent(id, &simu.env, syncChan, 400, 0, true, &UsagerLambda{}, alg.Coord{0, 28}, alg.Coord{8, 5}, 1, 1)
 		*/
 
-		id := fmt.Sprintf("Cont%d", i)
+		
 		//NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int)
-		ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &Controleur{}, alg.Coord{0, 28}, alg.Coord{0, 9}, 1, 1)
+		//ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &Controleur{}, alg.Coord{0, 28}, alg.Coord{0, 9}, 1, 1)
 
 		/*
 		
@@ -171,10 +166,12 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		}
 		*/
 
-		if i != 2 {
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, false, &UsagerLambda{}, alg.Coord{18, 4}, alg.Coord{13, 4}, 1, 1)
+		if i != 0 {
+			id := fmt.Sprintf("Fraudeur%d", i)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, alg.Coord{0, 8}, alg.Coord{13, 4}, 1, 1)
 		} else {
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, alg.Coord{18, 4}, alg.Coord{13, 4}, 1, 1)
+			id := fmt.Sprintf("Cont%d", i)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &Controleur{}, alg.Coord{0, 9}, alg.Coord{13, 4}, 1, 1)
 		}
 
 		// ajout de l'agent à la simulation
@@ -235,7 +232,7 @@ func (simu *Simulation) Run() {
 	}
 
 	// Lancement du flow d'agents
-	go simu.ActivateFlow(1000)
+	//go simu.ActivateFlow(1000)
 
 	// Activation de l'ouie des agents
 	go simu.listenNewAgentChan()

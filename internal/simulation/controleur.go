@@ -16,7 +16,7 @@ import (
 )
 
 type Controleur struct {
-	req *Request // requete reçue par le controleur
+	req *req.Request // requete reçue par le controleur
 	faceCase string // chaine de caractère qui contient l'id de l'agent qui se trouve devant le controleur, exemple : "Agent1", "Fraudeur1", "X" ,etc.
 	timer *time.Timer // timer qui permet de définir la durée de vie du controleur
 	isExpired bool // true si le controleur est expiré, false sinon
@@ -91,12 +91,14 @@ func (c *Controleur) Act(ag *Agent) {
 		time.Sleep(time.Duration(n) * time.Second)
 
 	case Disappear:
-		RemoveAgent(&ag.env.station, ag)
+		ag.env.RemoveAgent(ag)
 
 	case Expel, Stop : //Expel ou Stop
 		agt_face_id := AgentID(c.faceCase) //id de l'agent qui se trouve devant le controleur
-		//fmt.Print("L'agent ", agt_face_id, " a été expulsé\n")
+		fmt.Print("L'agent ", agt_face_id, " a été expulsé ou arrete\n")
+		ag.env.controlledAgents[agt_face_id] = true // l'agent qui se trouve devant le controleur est controlé
 		ag.env.agentsChan[agt_face_id] <- *req.NewRequest(ag.env.agentsChan[ag.id], ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
+		time.Sleep(time.Duration(5) * time.Second)
 	}
 }
 
@@ -114,7 +116,7 @@ func (c *Controleur) randomDestination(ag *Agent) alg.Coord {
 func (c *Controleur) startTimer() {
 	rand.Seed(time.Now().UnixNano()) // le générateur de nombres aléatoires
 	//randomSeconds := rand.Intn(9) + 2 // Génère un entier aléatoire entre 2 et 10
-	randomSeconds := 2
+	randomSeconds := 500
 	lifetime := time.Duration(randomSeconds) * time.Second
     c.timer = time.NewTimer(lifetime)
 	//fmt.Println("[Controleur , startTimer] Le controleur est créé avec une durée de vie de ", lifetime)

@@ -7,11 +7,11 @@ import (
 	alg "metrosim/internal/algorithms"
 	req "metrosim/internal/request"
 	"time"
-	"sync"
+	//"sync"
 )
 
 type UsagerLambda struct {
-	req req.Request
+	req *req.Request
 }
 
 func (ul *UsagerLambda) Percept(ag *Agent) {
@@ -19,7 +19,7 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		//print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
-		ul.req = *ag.request
+		ul.req = ag.request
 	default:
 		ag.stuck = ag.isStuck()
 		if ag.stuck {
@@ -34,10 +34,10 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 	if ul.req != nil {
 		switch ul.req.Decision() {
 		case Stop :
-		ag.decision = Wait
+		ag.decision = Stop
 		case Expel: // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
 		ag.decision = Expel
-		case Disappear , (ag.position != ag.departure && ag.position == ag.destination) && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") 
+		case Disappear :
 		ag.decision = Disappear
 		case EnterMetro :
 		ag.decision = EnterMetro
@@ -46,9 +46,9 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 		case Move :
 		ag.decision = Move
 		case YouHaveToMove :
-		fmt.Println("J'essaye de bouger")
+		//fmt.Println("J'essaye de bouger")
 		movement := ag.MoveAgent()  
-		fmt.Printf("Je suis agent %s Resultat du mouvement de la personne %t \n", ag.id, movement)
+		//fmt.Printf("Je suis agent %s Resultat du mouvement de la personne %t \n", ag.id, movement)
 		if movement {
 			ag.decision = Done
 		} else {
@@ -71,6 +71,8 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 func (ul *UsagerLambda) Act(ag *Agent) {
 	//fmt.Println("[AgentLambda Act] decision :",ag.decision)
 	switch ag.decision {
+	case Stop : 
+		time.Sleep(time.Duration(5) * time.Second) 
 	case Move:
 		ag.MoveAgent()
 	case Wait: // temps d'attente aléatoire
@@ -84,10 +86,11 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 	case Expel :
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.findNearestExit()
-		//fmt.Println("[AgentLambda, Act] destination = ",ag.destination)
+		fmt.Printf("[AgentLambda, Act] destination de l'agent %s = %s \n",ag.id,ag.destination)
 		ag.env.controlledAgents[ag.id] = true
 		ag.path = make([]alg.Node, 0)
 		ag.MoveAgent()
+
 	case Noop :
 		//Cas ou un usager impoli demande a un usager de bouger et il refuse
 		ag.request.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)

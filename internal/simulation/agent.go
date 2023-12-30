@@ -80,6 +80,7 @@ func (ag *Agent) Start() {
 	
 	// si c'est un controlleur on lance le timer de durée de vie
 	if (ag.id[0] == 'C') {
+		fmt.Println("[Start()] C'est un controleur")
 		ag.behavior.(*Controleur).startTimer()
 	}
 
@@ -129,7 +130,7 @@ func (agt *Agent) IsMovementSafe() (bool, int) {
 		// Calcul des bornes de position de l'agent après mouvement
 
 		borneInfRow, borneSupRow, borneInfCol, borneSupCol := alg.CalculateBounds(ag.position, ag.width, ag.height, ag.orientation)
-		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > len(env.station[0]) || borneSupCol > len(env.station[1])) {
+		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > len(agt.env.station[0]) || borneSupCol > len(agt.env.station[1])) {
 			for i := borneInfRow; i < borneSupRow; i++ {
 				for j := borneInfCol; j < borneSupCol; j++ {
 					if agt.env.station[i][j] == "O" {
@@ -174,7 +175,7 @@ func (agt *Agent) IsAgentBlocking() bool {
 		// Calcul des bornes de position de l'agent après mouvement
 		borneInfRow, borneSupRow, borneInfCol, borneSupCol := alg.CalculateBounds(ag.position, ag.width, ag.height, ag.orientation)
 		//fmt.Println(ag.id,borneInfRow,borneInfRow, borneSupRow, borneInfCol, borneSupCol)
-		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > len(env.station[0]) || borneSupCol > len(env.station[1])) {
+		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > len(agt.env.station[0]) || borneSupCol > len(agt.env.station[1])) {
 			for i := borneInfRow; i < borneSupRow; i++ {
 				for j := borneInfCol; j < borneSupCol; j++ {
 					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && len(ag.env.station[i][j]) > 2 {
@@ -226,14 +227,23 @@ func (ag *Agent) isStuck() bool {
 func (ag *Agent) NextCell() string {
 	switch ag.direction {
 	case 0: // vers le haut
-		return ag.env.station[ag.position[0]-1][ag.position[1]]
+		if ag.position[0]-1 > 0 && ag.position[0]-1 < len(ag.env.station[0]) {
+			return ag.env.station[ag.position[0]-1][ag.position[1]]
+		}
 	case 1: // vers la droite
-		return ag.env.station[ag.position[0]-1][ag.position[1]]
+		if ag.position[1]+1 > 0 && ag.position[1]+1 < len(ag.env.station[1]) {
+			return ag.env.station[ag.position[0]][ag.position[1]+1]
+		}
 	case 2: // vers le bas
+		if ag.position[0]+1 > 0 && ag.position[0]+1 < len(ag.env.station[0]) {
 		return ag.env.station[ag.position[0]+1][ag.position[1]]
+		}
 	default: //vers la gauche
-		return ag.env.station[ag.position[0]][ag.position[1]-1]
+		if ag.position[1]-1 > 0 && ag.position[1]-1 < len(ag.env.station[0]){
+			return ag.env.station[ag.position[0]][ag.position[1]-1]
+		}
 	}
+	return " "
 }
 
 func (ag *Agent) MoveAgent() bool {
@@ -251,7 +261,7 @@ func (ag *Agent) MoveAgent() bool {
 
 	// ================== Etude de faisabilité =======================
 	if ag.IsAgentBlocking() {
-		fmt.Printf("[Agent, MoveAgent] %s est bloqué", ag.id)
+		//fmt.Printf("[Agent, MoveAgent] %s est bloqué", ag.id)
 		if ag.politesse {
 			start, end := ag.generatePathExtremities()
 			// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit

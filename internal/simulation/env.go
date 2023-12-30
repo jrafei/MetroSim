@@ -136,7 +136,7 @@ func (env *Environment) verifyEmptyCase(c alg.Coord) bool {
 }
 
 func existAgent(c string) bool {
-	return c != "X" && c != "E" && c != "S" && c != "W" && c != "Q" && c != "_" && c != "B" && c != "G" && c != "O"
+	return c != "X" && c != "E" && c != "S" && c != "W" && c != "Q" && c != "_" && c != "B" && c != "G" && c != "O" && c != "M"
 }
 
 func calculDirection(depart alg.Coord, arrive alg.Coord) int {
