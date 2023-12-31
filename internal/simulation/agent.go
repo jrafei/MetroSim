@@ -75,6 +75,7 @@ func (ag *Agent) ID() AgentID {
 }
 
 func (ag *Agent) Start() {
+	
 	log.Printf("%s starting...\n", ag.id)
 	go ag.listenForRequests()
 	
@@ -83,7 +84,7 @@ func (ag *Agent) Start() {
 		fmt.Println("[Start()] C'est un controleur")
 		ag.behavior.(*Controleur).startTimer()
 	}
-
+	
 	go func() {
 		var step int
 		for {
@@ -225,29 +226,30 @@ func (ag *Agent) isStuck() bool {
 }
 
 func (ag *Agent) NextCell() string {
+	//0 : vers le haut, 1 : vers la droite, 2 : vers le bas, 3 : vers la gauche (sens de son deplacement)
 	switch ag.direction {
 	case 0: // vers le haut
-		if ag.position[0]-1 > 0 && ag.position[0]-1 < len(ag.env.station[0]) {
+		if ag.position[0]-1 >= 0 && ag.position[0]-1 < len(ag.env.station[0]) {
 			return ag.env.station[ag.position[0]-1][ag.position[1]]
 		}
 	case 1: // vers la droite
-		if ag.position[1]+1 > 0 && ag.position[1]+1 < len(ag.env.station[1]) {
+		if ag.position[1]+1 >= 0 && ag.position[1]+1 < len(ag.env.station[1]) {
 			return ag.env.station[ag.position[0]][ag.position[1]+1]
 		}
 	case 2: // vers le bas
-		if ag.position[0]+1 > 0 && ag.position[0]+1 < len(ag.env.station[0]) {
+		if ag.position[0]+1 >= 0 && ag.position[0]+1 < len(ag.env.station[0]) {
 		return ag.env.station[ag.position[0]+1][ag.position[1]]
 		}
 	default: //vers la gauche
-		if ag.position[1]-1 > 0 && ag.position[1]-1 < len(ag.env.station[0]){
+		if ag.position[1]-1 >= 0 && ag.position[1]-1 < len(ag.env.station[0]){
 			return ag.env.station[ag.position[0]][ag.position[1]-1]
 		}
 	}
-	return " "
+	return "X"
 }
 
 func (ag *Agent) MoveAgent() bool {
-	//fmt.Println("[Agent, MoveAgent] destination ", ag.destination)
+	//fmt.Printf("[MoveAgent, %s ] direction = %d \n",ag.id, ag.direction)
 	// ================== Tentative de calcul du chemin =======================
 	if len(ag.path) == 0 || ag.isGoingToExitPath() || (ag.env.station[ag.path[0].Row()][ag.path[0].Col()]=="O"&& !alg.EqualCoord(&ag.destination,&alg.Coord{ag.path[0].Row(),ag.path[0].Col()})) {
 		start, end := ag.generatePathExtremities()
@@ -261,7 +263,7 @@ func (ag *Agent) MoveAgent() bool {
 
 	// ================== Etude de faisabilité =======================
 	if ag.IsAgentBlocking() {
-		//fmt.Printf("[Agent, MoveAgent] %s est bloqué", ag.id)
+		//fmt.Printf("[MoveAgent, %s ] %s est bloqué",ag.id, ag.id)
 		if ag.politesse {
 			start, end := ag.generatePathExtremities()
 			// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit
@@ -282,7 +284,7 @@ func (ag *Agent) MoveAgent() bool {
 			for !accept && i < 3 {
 				//Demande à l'agent qui bloque de se pousser (réitère trois fois s'il lui dit pas possible)
 				i += 1
-				fmt.Printf("You have to move %s for the %d time \n", blockingAgentID, i)
+				fmt.Printf("[MoveAgent, %s] You have to move %s for the %d time \n",ag.id, blockingAgentID, i)
 				reqToBlockingAgent = req.NewRequest(ag.env.agentsChan[ag.id], YouHaveToMove) //Création "Hello, je suis ag.id, move."
 				ag.env.agentsChan[blockingAgentID] <- *reqToBlockingAgent                //Envoi requête
 				repFromBlockingAgent := <-ag.env.agentsChan[ag.id]           //Attend la réponse
@@ -347,9 +349,10 @@ func (ag *Agent) listenForRequests() {
 	for {
 		if ag.request == nil {
 			req := <-ag.env.agentsChan[ag.id]
-			fmt.Println("Request received by :", ag.id, req.Decision)
+			fmt.Println("[listenForRequests] Request received by :", ag.id, req.Decision)
 			ag.request = &req
 		}
+		//fmt.Println("[listenForRequests]Agent ID :", ag.id)
 		if ag.request.Decision() == Disappear || ag.request.Decision() == EnterMetro {
 			return
 		}

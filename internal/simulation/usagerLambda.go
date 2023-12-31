@@ -21,8 +21,6 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		//print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
 		ul.requete = ag.request
-		fmt.Println("[UsagerLambda, Percept] Requete reçu par l'agent lambda : ", ul.requete.Decision())
-		ag.request = nil // la requete est traitée
 	default:
 		ag.stuck = ag.isStuck()
 		if ag.stuck {
@@ -46,7 +44,7 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 		ag.decision = Disappear
 		return
 		case EnterMetro :
-		fmt.Println("[UsagerLambda, Deliberate] EnterMetro")
+		//fmt.Println("[UsagerLambda, Deliberate] EnterMetro")
 		ag.decision = EnterMetro
 		return
 		case Wait :
@@ -121,7 +119,7 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 			ul.requete.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)
 		}
 	}
-	ul.requete = nil //demande traitée
+	//ag.request = nil // la requete est traitée
 }
 
 

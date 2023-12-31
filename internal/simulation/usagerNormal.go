@@ -3,21 +3,23 @@ package simulation
 
 /*
   Agent qui se dirige vers la porte la plus proche sans trop de monde (bon rapport monde/proximité )
-
+  On normalise les valeurs de proximité et de monde pour avoir un score entre 0 et 1, on choisit la porte ayant le moins du score (le score est la somme des deux valeurs normalisées)
+  Si plusieurs portes ont le même score, on choisit celle ayant le moins de monde
 */
+
 import (
 	"fmt"
-
 	"math/rand"
 	alg "metrosim/internal/algorithms"
 	req "metrosim/internal/request"
 	"time"
 	"sync"
 	"math"
+	"sort"
 )
 
 type UsagerNormal struct {
-	req *req.Request // requete recue par l'agent lambda
+	req *req.Request // req recue par l'agent lambda
 	once sync.Once
 }
 
@@ -25,9 +27,8 @@ func (un *UsagerNormal) Percept(ag *Agent) {
 	un.once.Do(func(){un.setUpDestination(ag)}) // la fonction setUp est executé à la premiere appel de la fonction Percept()
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
-		//print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
+		//print("req recue par l'agent lambda : ", ag.request.decision, "\n")
 		un.req = ag.request
-		ag.request = nil // la requete est traitée
 	default:
 		ag.stuck = ag.isStuck()
 		if ag.stuck {
@@ -51,11 +52,25 @@ func (un *UsagerNormal) Deliberate(ag *Agent) {
 			case Disappear :
 				ag.decision = Disappear
 				return
+			case EnterMetro :
+				ag.decision = EnterMetro
+				return
 			case Wait :
 				ag.decision = Wait
 				return
-			case EnterMetro :
-				ag.decision = EnterMetro
+			case Move :
+				ag.decision = Move
+				return
+			case YouHaveToMove :
+				fmt.Println("[AgentNormal, Deliberate] J'essaye de bouger ", ag.id)
+				movement := ag.MoveAgent()
+				//fmt.Printf("Je suis agent %s Resultat du mouvement de la personne %t \n", ag.id, movement)
+				if movement {
+					fmt.Println("[AgentNormal, Deliberate] J'ai bougé ", ag.id)
+					ag.decision = Done
+				} else {
+					ag.decision = Noop
+				}
 				return
 		}
 	}else if (ag.position != ag.departure && ag.position == ag.destination) && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si l'agent est arrivé à sa destination et qu'il est sur une sortie
@@ -65,36 +80,60 @@ func (un *UsagerNormal) Deliberate(ag *Agent) {
 			ag.decision = Wait
 				}else {
 				ag.decision = Move
+				//un.setUpDestination(ag)
 				}
 }
 
+
 func (un *UsagerNormal) Act(ag *Agent) {
 	//fmt.Println("[AgentLambda Act] decision :",ag.decision)
-	if ag.decision == Move {
+	switch ag.decision {
+	case Stop : 
+		time.Sleep(time.Duration(5) * time.Second) 
+	case Move:
 		ag.MoveAgent()
-	} else if ag.decision == Wait {
-		n := rand.Intn(2) // temps d'attente aléatoire
+	case Wait: // temps d'attente aléatoire
+		n := rand.Intn(2)
 		time.Sleep(time.Duration(n) * time.Second)
-	} else if ag.decision == Disappear {
+	case Disappear:
+		//fmt.Printf("[UsagerLambda, Act] agent %s est disparu \n",ag.id)
 		ag.env.RemoveAgent(ag)
-	} else if ag.decision == EnterMetro {
-		fmt.Println("[UsagerNormal, Act] EnterMetro")
+	case EnterMetro :
+		fmt.Printf("[UsagerNormal, Act] agent %s entre dans le Metro \n",ag.id)
 		ag.env.RemoveAgent(ag)
+		//fmt.Printf("Demandeur d'entrer le metro : %s \n",un.req.Demandeur())
 		un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
-	} else if ag.decision == Expel {
+	case Expel :
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.findNearestExit()
-		//fmt.Println("[AgentLambda, Act] destination = ",ag.destination)
+		fmt.Printf("[UsagerNormal, Act] destination de l'agent %s = %s \n",ag.id,ag.destination)
 		ag.env.controlledAgents[ag.id] = true
 		ag.path = make([]alg.Node, 0)
 		ag.MoveAgent()
-	} else {
+
+	case Noop :
+		//Cas ou un usager impoli demande a un usager de bouger et il refuse
+		un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)
 		// nothing to do
+	case Done : 
+		//Cas ou un usager impoli demande a un usager de bouger et il le fait
+		un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Done)
+	case TryToMove :
+		movement := ag.MoveAgent()
+		fmt.Printf("Je suis %s est-ce que j'ai bougé? %t \n", ag.id, movement)
+		if movement {
+			un.req.Demandeur()<- *req.NewRequest(ag.env.agentsChan[ag.id], Done)
+		} else {
+			un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)
+		}
 	}
+	//un.req = nil //demande traitée
 }
 
-
 func (un *UsagerNormal)setUpDestination(ag *Agent){
+	//t := rand.Intn(10) +1 
+	//time.Sleep(time.Duration(t) * time.Second) // "cool down"
+	//fmt.Println("[UsagerNormal, setUpDestination] setUpDestination")
 	choix_voie := rand.Intn(2) // choix de la voie de métro aléatoire
 	dest_porte := (un.findBestGate(ag, ag.env.metros[choix_voie].way.gates))
 	ag.destination = dest_porte
@@ -103,28 +142,53 @@ func (un *UsagerNormal)setUpDestination(ag *Agent){
 
 
 func (un *UsagerNormal) findBestGate(ag *Agent, gates []alg.Coord) alg.Coord {
-	gatesDistances := make([]Gate, len(gates))
+	
+	uniquegates := make([]alg.Coord, 0)
 	for i, gate := range gates {
-		dist := alg.Abs(ag.position[0]-gate[0]) + alg.Abs(ag.position[1]-gate[1])
+		if i+1 < len(gates) && twocloseGate(gate,gates[i+1]) {
+			continue
+		}
+		uniquegates = append(uniquegates, gate)
+		//gatesDistances[i] = Gate{Position: gate, Distance: float64(dist), NbAgents: nbAgents}
+	}
+
+	gatesDistances := make([]Gate, len(uniquegates))
+	for i, gate := range uniquegates {
+		dist := alg.Abs(ag.position[0]-gate[0]) + alg.Abs(ag.position[1]-gate[1]) // Distance de Manhattan entre l'agent et la porte
 		nbAgents := float64(ag.env.getNbAgentsAround(gate))
 		gatesDistances[i] = Gate{Position: gate, Distance: float64(dist), NbAgents: nbAgents}
 	}
-	fmt.Println("[findBestGate] gates non normalisé : ",gatesDistances)
-	normalizedGates, _, _ := normalizeGates(gatesDistances)
-	fmt.Println("[findBestGate] gates normalisé : ",normalizedGates)
-	var bestGate Gate
-	lowestScore := 2.0 // Puisque la somme des scores normalisés ne peut pas dépasser 2
 
-	for _, gate := range normalizedGates {
-		score := float64(gate.NbAgents) + gate.Distance
-		if score < lowestScore {
-			lowestScore = score
-			bestGate = gate
+	//fmt.Println("[findBestGate] agent : ",ag.id)
+	//fmt.Println("[findBestGate] agent Position : ",ag.position)
+	//fmt.Println("[findBestGate] gates non normalisé : ",gatesDistances)
+	normalizedGates, _, _ := normalizeGates(gatesDistances)
+	//fmt.Println("[findBestGate] gates normalisé : ",normalizedGates)
+	
+	
+	bestGates := gates_with_lowest_score(normalizedGates)
+	bestGate := bestGates[0]
+	if len(bestGates) > 1 {
+		//on choisit la porte ayant le moins de monde
+		for _, gate := range bestGates {
+			if gate.NbAgents < bestGate.NbAgents {
+				bestGate = gate
+			}
 		}
 	}
+	//fmt.Println("[findBestGate] bestGate : ",bestGate)
 	return bestGate.Position
 }
 
+func twocloseGate(gate1 alg.Coord ,gate2 alg.Coord) bool{
+	if (gate1[0] == gate2[0]) && (gate1[1] == gate2[1] + 1 || gate1[1] == gate2[1] - 1) {
+		return true
+	}
+	if (gate1[1] == gate2[1]) && (gate1[0] == gate2[0] + 1 || gate1[0] == gate2[0] - 1) {
+		return true
+	}
+	return false
+}
 
 // Normalise les valeurs d'un ensemble de portes
 func normalizeGates(gates []Gate) ([]Gate, float64, float64) {
@@ -156,7 +220,7 @@ func normalizeGates(gates []Gate) ([]Gate, float64, float64) {
 	if d_dist == 0 {
 		d_dist = 1.0
 	}
-	fmt.Println("[normalizeGates] d_dist : ",d_dist)
+	//fmt.Println("[normalizeGates] d_dist : ",d_dist)
     for i := range gates {
         gates[i].NbAgents = (gates[i].NbAgents - minAgents) / d_agt
 		//fmt.Println("[normalizeGates] gates[i].Distance : ",gates[i].Distance)
@@ -165,4 +229,39 @@ func normalizeGates(gates []Gate) ([]Gate, float64, float64) {
         gates[i].Distance = (gates[i].Distance - minDistance) / d_dist
 	}
     return gates, float64(maxAgents - minAgents), maxDistance - minDistance
+}
+
+
+// Calcul du score d'un Gate
+func (g Gate) Score() float64 {
+	return g.Distance + g.NbAgents
+}
+
+// sort_by_score trie une tranche de Gates par ordre croissant de leur score
+func sort_by_score(gates []Gate) {
+	sort.Slice(gates, func(i, j int) bool {
+		return gates[i].Score() < gates[j].Score() // Ordre croissant
+	})
+}
+
+// gates_with_highest_score renvoie une tranche de Gates ayant le score le moins élevé
+func gates_with_lowest_score(gates []Gate) []Gate {
+	if len(gates) == 0 {
+		return nil
+	}
+
+	sort_by_score(gates) // D'abord, on trie les gates
+
+	lowestScore := gates[0].Score() // Le premier gate a le score le moins élevé après le tri
+	var lowestScoreGates []Gate
+
+	for _, gate := range gates {
+		if gate.Score() == lowestScore {
+			lowestScoreGates = append(lowestScoreGates, gate)
+		} else {
+			break // Puisque les gates sont triés, pas besoin de vérifier plus loin
+		}
+	}
+
+	return lowestScoreGates
 }
