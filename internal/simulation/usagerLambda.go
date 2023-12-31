@@ -3,6 +3,7 @@ package simulation
 import (
 	//"fmt"
 
+	"fmt"
 	"math/rand"
 	alg "metrosim/internal/algorithms"
 	req "metrosim/internal/request"
@@ -55,6 +56,7 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 	} else if ag.decision == Disappear {
 		ag.env.RemoveAgent(ag)
 	} else if ag.decision == EnterMetro {
+		fmt.Printf("[UsagerLambda, Act] agent %s entre dans le Metro \n", ag.id)
 		ag.env.RemoveAgent(ag)
 		ul.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
 	} else if ag.decision == Expel {

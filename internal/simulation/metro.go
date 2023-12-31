@@ -69,14 +69,14 @@ func (metro *Metro) pickUpUsers() {
 		wg.Add(1)
 		go func(gate alg.Coord) {
 			defer wg.Done()
-			metro.pickUpGate(&gate, time.Now().Add(metro.stopTime))
+			metro.pickUpGate(&gate, time.Now().Add(metro.stopTime), false)
 		}(gate)
 	}
 
 	wg.Wait()
 }
 
-func (metro *Metro) pickUpGate(gate *alg.Coord, endTime time.Time) {
+func (metro *Metro) pickUpGate(gate *alg.Coord, endTime time.Time, force bool) {
 	// Récupérer les usagers à une porte spécifique
 	for {
 
@@ -86,12 +86,13 @@ func (metro *Metro) pickUpGate(gate *alg.Coord, endTime time.Time) {
 			gate_cell := metro.way.env.station[gate[0]][gate[1]]
 			if len(gate_cell) > 1 {
 				agent := metro.findAgent(AgentID(gate_cell))
-				if agent != nil && agent.width*agent.height <= metro.freeSpace && alg.EqualCoord(&agent.destination, gate) {
+				if agent != nil && (((!force && agent.width*agent.height <= metro.freeSpace) && alg.EqualCoord(&agent.destination, gate)) || force) {
+
 					fmt.Println("agent entering metro : ", agent.id, "at gate ", gate)
 					metro.way.env.agentsChan[agent.id] <- *req.NewRequest(metro.comChannel, EnterMetro)
 					<-metro.comChannel
 					metro.freeSpace = metro.freeSpace - agent.width*agent.height
-					//fmt.Println("leaving", agent.id)
+					fmt.Println("leaving", agent.position)
 				}
 			}
 		}
@@ -247,7 +248,7 @@ func (metro *Metro) closeGates() {
 	for _, gate := range metro.way.gates {
 		if len(metro.way.env.station[gate[0]][gate[1]]) > 1 {
 			// On autorise les agents déjà sur la case à rentrer dans le métro
-			metro.pickUpGate(&gate, time.Now().Add(time.Duration(1*time.Second)))
+			metro.pickUpGate(&gate, time.Now().Add(time.Duration(1*time.Second)), true)
 		}
 		metro.way.env.station[gate[0]][gate[1]] = "G"
 	}

@@ -276,8 +276,8 @@ func (simu *Simulation) Log() {
 func (simu *Simulation) ActivateFlow() {
 
 	for {
+		simu.env.AddAgent(*NewAgent("Agent"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, 0, true, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 2, 1))
 		time.Sleep(time.Duration(simu.flow) * time.Millisecond)
-		simu.env.AddAgent(*NewAgent("Agent"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, 0, true, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1))
 		log.Println(simu.env.ags[len(simu.env.ags)-1].path)
 	}
 }
