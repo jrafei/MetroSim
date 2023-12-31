@@ -241,7 +241,7 @@ func (ag *Agent) NextCell() string {
 		return ag.env.station[ag.position[0]+1][ag.position[1]]
 		}
 	default: //vers la gauche
-		if ag.position[1]-1 >= 0 && ag.position[1]-1 < len(ag.env.station[0]){
+		if ag.position[1]-1 >= 0 && ag.position[1]-1 < len(ag.env.station[1]){
 			return ag.env.station[ag.position[0]][ag.position[1]-1]
 		}
 	}
@@ -263,7 +263,7 @@ func (ag *Agent) MoveAgent() bool {
 
 	// ================== Etude de faisabilité =======================
 	if ag.IsAgentBlocking() {
-		//fmt.Printf("[MoveAgent, %s ] %s est bloqué",ag.id, ag.id)
+		fmt.Printf("[MoveAgent, %s ] %s est bloqué\n",ag.id, ag.id)
 		if ag.politesse {
 			start, end := ag.generatePathExtremities()
 			// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit
