@@ -1,10 +1,10 @@
-package simulation
 
+package simulation
 
 /*
   Agent qui se dirige vers la porte la plus proche sans trop de monde (bon rapport monde/proximité )
-*/
 
+*/
 import (
 	"fmt"
 
@@ -21,12 +21,13 @@ type UsagerNormal struct {
 	once sync.Once
 }
 
-func (ul *UsagerNormal) Percept(ag *Agent) {
-	ul.once.Do(func(){ul.setUpDestination(ag)}) // la fonction setUp est executé à la premiere appel de la fonction Percept()
+func (un *UsagerNormal) Percept(ag *Agent) {
+	un.once.Do(func(){un.setUpDestination(ag)}) // la fonction setUp est executé à la premiere appel de la fonction Percept()
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		//print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
-		ul.req = ag.request
+		un.req = ag.request
+		ag.request = nil // la requete est traitée
 	default:
 		ag.stuck = ag.isStuck()
 		if ag.stuck {
@@ -36,18 +37,16 @@ func (ul *UsagerNormal) Percept(ag *Agent) {
 	}
 }
 
-func (ul *UsagerNormal) Deliberate(ag *Agent) {
-	//fmt.Println("[AgentLambda Deliberate] decision :", ul.req.decision)
-	if (ul.req != nil ) {
-		switch ul.req.Decision() {
+func (un *UsagerNormal) Deliberate(ag *Agent) {
+	//fmt.Println("[AgentLambda Deliberate] decision :", un.req.decision)
+	if (un.req != nil ) {
+		switch un.req.Decision() {
 			case Stop :
-				ag.decision = Wait
-				ul.req = nil //demande traitée
+				ag.decision = Stop
 				return
-			case Expel : // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
+			case Expel : // cette condition est inutile car l'usager lambda ne peut pas etre expunsé , elle est nécessaire pour les agents fraudeurs
 				//fmt.Println("[AgentLambda, Deliberate] Expel")
 				ag.decision = Expel
-				ul.req = nil //demande traitée
 				return
 			case Disappear :
 				ag.decision = Disappear
@@ -69,7 +68,7 @@ func (ul *UsagerNormal) Deliberate(ag *Agent) {
 				}
 }
 
-func (ul *UsagerNormal) Act(ag *Agent) {
+func (un *UsagerNormal) Act(ag *Agent) {
 	//fmt.Println("[AgentLambda Act] decision :",ag.decision)
 	if ag.decision == Move {
 		ag.MoveAgent()
@@ -81,7 +80,7 @@ func (ul *UsagerNormal) Act(ag *Agent) {
 	} else if ag.decision == EnterMetro {
 		fmt.Println("[UsagerNormal, Act] EnterMetro")
 		ag.env.RemoveAgent(ag)
-		ul.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
+		un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
 	} else if ag.decision == Expel {
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.findNearestExit()
@@ -95,15 +94,15 @@ func (ul *UsagerNormal) Act(ag *Agent) {
 }
 
 
-func (ul *UsagerNormal)setUpDestination(ag *Agent){
+func (un *UsagerNormal)setUpDestination(ag *Agent){
 	choix_voie := rand.Intn(2) // choix de la voie de métro aléatoire
-	dest_porte := (ul.findBestGate(ag, ag.env.metros[choix_voie].way.gates))
+	dest_porte := (un.findBestGate(ag, ag.env.metros[choix_voie].way.gates))
 	ag.destination = dest_porte
 }
 
 
 
-func (ul *UsagerNormal) findBestGate(ag *Agent, gates []alg.Coord) alg.Coord {
+func (un *UsagerNormal) findBestGate(ag *Agent, gates []alg.Coord) alg.Coord {
 	gatesDistances := make([]Gate, len(gates))
 	for i, gate := range gates {
 		dist := alg.Abs(ag.position[0]-gate[0]) + alg.Abs(ag.position[1]-gate[1])
