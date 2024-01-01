@@ -176,7 +176,7 @@ func getNeighbors(matrix [50][50]string, current, end Node, forbiddenCell Node, 
 func Heuristic(matrix [50][50]string, row, col int, end Node) int {
 	// Heuristique simple : distance de Manhattan
 	// On introduit de l'aléatoire pour ajouter de la diversité dans la construction des chemins
-	// On évite d'avoir tout le temps le même chemin pour un même point de départ et d'arrivé
+	// On évite d'avoir tout le temps le même chemin pour un même point de départ et d'arrivée
 	//return abs(row-end.row) + abs(col-end.col) + rand.Intn(3)
 	malus := 0
 	if len(matrix[row][col]) > 1 {

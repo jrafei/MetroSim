@@ -11,8 +11,6 @@ import (
 )
 
 /*
- * //TODO:Ajouter la capacité max
- * //TODO:Parfois agents bloqués
  * // Apparition des agents sortant
  */
 
@@ -46,8 +44,7 @@ func (metro *Metro) Start() {
 	// affichage des portes au départ
 	metro.closeGates()
 	for {
-		//step = <-metro.syncChan
-		if refTime.Add(metro.frequency).Sub(time.Now()) <= time.Duration(metro_speed)*time.Second {
+		if time.Until(refTime.Add(metro.frequency)) <= time.Duration(metro_speed)*time.Second {
 			metro.printMetro()
 		}
 		if refTime.Add(metro.frequency).Before(time.Now()) {
@@ -56,10 +53,9 @@ func (metro *Metro) Start() {
 			metro.pickUpUsers()
 			metro.closeGates()
 			metro.removeMetro()
-			metro.freeSpace = rand.Intn(10)
+			metro.freeSpace = rand.Intn(metro.capacity)
 			refTime = time.Now()
 		}
-		//metro.syncChan <- step
 
 	}
 }

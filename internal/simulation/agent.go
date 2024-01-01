@@ -219,7 +219,9 @@ func (ag *Agent) MoveAgent() {
 	//fmt.Println("[Agent, MoveAgent] destination ", ag.destination)
 
 	// ================== Tentative de calcul du chemin =======================
-	if len(ag.path) == 0 || ag.isGoingToExitPath() || (ag.env.station[ag.path[0].Row()][ag.path[0].Col()]=="O"&& !alg.EqualCoord(&ag.destination,&alg.Coord{ag.path[0].Row(),ag.path[0].Col()})) {
+	if len(ag.path) == 0 || 
+	 ag.isGoingToExitPath() ||
+	 (ag.env.station[ag.path[0].Row()][ag.path[0].Col()]=="O" && !alg.EqualCoord(&ag.destination,&alg.Coord{ag.path[0].Row(),ag.path[0].Col()})) {
 		start, end := ag.generatePathExtremities()
 		// Recherche d'un chemin si inexistant
 		if len(ag.path) > 0 {
@@ -229,7 +231,7 @@ func (ag *Agent) MoveAgent() {
 		}
 	}
 
-	// ================== Etude de faisabilité =======================
+	// ================== Vérification si déplacement possible =======================
 	if ag.IsAgentBlocking() {
 
 		if ag.politesse {
@@ -299,7 +301,6 @@ func (ag *Agent) MoveAgent() {
 		// ============ Prise en compte de la vitesse de déplacement ======================
 		time.Sleep(ag.vitesse * time.Millisecond)
 	}
-
 }
 
 func (ag *Agent) generatePathExtremities() (alg.Node, alg.Node) {
