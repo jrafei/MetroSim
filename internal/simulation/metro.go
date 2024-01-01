@@ -11,8 +11,6 @@ import (
 )
 
 /*
- * //TODO:Ajouter la capacité max
- * //TODO:Parfois agents bloqués
  * // Apparition des agents sortant
  */
 
@@ -39,14 +37,14 @@ func NewMetro(freq time.Duration, stopT time.Duration, capacity, freeS int, way 
 }
 
 func (metro *Metro) Start() {
+	// Début de la simulation du métro
 	log.Printf("Metro starting...\n")
 	refTime := time.Now()
 	//var step int
 	// affichage des portes au départ
 	metro.closeGates()
 	for {
-		//step = <-metro.syncChan
-		if refTime.Add(metro.frequency).Sub(time.Now()) <= time.Duration(metro_speed)*time.Second {
+		if time.Until(refTime.Add(metro.frequency)) <= time.Duration(metro_speed)*time.Second {
 			metro.printMetro()
 		}
 		if refTime.Add(metro.frequency).Before(time.Now()) {
@@ -55,28 +53,28 @@ func (metro *Metro) Start() {
 			metro.pickUpUsers()
 			metro.closeGates()
 			metro.removeMetro()
-			metro.freeSpace = rand.Intn(10)
+			metro.freeSpace = rand.Intn(metro.capacity)
 			refTime = time.Now()
 		}
-		//metro.syncChan <- step
 
 	}
 }
 
 func (metro *Metro) pickUpUsers() {
+	// Récupérer les usagers à toutes les portes
 	var wg sync.WaitGroup
 	for _, gate := range metro.way.gates {
 		wg.Add(1)
 		go func(gate alg.Coord) {
 			defer wg.Done()
-			metro.pickUpGate(&gate, time.Now().Add(metro.stopTime))
+			metro.pickUpGate(&gate, time.Now().Add(metro.stopTime), false)
 		}(gate)
 	}
 
 	wg.Wait()
 }
 
-func (metro *Metro) pickUpGate(gate *alg.Coord, endTime time.Time) {
+func (metro *Metro) pickUpGate(gate *alg.Coord, endTime time.Time, force bool) {
 	// Récupérer les usagers à une porte spécifique
 	for {
 
@@ -86,13 +84,23 @@ func (metro *Metro) pickUpGate(gate *alg.Coord, endTime time.Time) {
 			gate_cell := metro.way.env.station[gate[0]][gate[1]]
 			if len(gate_cell) > 1 {
 				agent := metro.findAgent(AgentID(gate_cell))
-				
-				if agent != nil && agent.width*agent.height <= metro.freeSpace && alg.EqualCoord(&agent.destination, gate) {
+				if agent != nil && (((!force && agent.width*agent.height <= metro.freeSpace) && alg.EqualCoord(&agent.destination, gate)) || force) {
+
 					fmt.Println("agent entering metro : ", agent.id, "at gate ", gate)
 					metro.way.env.agentsChan[agent.id] <- *req.NewRequest(metro.comChannel, EnterMetro)
-					<-metro.comChannel
-					metro.freeSpace = metro.freeSpace - agent.width*agent.height
-					//fmt.Println("leaving", agent.id)
+					select {
+					case <-metro.comChannel:
+						metro.freeSpace = metro.freeSpace - agent.width*agent.height
+					case <-time.After(2 * time.Second):
+						// Si l'agent prend trop de temps à répondre, on le supprime "manuellement"
+						if metro.findAgent(agent.id) != nil {
+							agent.env.RemoveAgent(agent)
+							agent.env.DeleteAgent(*agent)
+						}
+						if !force {
+							metro.freeSpace = metro.freeSpace - agent.width*agent.height
+						}
+					}
 				}
 			}
 		}
@@ -112,6 +120,7 @@ func (metro *Metro) findAgent(agent AgentID) *Agent {
 }
 
 func (metro *Metro) dropUsers() {
+	// Déposer les usagers dans un métro, à une porte aléatoire
 	nb := rand.Intn(metro.capacity - metro.freeSpace) // Nombre de cases à vider du métro
 	for nb > 0 {
 		gate_nb := rand.Intn(len(metro.way.gates)) // Sélection d'une porte aléatoirement
@@ -134,7 +143,7 @@ func (metro *Metro) dropUsers() {
 }
 
 func (metro *Metro) printMetro() {
-
+	// Afficher le métro sur la carte
 	if metro.way.horizontal {
 		waiting_time := time.Duration((metro_speed * 1000) / (metro.way.downRightCoord[1] - metro.way.upLeftCoord[1]))
 		if metro.way.goToLeft {
@@ -185,7 +194,7 @@ func (metro *Metro) printMetro() {
 }
 
 func (metro *Metro) removeMetro() {
-
+	// Supprimer le métro de la carte
 	if metro.way.horizontal {
 		waiting_time := time.Duration((metro_speed * 1000) / (metro.way.downRightCoord[1] - metro.way.upLeftCoord[1]))
 
@@ -249,7 +258,7 @@ func (metro *Metro) closeGates() {
 	for _, gate := range metro.way.gates {
 		if len(metro.way.env.station[gate[0]][gate[1]]) > 1 {
 			// On autorise les agents déjà sur la case à rentrer dans le métro
-			metro.pickUpGate(&gate, time.Now().Add(time.Duration(1*time.Second)))
+			metro.pickUpGate(&gate, time.Now().Add(time.Duration(1*time.Second)), true)
 		}
 		metro.way.env.station[gate[0]][gate[1]] = "G"
 	}

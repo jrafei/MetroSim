@@ -102,11 +102,7 @@ func (ag *Agent) Start() {
 	}()
 }
 
-func (ag *Agent) Act(env *Environment) {
-	if ag.decision == Noop {
-		env.Do(Noop, alg.Coord{})
-	}
-}
+
 
 func (agt *Agent) IsMovementSafe() (bool, int) {
 	// Détermine si le movement est faisable
@@ -251,7 +247,9 @@ func (ag *Agent) NextCell() string {
 func (ag *Agent) MoveAgent() bool {
 	//fmt.Printf("[MoveAgent, %s ] direction = %d \n",ag.id, ag.direction)
 	// ================== Tentative de calcul du chemin =======================
-	if len(ag.path) == 0 || ag.isGoingToExitPath() || (ag.env.station[ag.path[0].Row()][ag.path[0].Col()]=="O"&& !alg.EqualCoord(&ag.destination,&alg.Coord{ag.path[0].Row(),ag.path[0].Col()})) {
+	if len(ag.path) == 0 || 
+	 ag.isGoingToExitPath() ||
+	 (ag.env.station[ag.path[0].Row()][ag.path[0].Col()]=="O" && !alg.EqualCoord(&ag.destination,&alg.Coord{ag.path[0].Row(),ag.path[0].Col()})) {
 		start, end := ag.generatePathExtremities()
 		// Recherche d'un chemin si inexistant
 		if len(ag.path) > 0 {
@@ -261,7 +259,7 @@ func (ag *Agent) MoveAgent() bool {
 		}
 	}
 
-	// ================== Etude de faisabilité =======================
+	// ================== Vérification si déplacement possible =======================
 	if ag.IsAgentBlocking() {
 		fmt.Printf("[MoveAgent, %s ] %s est bloqué\n",ag.id, ag.id)
 		if ag.politesse {
