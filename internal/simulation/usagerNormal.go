@@ -131,7 +131,7 @@ func (un *UsagerNormal) SetUpAleaDestination(ag *Agent) {
 	//t := rand.Intn(10) +1
 	//time.Sleep(time.Duration(t) * time.Second) // "cool down"
 	//fmt.Println("[UsagerNormal, setUpDestination] setUpDestination")
-	choix_voie := rand.Intn(2) // choix de la voie de métro aléatoire
+	choix_voie := rand.Intn(len(ag.env.metros)) // choix de la voie de métro aléatoire
 	dest_porte := (un.findBestGate(ag, ag.env.metros[choix_voie].way.gates))
 	ag.destination = dest_porte
 }

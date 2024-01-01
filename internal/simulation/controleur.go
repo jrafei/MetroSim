@@ -114,11 +114,11 @@ func (c *Controleur) Act(ag *Agent) {
 
 func (c *Controleur) SetUpAleaDestination(ag *Agent) {
 	rand.Seed(time.Now().UnixNano())               // le générateur de nombres aléatoires
-	randomRow := rand.Intn(len(ag.env.station[0])) // Génère un entier aléatoire entre 0 et 19
-	randomCol := rand.Intn(len(ag.env.station[1])) // Génère un entier aléatoire entre 0 et 19
+	randomRow := rand.Intn(len(ag.env.station[0])) // Génère un entier aléatoire entre 0 et 49
+	randomCol := rand.Intn(len(ag.env.station[1])) // Génère un entier aléatoire entre 0 et 49
 	for ag.env.station[randomRow][randomCol] != "_" {
-		randomRow = rand.Intn(len(ag.env.station[0])) // Génère un entier aléatoire entre 0 et 19
-		randomCol = rand.Intn(len(ag.env.station[1])) // Génère un entier aléatoire entre 0 et 19
+		randomRow = rand.Intn(len(ag.env.station[0])) // Génère un entier aléatoire entre 0 et 49
+		randomCol = rand.Intn(len(ag.env.station[1])) // Génère un entier aléatoire entre 0 et 49
 	}
 	ag.destination = alg.Coord{randomRow, randomCol}
 }
