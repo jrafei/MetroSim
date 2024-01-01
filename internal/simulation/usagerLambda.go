@@ -45,7 +45,7 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 			ag.decision = Disappear
 			return
 		case EnterMetro:
-			//fmt.Println("[UsagerLambda, Deliberate] EnterMetro")
+			fmt.Println("[UsagerLambda, Deliberate] EnterMetro %s", ag.id)
 			ag.decision = EnterMetro
 			return
 		case Wait:
@@ -137,7 +137,7 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 
 func (ul *UsagerLambda) setUpAleaDestination(ag *Agent) {
 	//fmt.Println("[UsagerLambda, setUpAleaDestination] setUpAleaDestination")
-	choix_voie := rand.Intn(2)                                        // choix de la voie de métro aléatoire
+	choix_voie := rand.Intn(len(ag.env.metros))                                        // choix de la voie de métro aléatoire
 	dest_porte := rand.Intn(len(ag.env.metros[choix_voie].way.gates)) // choix de la porte de métro aléatoire
 	ag.destination = ag.env.metros[choix_voie].way.gates[dest_porte]
 }

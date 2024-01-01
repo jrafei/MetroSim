@@ -140,7 +140,7 @@ func (agt *Agent) IsMovementSafe() (bool, int) {
 							safe = false
 						}
 					}
-					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && (agt.env.station[i][j] != "B" && agt.env.station[i][j] != "_" && agt.env.station[i][j] != "W" && agt.env.station[i][j] != "S") {
+					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && (agt.env.station[i][j] != "B" && agt.env.station[i][j] != "_" && agt.env.station[i][j] != "W" && agt.env.station[i][j] != "S" ) {
 						// Si on n'est pas sur une case atteignable, en dehors de la zone qu'occupe l'agent avant déplacement, on est bloqué
 						//fmt.Println("[IsMovementSafe]case inaccessible :",agt.id)
 						safe = false
@@ -261,7 +261,7 @@ func (ag *Agent) MoveAgent() bool {
 
 	// ================== Vérification si déplacement possible =======================
 	if ag.IsAgentBlocking() {
-		fmt.Printf("[MoveAgent, %s ] %s est bloqué\n",ag.id, ag.id)
+		//fmt.Printf("[MoveAgent, %s ] %s est bloqué\n",ag.id, ag.id)
 		if ag.politesse {
 			start, end := ag.generatePathExtremities()
 			// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit
@@ -395,13 +395,13 @@ func (ag * Agent) getFaceCase() string{
 			return ag.env.station[ag.position[0]-1][ag.position[1]]
 			}
 		case ag.direction == 1: // vers la droite
-			if (ag.position[1] + 1) > 19 {
+			if (ag.position[1] + 1) > 50 {
 				return  "X" // si le controleur est au bord de la station, alors il fait face à un mur
 			} else {
 				return ag.env.station[ag.position[0]][ag.position[1]+1]
 			}
 		case ag.direction == 2: // vers le bas
-			if (ag.position[0] + 1) > 19 {
+			if (ag.position[0] + 1) > 50 {
 				return "X" // si le controleur est au bord de la station, alors il fait face à un mur
 			} else {
 				return ag.env.station[ag.position[0]+1][ag.position[1]]

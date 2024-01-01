@@ -44,7 +44,7 @@ func (metro *Metro) Start() {
 	// affichage des portes au départ
 	metro.closeGates()
 	for {
-		if time.Until(refTime.Add(metro.frequency)) <= time.Duration(metro_speed)*time.Second {
+		if refTime.Add(metro.frequency).Sub(time.Now()) <= time.Duration(metro_speed)*time.Second {
 			metro.printMetro()
 		}
 		if refTime.Add(metro.frequency).Before(time.Now()) {
@@ -91,6 +91,7 @@ func (metro *Metro) pickUpGate(gate *alg.Coord, endTime time.Time, force bool) {
 					select {
 					case <-metro.comChannel:
 						metro.freeSpace = metro.freeSpace - agent.width*agent.height
+						fmt.Println("agent entered metro : ", agent.id, "at gate ", gate)
 					case <-time.After(2 * time.Second):
 						// Si l'agent prend trop de temps à répondre, on le supprime "manuellement"
 						if metro.findAgent(agent.id) != nil {
