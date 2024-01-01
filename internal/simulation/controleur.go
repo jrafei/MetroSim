@@ -45,7 +45,6 @@ func (c *Controleur) Deliberate(ag *Agent) {
 	regexCont := `^Cont\d+$` // \d+ correspond à un ou plusieurs chiffres
 	regexFraudeur := `^Fraudeur\d+$`
 
-	existAgt := existAgent(c.faceCase) // true si l'agent existe dans la case en face , false sinon
 	// Vérifier si la valeur de faceCase ne correspond pas au motif
 	matchedCont, err1 := regexp.MatchString(regexCont, c.faceCase)
 	matchedFraud, err := regexp.MatchString(regexFraudeur, c.faceCase)
@@ -67,9 +66,6 @@ func (c *Controleur) Deliberate(ag *Agent) {
 		}
 		if matchedFraud && !ag.env.controlledAgents[AgentID(c.faceCase)] {
 			ag.decision = Expel // virer l'agent devant lui
-		} else if existAgt && !ag.env.controlledAgents[AgentID(c.faceCase)] { // si l'agent devant le controleur est un agent et qu'il n'a pas encore été controlé
-			//fmt.Println("L'agent ", c.face, " a été détecté par le controleur")
-			ag.decision = Stop // arreter l'agent
 		} else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si le controleur est arrivé à sa destination et qu'il est sur une sortie
 			//fmt.Println(ag.id, "disappear")
 			ag.decision = Disappear
@@ -102,9 +98,9 @@ func (c *Controleur) Act(ag *Agent) {
 	case Disappear:
 		ag.env.RemoveAgent(ag)
 
-	case Expel, Stop: //Expel ou Stop
+	case Expel: //Expel 
 		agt_face_id := AgentID(c.faceCase) //id de l'agent qui se trouve devant le controleur
-		fmt.Print("L'agent ", agt_face_id, " a été expulsé ou arrete\n")
+		fmt.Print("L'agent ", agt_face_id, " a été expulsé \n")
 		ag.env.controlledAgents[agt_face_id] = true                                              // l'agent qui se trouve devant le controleur est controlé
 		ag.env.agentsChan[agt_face_id] <- *req.NewRequest(ag.env.agentsChan[ag.id], ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
 		time.Sleep(500 * time.Millisecond)

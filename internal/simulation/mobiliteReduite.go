@@ -36,9 +36,6 @@ func (mr *MobiliteReduite) Deliberate(ag *Agent) {
 	//fmt.Println("[AgentLambda Deliberate] decision :", ul.req.decision)
 	if mr.req != nil {
 		switch mr.req.Decision() {
-		case Stop:
-			ag.decision = Wait
-			return
 		case Expel: // sinon alors la requete est de type "Viré" cette condition est inutile car MR ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
 			//fmt.Println("[AgentLambda, Deliberate] Expel")
 			ag.decision = Expel

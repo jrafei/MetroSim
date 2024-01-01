@@ -34,9 +34,6 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 
 	if ul.requete != nil {
 		switch ul.requete.Decision() {
-		case Stop:
-			ag.decision = Wait
-			return
 		case Expel: // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
 			ag.decision = Expel
 			return
@@ -80,12 +77,6 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 func (ul *UsagerLambda) Act(ag *Agent) {
 	//fmt.Println("[AgentLambda Act] decision :",ag.decision)
 	switch ag.decision {
-	case Stop:
-		fmt.Printf("[Act, %s] Stop \n", ag.id)
-		return
-		//time.Sleep(5 * time.Millisecond)
-		//ag.request = nil
-		//ul.requete = nil
 	case Move:
 		ag.MoveAgent()
 		return

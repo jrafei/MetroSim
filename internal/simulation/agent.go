@@ -82,7 +82,7 @@ func (ag *Agent) Start() {
 
 	// si c'est un controlleur on lance le timer de durée de vie
 	if ag.id[0] == 'C' {
-		fmt.Println("[Start()] C'est un controleur")
+		//fmt.Println("[Start()] C'est un controleur")
 		ag.behavior.(*Controleur).startTimer()
 	}
 
@@ -349,7 +349,7 @@ func (ag *Agent) listenForRequests() {
 	for {
 		if ag.request == nil {
 			req := <-ag.env.agentsChan[ag.id]
-			fmt.Println("[listenForRequests] Request received by :", ag.id, req.Decision)
+			//fmt.Println("[listenForRequests] Request received by :", ag.id, req.Decision)
 			ag.request = &req
 		}
 
@@ -390,13 +390,13 @@ func (ag *Agent) getFaceCase() string {
 			return ag.env.station[ag.position[0]-1][ag.position[1]]
 		}
 	case ag.direction == 1: // vers la droite
-		if (ag.position[1] + 1) > 50 {
+		if (ag.position[1] + 1) > 49 {
 			return "X" // si le controleur est au bord de la station, alors il fait face à un mur
 		} else {
 			return ag.env.station[ag.position[0]][ag.position[1]+1]
 		}
 	case ag.direction == 2: // vers le bas
-		if (ag.position[0] + 1) > 50 {
+		if (ag.position[0] + 1) > 49 {
 			return "X" // si le controleur est au bord de la station, alors il fait face à un mur
 		} else {
 			return ag.env.station[ag.position[0]+1][ag.position[1]]
