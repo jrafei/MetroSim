@@ -86,7 +86,7 @@ func (metro *Metro) pickUpGate(gate *alg.Coord, endTime time.Time, force bool) {
 			return
 		} else {
 			gate_cell := metro.way.env.station[gate[0]][gate[1]]
-			if existAgent(gate_cell) {
+			if len(gate_cell) > 1 {
 				agent := metro.findAgent(AgentID(gate_cell))
 				if agent != nil && (((!force && agent.width*agent.height <= metro.freeSpace) && alg.EqualCoord(&agent.destination, gate)) || force) {
 
@@ -259,7 +259,7 @@ func (metro *Metro) closeGates() {
 	// Fin d'autorisation d'entrer dans le métro
 	metro.way.gatesClosed = true
 	for _, gate := range metro.way.gates {
-		if existAgent(metro.way.env.station[gate[0]][gate[1]]) {
+		if len(metro.way.env.station[gate[0]][gate[1]]) > 1 {
 			// On autorise les agents déjà sur la case à rentrer dans le métro
 			metro.pickUpGate(&gate, time.Now().Add(time.Duration(1*time.Second)), true)
 		}
