@@ -244,35 +244,40 @@ func (simu *Simulation) ActivateFlow() {
 	rand.Seed(time.Now().UnixNano())
 	probability := rand.Float64()
 	for {
-
+		ag := &Agent{}
+		ag = nil
 		fmt.Println(probability)
 		switch {
 		case probability < 0.1: // 10% de probabilité
-			simu.env.AddAgent(*NewAgent("Normal"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, true, &UsagerNormal{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1))
+			ag = NewAgent("Normal"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, true, &UsagerNormal{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1)
 		case probability < 0.5: // 40% de probabilité (cumulative 50%)
 			if simu.patients {
-				simu.env.AddAgent(*NewAgent("Patient"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, true, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1))
+				ag = NewAgent("Patient"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, true, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1)
 			}
 
 		case probability < 0.6: // 10% de probabilité (cumulative 60%)
 			if simu.controleurs {
-				simu.env.AddAgent(*NewAgent("Cont"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, true, &Controleur{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1))
+				ag = NewAgent("Cont"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, true, &Controleur{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1)
 			}
 
 		case probability < 0.8: // 20% de probabilité (cumulative 80%)
 			if simu.fraudeurs {
-				simu.env.AddAgent(*NewAgent("Fraudeur"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, true, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1))
+				ag = NewAgent("Fraudeur"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, true, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1)
 			}
 
 		case probability < 0.9: // 10% de probabilité (cumulative 90%)
 			if simu.impolis {
-				//simu.env.AddAgent(*NewAgent("Impoli"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, false, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1))
+				// ag = *NewAgent("Impoli"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, false, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1)
 			}
 
 		case probability < 1.0: // 10% de probabilité (cumulative 100%)
 			if simu.mob_reduite {
-				simu.env.AddAgent(*NewAgent("MR"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, true, &MobiliteReduite{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1))
+				ag = NewAgent("MR"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, true, &MobiliteReduite{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1)
 			}
+		}
+		if ag!=nil{
+			ag.behavior.SetUpAleaDestination(ag)
+			simu.env.AddAgent(*ag)
 		}
 
 		// NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, politesse bool, behavior Behavior, departure, destination alg.Coord, width, height int) *Agent {

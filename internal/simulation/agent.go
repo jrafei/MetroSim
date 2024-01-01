@@ -36,8 +36,8 @@ const (
 type AgentID string
 
 type Agent struct {
-	id          AgentID
-	vitesse     time.Duration
+	id      AgentID
+	vitesse time.Duration
 	//force       int
 	politesse   bool
 	position    alg.Coord // Coordonnées de référence, width et height on compte width et height à partir de cette position
@@ -68,7 +68,7 @@ type Behavior interface {
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, politesse bool, behavior Behavior, departure, destination alg.Coord, width, height int) *Agent {
 	isOn := make(map[alg.Coord]string)
 	direct := initDirection(departure, len(env.station[0]))
-	return &Agent{AgentID(id), vitesse,politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil, direct}
+	return &Agent{AgentID(id), vitesse, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil, direct}
 }
 
 func (ag *Agent) ID() AgentID {
@@ -349,7 +349,7 @@ func (ag *Agent) listenForRequests() {
 	for {
 		if ag.request == nil {
 			req := <-ag.env.agentsChan[ag.id]
-			fmt.Println("[listenForRequests] Request received by :", ag.id, req.Decision)
+			fmt.Println("[listenForRequests] Request received by :", ag.id, req.Decision())
 			ag.request = &req
 		}
 
@@ -390,13 +390,13 @@ func (ag *Agent) getFaceCase() string {
 			return ag.env.station[ag.position[0]-1][ag.position[1]]
 		}
 	case ag.direction == 1: // vers la droite
-		if (ag.position[1] + 1) > 50 {
+		if (ag.position[1] + 1) > 49 {
 			return "X" // si le controleur est au bord de la station, alors il fait face à un mur
 		} else {
 			return ag.env.station[ag.position[0]][ag.position[1]+1]
 		}
 	case ag.direction == 2: // vers le bas
-		if (ag.position[0] + 1) > 50 {
+		if (ag.position[0] + 1) > 49 {
 			return "X" // si le controleur est au bord de la station, alors il fait face à un mur
 		} else {
 			return ag.env.station[ag.position[0]+1][ag.position[1]]
