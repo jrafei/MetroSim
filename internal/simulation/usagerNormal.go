@@ -13,17 +13,16 @@ import (
 	alg "metrosim/internal/algorithms"
 	req "metrosim/internal/request"
 	"sort"
-	"sync"
 	"time"
 )
 
 type UsagerNormal struct {
-	req  *req.Request // req recue par l'agent lambda
-	once sync.Once
+	req *req.Request // req recue par l'agent lambda
+	//once sync.Once
 }
 
 func (un *UsagerNormal) Percept(ag *Agent) {
-	un.once.Do(func() { un.SetUpDestination(ag) }) // la fonction setUp est executé à la premiere appel de la fonction Percept()
+	//un.once.Do(func() { un.SetUpDestination(ag) }) // la fonction setUp est executé à la premiere appel de la fonction Percept()
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		//print("req recue par l'agent lambda : ", ag.request.decision, "\n")
@@ -125,10 +124,10 @@ func (un *UsagerNormal) Act(ag *Agent) {
 			un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)
 		}
 	}
-	//un.req = nil //demande traitée
+	ag.request = nil
 }
 
-func (un *UsagerNormal) SetUpDestination(ag *Agent) {
+func (un *UsagerNormal) SetUpAleaDestination(ag *Agent) {
 	//t := rand.Intn(10) +1
 	//time.Sleep(time.Duration(t) * time.Second) // "cool down"
 	//fmt.Println("[UsagerNormal, setUpDestination] setUpDestination")
