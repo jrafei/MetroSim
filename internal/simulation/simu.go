@@ -80,29 +80,6 @@ var carte [50][50]string = [50][50]string{
 	{"X", "X", "X", "X", "S", "S", "X", "X", "X", "X", "X", "X", "E", "E", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "E", "E", "X", "X", "X", "X", "X", "X", "S", "S", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X", "X"},
 }
 
-var playground [50][50]string = [50][50]string{
-	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "X", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-	{"_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"},
-}
-
 type Simulation struct {
 	env          Environment
 	maxStep      int
@@ -210,6 +187,7 @@ func (simu *Simulation) Run() {
 
 }
 func (simu *Simulation) listenNewAgentChan() {
+	// Ecoute du channel de création d'agents
 	for {
 		select {
 		case newAgent := <-simu.newAgentChan:
@@ -235,20 +213,8 @@ func (simu *Simulation) listenNewAgentChan() {
 	}
 }
 
-func (simu *Simulation) Print_v0() {
-	for {
-		for i := 0; i < 20; i++ {
-			fmt.Println(simu.env.station[i])
-		}
-		//fmt.Println("=================================================================================")
-		fmt.Println()
-		fmt.Println()
-		//time.Sleep(time.Second / 4) // 60 fps !
-		time.Sleep(500 * time.Millisecond) // 1 fps !
-		//fmt.Print("\033[H\033[2J") // effacement du terminal
-	}
-}
 func (simu *Simulation) Print() [][]string {
+	// Affichage de la station
 	result := make([][]string, 50)
 	for i := 0; i < 50; i++ {
 		result[i] = make([]string, 50)
@@ -274,14 +240,15 @@ func (simu *Simulation) Log() {
 }
 
 func (simu *Simulation) ActivateFlow() {
-
+	// Activation du flux d'agents
 	for {
-		simu.env.AddAgent(*NewAgent("Agent"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, 0, true, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 2, 1))
+		simu.env.AddAgent(*NewAgent("Agent"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, 0, true, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1))
 		time.Sleep(time.Duration(simu.flow) * time.Millisecond)
 		log.Println(simu.env.ags[len(simu.env.ags)-1].path)
 	}
 }
 
 func (simu *Simulation) IsRunning() bool {
+	// Détermine si la simulation est en cours
 	return simu.active
 }

@@ -85,11 +85,6 @@ func (ag *Agent) Start() {
 	}()
 }
 
-func (ag *Agent) Act(env *Environment) {
-	if ag.decision == Noop {
-		env.Do(Noop, alg.Coord{})
-	}
-}
 
 func (agt *Agent) IsMovementSafe() (bool, int) {
 	// Détermine si le movement est faisable
@@ -101,7 +96,7 @@ func (agt *Agent) IsMovementSafe() (bool, int) {
 	infRow, supRow, infCol, supCol := alg.CalculateBounds(agt.position, agt.width, agt.height, agt.orientation)
 
 	// Si pas encore sur la map, mais agent déja sur la position, on ne peut pas encore apparaître
-	if len(agt.isOn) == 0 && len(agt.env.station[agt.path[0].Row()][agt.path[0].Col()]) > 1 {
+	if len(agt.isOn) == 0 && existAgent(agt.env.station[agt.path[0].Row()][agt.path[0].Col()]) {
 		return false, agt.orientation
 	}
 	// Simulation du déplacement
@@ -161,7 +156,7 @@ func (agt *Agent) IsAgentBlocking() bool {
 		if !(borneInfCol < 0 || borneInfRow < 0 || borneSupRow > 50 || borneSupCol > 50) {
 			for i := borneInfRow; i < borneSupRow; i++ {
 				for j := borneInfCol; j < borneSupCol; j++ {
-					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && len(ag.env.station[i][j]) > 2 {
+					if !(j >= infCol && j < supCol && i >= infRow && i < supRow) && existAgent(ag.env.station[i][j]) {
 						// Si on n'est pas sur une case atteignable, en dehors de la zone qu'occupe l'agent avant déplacement, on est bloqué
 						blocking = true
 					}
@@ -195,7 +190,7 @@ func (ag *Agent) isStuck() bool {
 				count++
 			}
 			// Case inaccessible
-			if i < 0 || j < 0 || i > 19 || j > 19 || ag.env.station[i][j] == "X" || ag.env.station[i][j] == "Q" || ag.env.station[i][j] == "M" || len(ag.env.station[i][j]) > 2 {
+			if i < 0 || j < 0 || i > 19 || j > 19 || ag.env.station[i][j] == "X" || ag.env.station[i][j] == "Q" || ag.env.station[i][j] == "M" || existAgent(ag.env.station[i][j]){
 				not_acc++
 
 			}

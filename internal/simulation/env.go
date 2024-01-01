@@ -55,6 +55,7 @@ func NewEnvironment(ags []Agent, carte [50][50]string, metros []Metro, newAgtCh 
 		}
 	}
 
+	// Initialisation de la vérification du contrôle agents (faux au départ)
 	for _, ag := range ags {
 		mapControlled[ag.id] = false
 	}
@@ -74,6 +75,7 @@ func NewEnvironment(ags []Agent, carte [50][50]string, metros []Metro, newAgtCh 
 }
 
 func (env *Environment) AddAgent(agt Agent) {
+	// Ajout d'un agent à l'environnement
 	env.Lock()
 	defer env.Unlock()
 	env.ags = append(env.ags, agt)
@@ -101,34 +103,18 @@ func (env *Environment) DeleteAgent(agt Agent) {
 
 }
 
-func (env *Environment) Do(a Action, c alg.Coord) (err error) {
-	env.Lock()
-	defer env.Unlock()
-
-	switch a {
-	// case Mark:
-	// 	if c[0] < 0 || c[0] > 1 || c[1] < 0 || c[1] > 1 {
-	// 		return fmt.Errorf("bad coordinates (%f,%f)", c[0], c[1])
-	// 	}
-
-	// 	return nil
-
-	case Noop:
-		return nil
-	}
-
-	return fmt.Errorf("bad action number %d", a)
-}
-
 func (env *Environment) GetAgentChan(agt_id AgentID) chan req.Request {
+	// Récupère le channel de communication d'un agent
 	return env.agentsChan[agt_id]
 }
 
 func existAgent(c string) bool {
+	// Vérifie si c'est un agent
 	return c != "X" && c != "E" && c != "S" && c != "W" && c != "Q" && c != "_" && c != "B"
 }
 
 func calculDirection(depart alg.Coord, arrive alg.Coord) int {
+	// Calcul de la direction d'un agent
 	if depart[0] == arrive[0] {
 		if depart[1] > arrive[1] {
 			return 3 //Gauche
@@ -176,6 +162,7 @@ func (env *Environment) writeAgent(agt *Agent) {
 }
 
 func (env *Environment) FindAgentByID(agtId AgentID) *Agent {
+	// Trouve un agent (pointeur d'objet) par son ID
 	for i := range env.ags {
 		if env.ags[i].id == agtId {
 			return &env.ags[i]
@@ -185,6 +172,7 @@ func (env *Environment) FindAgentByID(agtId AgentID) *Agent {
 }
 
 func (env *Environment) Station() [50][50]string {
+	// Récupère la matrice de l'environnement
 	env.RLock()
 	defer env.RUnlock()
 	return env.station
