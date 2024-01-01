@@ -129,9 +129,9 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 
 	// Création de l'environement
 	// Création du métro
-	//NewMetro(freq time.Duration, stopT time.Duration, capacity, freeS int, way *Way) *Metro {
-	metro1 := *NewMetro(2*time.Second, 5*time.Second, 30, 20, NewWay(1, alg.Coord{9, 0}, alg.Coord{10, 39}, true, []alg.Coord{{8, 5}, {8, 34}}, &simu.env))
-	metro2 := *NewMetro(2*time.Second, 5*time.Second, 30, 20, NewWay(2, alg.Coord{11, 0}, alg.Coord{12, 39}, false, []alg.Coord{{13, 5}, {13, 34}}, &simu.env))
+	//NewMetro(freq time.Duration, stopT time.Duration, capacity, freeS int, way *Way) *Metro { //5*time.Millisecond
+	metro1 := *NewMetro(0, 5*time.Second, 30, 0, NewWay(1, alg.Coord{9, 0}, alg.Coord{10, 39}, true, []alg.Coord{{8, 5}, {8, 34}}, &simu.env))
+	metro2 := *NewMetro(0, 5*time.Second, 30, 0, NewWay(2, alg.Coord{11, 0}, alg.Coord{12, 39}, false, []alg.Coord{{13, 5}, {13, 34}}, &simu.env))
 	simu.env = *NewEnvironment([]Agent{}, carte, []Metro{metro1, metro2}, simu.newAgentChan, agentCount)
 	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
 
@@ -147,14 +147,14 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 		ag := &Agent{}
 
 		if i== 2 { //Type Agent
-			id := fmt.Sprintf("Impoli%d", i)
+			id := fmt.Sprintf("Norm%d", i)
 			//NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int)
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, false, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], alg.Coord{0, 9}, 1, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerNormal{}, simu.env.entries[rand.Intn(len(simu.env.entries))], alg.Coord{0, 9}, 1, 1)
 			//alg.Coord{49, 32} : entrée
-		} else { // Type Controleur
+		} else { 
 			//id := fmt.Sprintf("Controleur%d", i)
-			id := fmt.Sprintf("Agent%d", i)
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, alg.Coord{0, 9}, alg.Coord{8, 5}, 1, 1)
+			id := fmt.Sprintf("Norm%d", i)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerNormal{},simu.env.entries[rand.Intn(len(simu.env.entries))], alg.Coord{8, 5}, 1, 1)
 			//ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &Controleur{}, Coord{18, 12}, Coord{18, 4}, 1, 1)
 		}
 
@@ -261,8 +261,8 @@ func (simu *Simulation) Print() {
 				element := simu.env.station[i][j]
 				
 				if len(element) > 1 {
-					fmt.Print(element[len(element)-1:] + " ") // Afficher le premier caractère si la longueur est supérieure à 1
-					//fmt.Print(element[0:1] + " ")
+					//fmt.Print(element[len(element)-1:] + " ") // Afficher le premier caractère si la longueur est supérieure à 1
+					fmt.Print(element[0:1] + " ")
 					} else {
 						fmt.Print(element + " ")
 					}

@@ -21,7 +21,6 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		//fmt.Printf("Requete recue par l'agent lambda %s : %d \n ",ag.id, ag.request.Decision(), "\n")
 		ul.requete = ag.request
-		//ag.request = nil
 		//fmt.Printf("[Percept, %s ] ag.request = nil \n", ag.id)
 	default:
 		ag.stuck = ag.isStuck()
@@ -39,7 +38,8 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 		case Stop :
 		ag.decision = Wait
 		return
-		case Expel: // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
+		case Expel:
+		fmt.Printf("[%s, Deliberate] Expel \n",ag.id)
 		ag.decision = Expel
 		return
 		case Disappear :
@@ -106,7 +106,7 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 		ul.requete.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
 		return
 	case Expel :
-		//fmt.Println("[AgentLambda, Act] Expel")
+		fmt.Printf("[%s, Act] Expel \n",ag.id)
 		ag.destination = ag.findNearestExit()
 		fmt.Printf("[AgentLambda, Act] destination de l'agent %s = %s \n",ag.id,ag.destination)
 		ag.env.controlledAgents[ag.id] = true

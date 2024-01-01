@@ -263,7 +263,7 @@ func (ag *Agent) MoveAgent() bool {
 
 	// ================== Etude de faisabilité =======================
 	if ag.IsAgentBlocking() {
-		fmt.Printf("[MoveAgent, %s ] %s est bloqué\n",ag.id, ag.id)
+		//fmt.Printf("[MoveAgent, %s ] %s est bloqué\n",ag.id, ag.id)
 		if ag.politesse {
 			start, end := ag.generatePathExtremities()
 			// Si un agent bloque notre déplacement, on attend un temps aléatoire, et reconstruit
@@ -291,7 +291,7 @@ func (ag *Agent) MoveAgent() bool {
 					repFromBlockingAgent := <-ag.env.agentsChan[ag.id]           //Attend la réponse
 
 					if repFromBlockingAgent.Decision() == Done { //BlockingAgent lui a répondu Done, il s'est donc poussé
-						fmt.Printf("okay i will move agent %s \n", ag.id)
+						fmt.Printf("okay i moved agent %s \n", ag.id)
 						accept = true
 					}
 				}
@@ -305,6 +305,7 @@ func (ag *Agent) MoveAgent() bool {
 	}
 
 	// ================== Déplacement si aucun problème ou si blockingAgent se pousse =======================
+
 	safe, or := ag.IsMovementSafe()
 	if safe {
 		if len(ag.isOn) > 0 {
@@ -312,6 +313,7 @@ func (ag *Agent) MoveAgent() bool {
 		}
 		ag.orientation = or
 		ag.direction = calculDirection(ag.position, alg.Coord{ag.path[0].Row(), ag.path[0].Col()})
+		
 		//fmt.Println("[MoveAgent]Direction : ", ag.direction)
 		ag.position[0] = ag.path[0].Row()
 		ag.position[1] = ag.path[0].Col()
@@ -352,7 +354,7 @@ func (ag *Agent) listenForRequests() {
 	for {
 		if ag.request == nil {
 			req := <-ag.env.agentsChan[ag.id]
-			fmt.Println("[listenForRequests] Request received by :", ag.id, req.Decision)
+			fmt.Println("[listenForRequests] Request received by :", ag.id, req.Decision())
 			ag.request = &req
 		}
 		
