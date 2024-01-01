@@ -142,7 +142,7 @@ func (simu *Simulation) Run() {
 
 	var wg sync.WaitGroup
 	for _, agt := range simu.env.ags {
-		
+
 		wg.Add(1)
 		go func(agent Agent) {
 			defer wg.Done()
@@ -235,7 +235,6 @@ func (simu *Simulation) Print() [][]string {
 	time.Sleep(200 * time.Millisecond) // 1 fps !
 	return result
 }
-
 
 func (simu *Simulation) Log() {
 	// Not implemented
