@@ -5,17 +5,16 @@ import (
 	"math/rand"
 	alg "metrosim/internal/algorithms"
 	req "metrosim/internal/request"
-	"sync"
 	"time"
 )
 
 type UsagerLambda struct {
 	requete *req.Request
-	once    sync.Once
+	// once    sync.Once
 }
 
 func (ul *UsagerLambda) Percept(ag *Agent) {
-	ul.once.Do(func() { ul.setUpAleaDestination(ag) }) // la fonction setUp est executé à la premiere appel de la fonction Percept()
+	//ul.once.Do(func() { ul.setUpAleaDestination(ag) }) // la fonction setUp est executé à la premiere appel de la fonction Percept()
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		//fmt.Printf("Requete recue par l'agent lambda %s : %d \n ",ag.id, ag.request.Decision(), "\n")
@@ -135,9 +134,9 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 	ag.request = nil // la requete est traitée
 }
 
-func (ul *UsagerLambda) setUpAleaDestination(ag *Agent) {
+func (ul *UsagerLambda) SetUpAleaDestination(ag *Agent) {
 	//fmt.Println("[UsagerLambda, setUpAleaDestination] setUpAleaDestination")
-	choix_voie := rand.Intn(len(ag.env.metros))                                        // choix de la voie de métro aléatoire
+	choix_voie := rand.Intn(len(ag.env.metros))                       // choix de la voie de métro aléatoire
 	dest_porte := rand.Intn(len(ag.env.metros[choix_voie].way.gates)) // choix de la porte de métro aléatoire
 	ag.destination = ag.env.metros[choix_voie].way.gates[dest_porte]
 }

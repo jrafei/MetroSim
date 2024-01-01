@@ -1,4 +1,3 @@
-
 package simulation
 
 /*
@@ -9,22 +8,22 @@ package simulation
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	alg "metrosim/internal/algorithms"
 	req "metrosim/internal/request"
-	"time"
-	"sync"
-	"math"
 	"sort"
+	"sync"
+	"time"
 )
 
 type UsagerNormal struct {
-	req *req.Request // req recue par l'agent lambda
+	req  *req.Request // req recue par l'agent lambda
 	once sync.Once
 }
 
 func (un *UsagerNormal) Percept(ag *Agent) {
-	un.once.Do(func(){un.setUpDestination(ag)}) // la fonction setUp est executé à la premiere appel de la fonction Percept()
+	un.once.Do(func() { un.SetUpDestination(ag) }) // la fonction setUp est executé à la premiere appel de la fonction Percept()
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		//print("req recue par l'agent lambda : ", ag.request.decision, "\n")
@@ -40,56 +39,55 @@ func (un *UsagerNormal) Percept(ag *Agent) {
 
 func (un *UsagerNormal) Deliberate(ag *Agent) {
 	//fmt.Println("[AgentLambda Deliberate] decision :", un.req.decision)
-	if (un.req != nil ) {
+	if un.req != nil {
 		switch un.req.Decision() {
-			case Stop :
-				ag.decision = Stop
-				return
-			case Expel : // cette condition est inutile car l'usager lambda ne peut pas etre expunsé , elle est nécessaire pour les agents fraudeurs
-				//fmt.Println("[AgentLambda, Deliberate] Expel")
-				ag.decision = Expel
-				return
-			case Disappear :
-				ag.decision = Disappear
-				return
-			case EnterMetro :
-				ag.decision = EnterMetro
-				return
-			case Wait :
-				ag.decision = Wait
-				return
-			case Move :
-				ag.decision = Move
-				return
-			case YouHaveToMove :
-				fmt.Println("[AgentNormal, Deliberate] J'essaye de bouger ", ag.id)
-				movement := ag.MoveAgent()
-				//fmt.Printf("Je suis agent %s Resultat du mouvement de la personne %t \n", ag.id, movement)
-				if movement {
-					fmt.Println("[AgentNormal, Deliberate] J'ai bougé ", ag.id)
-					ag.decision = Done
-				} else {
-					ag.decision = Noop
-				}
-				return
-		}
-	}else if (ag.position != ag.departure && ag.position == ag.destination) && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si l'agent est arrivé à sa destination et qu'il est sur une sortie
-			//fmt.Println(ag.id, "disappear")
+		case Stop:
+			ag.decision = Stop
+			return
+		case Expel: // cette condition est inutile car l'usager lambda ne peut pas etre expunsé , elle est nécessaire pour les agents fraudeurs
+			//fmt.Println("[AgentLambda, Deliberate] Expel")
+			ag.decision = Expel
+			return
+		case Disappear:
 			ag.decision = Disappear
-		} else if ag.stuck{ // si l'agent est bloqué
+			return
+		case EnterMetro:
+			ag.decision = EnterMetro
+			return
+		case Wait:
 			ag.decision = Wait
-				}else {
-				ag.decision = Move
-				//un.setUpDestination(ag)
-				}
+			return
+		case Move:
+			ag.decision = Move
+			return
+		case YouHaveToMove:
+			fmt.Println("[AgentNormal, Deliberate] J'essaye de bouger ", ag.id)
+			movement := ag.MoveAgent()
+			//fmt.Printf("Je suis agent %s Resultat du mouvement de la personne %t \n", ag.id, movement)
+			if movement {
+				fmt.Println("[AgentNormal, Deliberate] J'ai bougé ", ag.id)
+				ag.decision = Done
+			} else {
+				ag.decision = Noop
+			}
+			return
+		}
+	} else if (ag.position != ag.departure && ag.position == ag.destination) && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si l'agent est arrivé à sa destination et qu'il est sur une sortie
+		//fmt.Println(ag.id, "disappear")
+		ag.decision = Disappear
+	} else if ag.stuck { // si l'agent est bloqué
+		ag.decision = Wait
+	} else {
+		ag.decision = Move
+		//un.setUpDestination(ag)
+	}
 }
-
 
 func (un *UsagerNormal) Act(ag *Agent) {
 	//fmt.Println("[AgentLambda Act] decision :",ag.decision)
 	switch ag.decision {
-	case Stop : 
-		time.Sleep(time.Duration(5) * time.Second) 
+	case Stop:
+		time.Sleep(time.Duration(5) * time.Second)
 	case Move:
 		ag.MoveAgent()
 	case Wait: // temps d'attente aléatoire
@@ -98,31 +96,31 @@ func (un *UsagerNormal) Act(ag *Agent) {
 	case Disappear:
 		//fmt.Printf("[UsagerLambda, Act] agent %s est disparu \n",ag.id)
 		ag.env.RemoveAgent(ag)
-	case EnterMetro :
-		fmt.Printf("[UsagerNormal, Act] agent %s entre dans le Metro \n",ag.id)
+	case EnterMetro:
+		fmt.Printf("[UsagerNormal, Act] agent %s entre dans le Metro \n", ag.id)
 		ag.env.RemoveAgent(ag)
 		//fmt.Printf("Demandeur d'entrer le metro : %s \n",un.req.Demandeur())
 		un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
-	case Expel :
+	case Expel:
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.findNearestExit()
-		fmt.Printf("[UsagerNormal, Act] destination de l'agent %s = %s \n",ag.id,ag.destination)
+		fmt.Printf("[UsagerNormal, Act] destination de l'agent %s = %s \n", ag.id, ag.destination)
 		ag.env.controlledAgents[ag.id] = true
 		ag.path = make([]alg.Node, 0)
 		ag.MoveAgent()
 
-	case Noop :
+	case Noop:
 		//Cas ou un usager impoli demande a un usager de bouger et il refuse
 		un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)
 		// nothing to do
-	case Done : 
+	case Done:
 		//Cas ou un usager impoli demande a un usager de bouger et il le fait
 		un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Done)
-	case TryToMove :
+	case TryToMove:
 		movement := ag.MoveAgent()
 		fmt.Printf("Je suis %s est-ce que j'ai bougé? %t \n", ag.id, movement)
 		if movement {
-			un.req.Demandeur()<- *req.NewRequest(ag.env.agentsChan[ag.id], Done)
+			un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Done)
 		} else {
 			un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)
 		}
@@ -130,8 +128,8 @@ func (un *UsagerNormal) Act(ag *Agent) {
 	//un.req = nil //demande traitée
 }
 
-func (un *UsagerNormal)setUpDestination(ag *Agent){
-	//t := rand.Intn(10) +1 
+func (un *UsagerNormal) SetUpDestination(ag *Agent) {
+	//t := rand.Intn(10) +1
 	//time.Sleep(time.Duration(t) * time.Second) // "cool down"
 	//fmt.Println("[UsagerNormal, setUpDestination] setUpDestination")
 	choix_voie := rand.Intn(2) // choix de la voie de métro aléatoire
@@ -139,13 +137,11 @@ func (un *UsagerNormal)setUpDestination(ag *Agent){
 	ag.destination = dest_porte
 }
 
-
-
 func (un *UsagerNormal) findBestGate(ag *Agent, gates []alg.Coord) alg.Coord {
-	
+
 	uniquegates := make([]alg.Coord, 0)
 	for i, gate := range gates {
-		if i+1 < len(gates) && twocloseGate(gate,gates[i+1]) {
+		if i+1 < len(gates) && twocloseGate(gate, gates[i+1]) {
 			// Si la porte est trop proche d'une autre, on l'ignore, on considère que c'est la même
 			continue
 		}
@@ -165,8 +161,7 @@ func (un *UsagerNormal) findBestGate(ag *Agent, gates []alg.Coord) alg.Coord {
 	//fmt.Println("[findBestGate] gates non normalisé : ",gatesDistances)
 	normalizedGates, _, _ := normalizeGates(gatesDistances)
 	//fmt.Println("[findBestGate] gates normalisé : ",normalizedGates)
-	
-	
+
 	bestGates := gates_with_lowest_score(normalizedGates)
 	bestGate := bestGates[0]
 	if len(bestGates) > 1 {
@@ -184,17 +179,17 @@ func (un *UsagerNormal) findBestGate(ag *Agent, gates []alg.Coord) alg.Coord {
 	var bestGatePos alg.Coord
 	if len(nearGates) > 1 {
 		bestGatePos = nearGates[rand.Intn(len(nearGates))]
-	}else {
+	} else {
 		bestGatePos = nearGates[0]
 	}
 	return bestGatePos
 }
 
-func twocloseGate(gate1 alg.Coord ,gate2 alg.Coord) bool{
-	if (gate1[0] == gate2[0]) && (gate1[1] == gate2[1] + 1 || gate1[1] == gate2[1] - 1) {
+func twocloseGate(gate1 alg.Coord, gate2 alg.Coord) bool {
+	if (gate1[0] == gate2[0]) && (gate1[1] == gate2[1]+1 || gate1[1] == gate2[1]-1) {
 		return true
 	}
-	if (gate1[1] == gate2[1]) && (gate1[0] == gate2[0] + 1 || gate1[0] == gate2[0] - 1) {
+	if (gate1[1] == gate2[1]) && (gate1[0] == gate2[0]+1 || gate1[0] == gate2[0]-1) {
 		return true
 	}
 	return false
@@ -202,28 +197,28 @@ func twocloseGate(gate1 alg.Coord ,gate2 alg.Coord) bool{
 
 // Normalise les valeurs d'un ensemble de portes
 func normalizeGates(gates []Gate) ([]Gate, float64, float64) {
-    var minAgents, maxAgents float64 = math.MaxFloat64, 0
-    var minDistance, maxDistance float64 = math.MaxFloat64, 0
+	var minAgents, maxAgents float64 = math.MaxFloat64, 0
+	var minDistance, maxDistance float64 = math.MaxFloat64, 0
 
-    // Trouver les valeurs max et min pour la normalisation
-    for _, gate := range gates {
-        if gate.NbAgents > maxAgents {
-            maxAgents = gate.NbAgents
-        }
-        if gate.NbAgents < minAgents {
-            minAgents = gate.NbAgents
-        }
-        if gate.Distance > maxDistance {
-            maxDistance = gate.Distance
-        }
-        if gate.Distance < minDistance {
-            minDistance = gate.Distance
-        }
-    }
+	// Trouver les valeurs max et min pour la normalisation
+	for _, gate := range gates {
+		if gate.NbAgents > maxAgents {
+			maxAgents = gate.NbAgents
+		}
+		if gate.NbAgents < minAgents {
+			minAgents = gate.NbAgents
+		}
+		if gate.Distance > maxDistance {
+			maxDistance = gate.Distance
+		}
+		if gate.Distance < minDistance {
+			minDistance = gate.Distance
+		}
+	}
 
-    // Normaliser les valeurs
-	d_agt := (maxAgents - minAgents) 
-	if  d_agt == 0 {
+	// Normaliser les valeurs
+	d_agt := (maxAgents - minAgents)
+	if d_agt == 0 {
 		d_agt = 1.0
 	}
 	d_dist := (maxDistance - minDistance)
@@ -231,16 +226,15 @@ func normalizeGates(gates []Gate) ([]Gate, float64, float64) {
 		d_dist = 1.0
 	}
 	//fmt.Println("[normalizeGates] d_dist : ",d_dist)
-    for i := range gates {
-        gates[i].NbAgents = (gates[i].NbAgents - minAgents) / d_agt
+	for i := range gates {
+		gates[i].NbAgents = (gates[i].NbAgents - minAgents) / d_agt
 		//fmt.Println("[normalizeGates] gates[i].Distance : ",gates[i].Distance)
 		//fmt.Println("[normalizeGates] minDistance : ",minDistance)
 		//fmt.Println("[normalizeGates] d_dist : ",d_dist)
-        gates[i].Distance = (gates[i].Distance - minDistance) / d_dist
+		gates[i].Distance = (gates[i].Distance - minDistance) / d_dist
 	}
-    return gates, float64(maxAgents - minAgents), maxDistance - minDistance
+	return gates, float64(maxAgents - minAgents), maxDistance - minDistance
 }
-
 
 // Calcul du score d'un Gate
 func (g Gate) Score() float64 {

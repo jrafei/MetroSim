@@ -243,7 +243,9 @@ func (simu *Simulation) Log() {
 func (simu *Simulation) ActivateFlow() {
 	// Activation du flux d'agents
 	for {
-		simu.env.AddAgent(*NewAgent("Agent"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, 0, true, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1))
+		ag := *NewAgent("Agent"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, 0, true, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1)
+		ag.behavior.SetUpAleaDestination(&ag)
+		simu.env.AddAgent(ag)
 		time.Sleep(time.Duration(simu.flow) * time.Millisecond)
 		log.Println(simu.env.ags[len(simu.env.ags)-1].path)
 	}
