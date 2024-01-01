@@ -19,8 +19,10 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 	ul.once.Do(func(){ul.setUpAleaDestination(ag)}) // la fonction setUp est executé à la premiere appel de la fonction Percept()
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
-		//print("Requete recue par l'agent lambda : ", ag.request.decision, "\n")
+		//fmt.Printf("Requete recue par l'agent lambda %s : %d \n ",ag.id, ag.request.Decision(), "\n")
 		ul.requete = ag.request
+		//ag.request = nil
+		//fmt.Printf("[Percept, %s ] ag.request = nil \n", ag.id)
 	default:
 		ag.stuck = ag.isStuck()
 		if ag.stuck {
@@ -35,7 +37,7 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 	if ul.requete != nil {
 		switch ul.requete.Decision() {
 		case Stop :
-		ag.decision = Stop
+		ag.decision = Wait
 		return
 		case Expel: // cette condition est inutile car l'usager lambda ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
 		ag.decision = Expel
@@ -81,20 +83,28 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 	//fmt.Println("[AgentLambda Act] decision :",ag.decision)
 	switch ag.decision {
 	case Stop : 
-		time.Sleep(time.Duration(5) * time.Second) 
+		fmt.Printf("[Act, %s] Stop \n", ag.id)
+		return
+		//time.Sleep(5 * time.Millisecond)
+		//ag.request = nil
+		//ul.requete = nil
 	case Move:
 		ag.MoveAgent()
+		return
 	case Wait: // temps d'attente aléatoire
 		n := rand.Intn(2)
 		time.Sleep(time.Duration(n) * time.Second)
+		return
 	case Disappear:
 		//fmt.Printf("[UsagerLambda, Act] agent %s est disparu \n",ag.id)
 		ag.env.RemoveAgent(ag)
+		return
 	case EnterMetro :
 		//fmt.Printf("[UsagerLambda, Act] agent %s entre dans le Metro \n",ag.id)
 		ag.env.RemoveAgent(ag)
 		//fmt.Printf("Demandeur d'entrer le metro : %s \n",ul.requete.Demandeur())
 		ul.requete.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
+		return
 	case Expel :
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.findNearestExit()
@@ -102,14 +112,17 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 		ag.env.controlledAgents[ag.id] = true
 		ag.path = make([]alg.Node, 0)
 		ag.MoveAgent()
+		return
 
 	case Noop :
 		//Cas ou un usager impoli demande a un usager de bouger et il refuse
 		ul.requete.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)
+		return
 		// nothing to do
 	case Done : 
 		//Cas ou un usager impoli demande a un usager de bouger et il le fait
 		ul.requete.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Done)
+		return
 	case TryToMove :
 		movement := ag.MoveAgent()
 		fmt.Printf("Je suis %s est-ce que j'ai bougé? %t \n", ag.id, movement)
@@ -118,8 +131,9 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 		} else {
 			ul.requete.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)
 		}
+		return
 	}
-	//ag.request = nil // la requete est traitée
+	ag.request = nil // la requete est traitée
 }
 
 

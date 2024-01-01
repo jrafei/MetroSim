@@ -200,8 +200,8 @@ func (env *Environment) getNbAgentsAround(pos alg.Coord) int {
 
 	nb := 0
 	if upmetro {
-		for i := 0; i < 4; i++ {
-			for j := 0; j < 4; j++ {
+		for i := 0; i < 5; i++ {
+			for j := 0; j < 5; j++ {
 				a := pos[0]-i
 				b := pos[1]+j
 				if a >= 0 && b >= 0 && a < len(env.station[0]) && b < len(env.station[1]) {
@@ -252,4 +252,19 @@ func (env *Environment) getWay(pos alg.Coord) *Way {
 		}
 	}
 	return nil
+}
+
+func (env *Environment) getNearGateFromGate(gate Gate) []alg.Coord {
+	/*
+	 * Renvoie les portes proches de la porte passée en paramètre
+	*/
+	gates := env.gates
+	nearGates := make([]alg.Coord, 0)
+	for _, g := range gates {
+		if alg.Abs(g[0]-gate.Position[0]) <= 1 && alg.Abs(g[1]-gate.Position[1]) <= 1 {
+			nearGates = append(nearGates, g)
+		}
+	}
+	nearGates = append(nearGates, gate.Position)
+	return nearGates
 }

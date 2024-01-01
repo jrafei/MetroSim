@@ -275,29 +275,32 @@ func (ag *Agent) MoveAgent() bool {
 		} else {
 			//Si individu impoli, demande à l'agent devant de bouger
 			//On récupère le id de la personne devant
-			blockingAgentID := AgentID(ag.NextCell())
-			//blockingAgent := ag.env.FindAgentByID(blockingAgentID)
-			var reqToBlockingAgent *req.Request
-			//var reqToImpoliteAgent *Request
-			i := 0
-			accept := false
-			for !accept && i < 3 {
-				//Demande à l'agent qui bloque de se pousser (réitère trois fois s'il lui dit pas possible)
-				i += 1
-				fmt.Printf("[MoveAgent, %s] You have to move %s for the %d time \n",ag.id, blockingAgentID, i)
-				reqToBlockingAgent = req.NewRequest(ag.env.agentsChan[ag.id], YouHaveToMove) //Création "Hello, je suis ag.id, move."
-				ag.env.agentsChan[blockingAgentID] <- *reqToBlockingAgent                //Envoi requête
-				repFromBlockingAgent := <-ag.env.agentsChan[ag.id]           //Attend la réponse
+			if (existAgent(ag.NextCell())) {
+				blockingAgentID := AgentID(ag.NextCell())
+				//blockingAgent := ag.env.FindAgentByID(blockingAgentID)
+				var reqToBlockingAgent *req.Request
+				//var reqToImpoliteAgent *Request
+				i := 0
+				accept := false
+				for !accept && i < 3 {
+					//Demande à l'agent qui bloque de se pousser (réitère trois fois s'il lui dit pas possible)
+					i += 1
+					fmt.Printf("[MoveAgent, %s] You have to move %s for the %d time \n",ag.id, blockingAgentID, i)
+					reqToBlockingAgent = req.NewRequest(ag.env.agentsChan[ag.id], YouHaveToMove) //Création "Hello, je suis ag.id, move."
+					ag.env.agentsChan[blockingAgentID] <- *reqToBlockingAgent                //Envoi requête
+					repFromBlockingAgent := <-ag.env.agentsChan[ag.id]           //Attend la réponse
 
-				if repFromBlockingAgent.Decision() == Done { //BlockingAgent lui a répondu Done, il s'est donc poussé
-					fmt.Printf("okay i will move agent %s \n", ag.id)
-					accept = true
+					if repFromBlockingAgent.Decision() == Done { //BlockingAgent lui a répondu Done, il s'est donc poussé
+						fmt.Printf("okay i will move agent %s \n", ag.id)
+						accept = true
+					}
+				}
+				if !accept {
+					fmt.Printf("i can't move agent %s \n", ag.id)
+					return false //il ne peut pas bouger, il s'arrête
 				}
 			}
-			if !accept {
-				fmt.Printf("i can't move agent %s \n", ag.id)
-				return false //il ne peut pas bouger, il s'arrête
-			}
+			
 		}
 	}
 
@@ -352,7 +355,7 @@ func (ag *Agent) listenForRequests() {
 			fmt.Println("[listenForRequests] Request received by :", ag.id, req.Decision)
 			ag.request = &req
 		}
-		//fmt.Println("[listenForRequests]Agent ID :", ag.id)
+		
 		if ag.request.Decision() == Disappear || ag.request.Decision() == EnterMetro {
 			return
 		}

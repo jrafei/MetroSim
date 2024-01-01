@@ -21,11 +21,12 @@ type MobiliteReduite struct {
 
 
 func (mr *MobiliteReduite) Percept(ag *Agent) {
-	mr.once.Do(func(){mr.setUpDestination(ag)}) // la fonction setUp est executé à la premiere appel à la fonction Percept()
+	mr.once.Do(func(){mr.setUpDestination(ag)}) // on initialise la destination la plus proche, la fonction setUp est executé à la premiere appel à la fonction Percept()
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
-		fmt.Printf("Requete recue par l'agent mR : %d \n", ag.request.Decision())
+		//fmt.Printf("Requete recue par l'agent mR : %d \n", ag.request.Decision())
 		mr.req = ag.request
+		ag.request = nil
 	default:
 		ag.stuck = ag.isStuck()
 		if ag.stuck {
@@ -37,38 +38,47 @@ func (mr *MobiliteReduite) Percept(ag *Agent) {
 func (mr *MobiliteReduite) Deliberate(ag *Agent) {
 	//fmt.Println("[AgentLambda Deliberate] decision :", ul.req.decision)
 	if (mr.req != nil ) {
-	switch mr.req.Decision() {
-	case  Stop :
-			ag.decision = Wait
-			mr.req = nil //demande traitée
+		switch mr.req.Decision() {
+		case  Stop :
+				ag.decision = Wait
+				return
+		case  Expel : // sinon alors la requete est de type "Viré" cette condition est inutile car MR ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
+				//fmt.Println("[AgentLambda, Deliberate] Expel")
+				ag.decision = Expel
+				return
+		case Disappear :
+				fmt.Println("[Deliberate]",ag.id, "Disappear cond 1 (requete)")
+				ag.decision = Disappear
+				return
+		case Wait :
+				ag.decision = Wait
+				return
+		case EnterMetro :
+				fmt.Println("[MobiliteReduite, Deliberate] EnterMetro")
+				ag.decision = EnterMetro
+				return
+		case YouHaveToMove :
+			//fmt.Println("J'essaye de bouger")
+			movement := ag.MoveAgent()  
+			//fmt.Printf("Je suis agent %s Resultat du mouvement de la personne %t \n", ag.id, movement)
+			if movement {
+				ag.decision = Done
+			} else {
+				ag.decision = Noop
+			}
 			return
-	case  Expel : // sinon alors la requete est de type "Viré" cette condition est inutile car MR ne peut pas etre expulsé , elle est nécessaire pour les agents fraudeurs
-			//fmt.Println("[AgentLambda, Deliberate] Expel")
-			ag.decision = Expel
-			mr.req = nil //demande traitée
+		default :
+			ag.decision = Move
 			return
-	case Disappear :
-			fmt.Println("[Deliberate]",ag.id, "Disappear cond 1 (requete)")
-			ag.decision = Disappear
-			mr.req = nil
-			return
-	case Wait :
-			ag.decision = Wait
-			mr.req = nil
-			return
-	case EnterMetro :
-			fmt.Println("[MobiliteReduite, Deliberate] EnterMetro")
-			ag.decision = EnterMetro
-			mr.req = nil
-			return
-	}	
+		}
 	}else if (ag.position != ag.departure && ag.position == ag.destination) && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si l'agent est arrivé à sa destination et qu'il est sur une sortie
 			//fmt.Println("[Deliberate]",ag.id, "Disappear cond 2")
 			ag.decision = Disappear
-		}else if (ag.position != ag.departure && ag.position == ag.destination){
+		/*}else if (ag.position != ag.departure && ag.position == ag.destination){
 			// si l'agent est arrivé à la porte mais n'a pas reçu une requete du metro pour entrer, il attend
-			ag.decision = Wait
-		} else if ag.stuck{ // si l'agent est bloqué
+			ag.decision = Wait [A REVOIR]
+		}*/ 
+		}else if ag.stuck{ // si l'agent est bloqué
 			ag.decision = Wait
 			}else {
 			ag.decision = Move

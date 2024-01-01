@@ -42,12 +42,12 @@ func (c *Controleur) Percept(ag *Agent) {
 func (c *Controleur) Deliberate(ag *Agent) {
 	// Verifier si la case devant lui contient un agent ou un fraudeur
 	// Créer l'expression régulière
-	//regexAgent := `^Agent\d+$` // \d+ correspond à un ou plusieurs chiffres
+	regexCont := `^Cont\d+$` // \d+ correspond à un ou plusieurs chiffres
 	regexFraudeur := `^Fraudeur\d+$`
 
 	existAgt := existAgent(c.faceCase) // true si l'agent existe dans la case en face , false sinon 
 	// Vérifier si la valeur de faceCase ne correspond pas au motif
-	//matchedAgt, err1 := regexp.MatchString(regexAgent, c.faceCase)
+	matchedCont, err1 := regexp.MatchString(regexCont, c.faceCase)
 	matchedFraud, err := regexp.MatchString(regexFraudeur, c.faceCase)
 	//fmt.Println("faceCase : ", c.faceCase)
 	//fmt.Println("matchedAgt : ", matchedAgt)
@@ -55,7 +55,16 @@ func (c *Controleur) Deliberate(ag *Agent) {
 	if err!= nil {
 		fmt.Println("Erreur lors de l'analyse de la regex :",err)
 		return
-	} else {
+	} 
+	if err1!= nil {
+		fmt.Println("Erreur lors de l'analyse de la regex :",err1)
+		return
+	}else {
+		if matchedCont{
+			// si l'agent devant le controleur est un autre controleur alors il faut attendre qu'il se déplace
+			ag.decision = Move 
+			return
+		}
 		if matchedFraud && !ag.env.controlledAgents[AgentID(c.faceCase)] {
 			ag.decision = Expel // virer l'agent devant lui
 		}else if existAgt && !ag.env.controlledAgents[AgentID(c.faceCase)] { // si l'agent devant le controleur est un agent et qu'il n'a pas encore été controlé
@@ -98,7 +107,7 @@ func (c *Controleur) Act(ag *Agent) {
 		fmt.Print("L'agent ", agt_face_id, " a été expulsé ou arrete\n")
 		ag.env.controlledAgents[agt_face_id] = true // l'agent qui se trouve devant le controleur est controlé
 		ag.env.agentsChan[agt_face_id] <- *req.NewRequest(ag.env.agentsChan[ag.id], ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
-		time.Sleep(time.Duration(5) * time.Second)
+		time.Sleep(500 * time.Millisecond)
 	}
 }
 
@@ -114,7 +123,7 @@ func (c *Controleur) randomDestination(ag *Agent) alg.Coord {
 }
 
 func (c *Controleur) startTimer() {
-	rand.Seed(time.Now().UnixNano()) // le générateur de nombres aléatoires
+	//rand.Seed(time.Now().UnixNano()) // le générateur de nombres aléatoires
 	//randomSeconds := rand.Intn(9) + 2 // Génère un entier aléatoire entre 2 et 10
 	randomSeconds := 500
 	lifetime := time.Duration(randomSeconds) * time.Second

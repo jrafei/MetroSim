@@ -146,6 +146,7 @@ func (un *UsagerNormal) findBestGate(ag *Agent, gates []alg.Coord) alg.Coord {
 	uniquegates := make([]alg.Coord, 0)
 	for i, gate := range gates {
 		if i+1 < len(gates) && twocloseGate(gate,gates[i+1]) {
+			// Si la porte est trop proche d'une autre, on l'ignore, on considère que c'est la même
 			continue
 		}
 		uniquegates = append(uniquegates, gate)
@@ -177,7 +178,16 @@ func (un *UsagerNormal) findBestGate(ag *Agent, gates []alg.Coord) alg.Coord {
 		}
 	}
 	//fmt.Println("[findBestGate] bestGate : ",bestGate)
-	return bestGate.Position
+
+	//choix de la porte aléatoire parmi les portes adjacentes
+	nearGates := ag.env.getNearGateFromGate(bestGate)
+	var bestGatePos alg.Coord
+	if len(nearGates) > 1 {
+		bestGatePos = nearGates[rand.Intn(len(nearGates))]
+	}else {
+		bestGatePos = nearGates[0]
+	}
+	return bestGatePos
 }
 
 func twocloseGate(gate1 alg.Coord ,gate2 alg.Coord) bool{
