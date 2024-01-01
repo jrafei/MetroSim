@@ -37,7 +37,7 @@ type AgentID string
 type Agent struct {
 	id          AgentID
 	vitesse     time.Duration
-	force       int
+	//force       int
 	politesse   bool
 	position    alg.Coord // Coordonnées de référence, width et height on compte width et height à partir de cette position
 	departure   alg.Coord
@@ -64,10 +64,10 @@ type Behavior interface {
 }
 
 
-func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination alg.Coord, width, height int) *Agent {
+func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, politesse bool, behavior Behavior, departure, destination alg.Coord, width, height int) *Agent {
 	isOn := make(map[alg.Coord]string)
 	direct := initDirection(departure, len(env.station[0]))
-	return &Agent{AgentID(id), vitesse, force, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil, direct}
+	return &Agent{AgentID(id), vitesse,politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil, direct}
 }
 
 func (ag *Agent) ID() AgentID {

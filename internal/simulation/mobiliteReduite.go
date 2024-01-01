@@ -26,7 +26,6 @@ func (mr *MobiliteReduite) Percept(ag *Agent) {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
 		//fmt.Printf("Requete recue par l'agent mR : %d \n", ag.request.Decision())
 		mr.req = ag.request
-		ag.request = nil
 	default:
 		ag.stuck = ag.isStuck()
 		if ag.stuck {
@@ -110,6 +109,7 @@ func (mr *MobiliteReduite) Act(ag *Agent) {
 		ag.env.RemoveAgent(ag)
 		mr.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
 	}
+	ag.request = nil
 }
 
 /*

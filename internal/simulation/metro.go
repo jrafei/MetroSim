@@ -131,7 +131,7 @@ func (metro *Metro) dropUsers() {
 		id := fmt.Sprintf("Agent%d", metro.way.env.agentCount)
 		//path := metro.way.pathsToExit[gate_nb]
 		// Attribution d'une sortie aléatoire en destination
-		ag := NewAgent(id, metro.way.env, make(chan int), 200, 0, true, &UsagerLambda{}, metro.way.gates[gate_nb], metro.way.env.exits[rand.Intn(len(metro.way.env.exits))], width, height)
+		ag := NewAgent(id, metro.way.env, make(chan int), 200, true, &UsagerLambda{}, metro.way.gates[gate_nb], metro.way.env.exits[rand.Intn(len(metro.way.env.exits))], width, height)
 		//ag.path = path
 		metro.way.env.AddAgent(*ag)
 		ag.env.writeAgent(ag)

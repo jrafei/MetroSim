@@ -109,6 +109,7 @@ func (c *Controleur) Act(ag *Agent) {
 		ag.env.agentsChan[agt_face_id] <- *req.NewRequest(ag.env.agentsChan[ag.id], ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
 		time.Sleep(500 * time.Millisecond)
 	}
+	ag.request = nil
 }
 
 func (c *Controleur) randomDestination(ag *Agent) alg.Coord {

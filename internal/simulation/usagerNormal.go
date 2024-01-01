@@ -127,7 +127,7 @@ func (un *UsagerNormal) Act(ag *Agent) {
 			un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)
 		}
 	}
-	//un.req = nil //demande traitée
+	ag.request = nil
 }
 
 func (un *UsagerNormal)setUpDestination(ag *Agent){
