@@ -373,11 +373,14 @@ func (agt *Agent) MyNextCellIsSafe() (bool, [4]int) {
 	// Simulation du déplacement
 
 	ag := *agt
-	if ag.orientation == 1 {
-		//Deplacement a droite
+	switch ag.orientation {
+	case 0:
+		ag.position = alg.Coord{infRow - 1, ag.position[1]}
+	case 1:
 		ag.position = alg.Coord{ag.position[0], supCol + 1}
-	} else if ag.orientation == 3 {
-		//Deplacement a gauche
+	case 2:
+		ag.position = alg.Coord{supRow + 1, ag.position[1]}
+	case 3:
 		ag.position = alg.Coord{ag.position[0], infCol - 1}
 	}
 
@@ -407,61 +410,58 @@ func (agt *Agent) MyNextCellIsSafe() (bool, [4]int) {
 
 func (ag *Agent) ShiftAgent() bool {
 	fmt.Printf("ShiftAgent")
-	storeOrientation := ag.orientation
+	storeOrientation := ag.orientation //enregistrer l'orientation initiale de l'agent
 
-	// Verifie que case de droite safe
-	ag.orientation = 1
-	safe, MyNextCellIsSafe := ag.MyNextCellIsSafe()
-	if !safe {
-		// Verifie que case de gauche safe
-		ag.orientation = 3
-		safe, MyNextCellIsSafe = ag.MyNextCellIsSafe()
-		if !safe {
-			//si on peut aller ni a gauche, ni a droite, on se remet dans notre config initiale
-			ag.orientation = storeOrientation
-			fmt.Printf("Je me bouge pas")
-			return false
-		}
-	}
+	for i := 0; i < 4; i++ {
+		ag.orientation = (storeOrientation + i) % 4
+		safe, MyNextCellIsSafe := ag.MyNextCellIsSafe()
+		if safe {
+			// =========== Deplacement possible safe=true ===========
 
-	// =========== Deplacement possible safe=true ===========
-	borneInfRow := MyNextCellIsSafe[0]
-	borneSupRow := MyNextCellIsSafe[1]
-	borneInfCol := MyNextCellIsSafe[2]
-	borneSupCol := MyNextCellIsSafe[3]
+			borneInfRow := MyNextCellIsSafe[0]
+			borneSupRow := MyNextCellIsSafe[1]
+			borneInfCol := MyNextCellIsSafe[2]
+			borneSupCol := MyNextCellIsSafe[3]
 
-	ag.env.Lock()
-	if len(ag.isOn) > 0 {
-		// Suppression de l'agent
-		for i := borneInfRow; i < borneSupRow; i++ {
-			for j := borneInfCol; j < borneSupCol; j++ {
-				ag.env.station[i][j] = ag.isOn[alg.Coord{i, j}]
-				alg.RemoveCoord(alg.Coord{i, j}, ag.isOn)
+			ag.env.Lock()
+			if len(ag.isOn) > 0 {
+				// Suppression de l'agent
+				for i := borneInfRow; i < borneSupRow; i++ {
+					for j := borneInfCol; j < borneSupCol; j++ {
+						ag.env.station[i][j] = ag.isOn[alg.Coord{i, j}]
+						alg.RemoveCoord(alg.Coord{i, j}, ag.isOn)
+					}
+				}
 			}
+
+			ag.direction = ag.orientation //Se deplace soit vers la gauche soit vers la droite
+
+			// Enregistrement des valeurs précédentes de la matrice
+			for i := borneInfRow; i < borneSupRow; i++ {
+				for j := borneInfCol; j < borneSupCol; j++ {
+					ag.isOn[alg.Coord{i, j}] = ag.env.station[i][j]
+				}
+			}
+
+			//Ecriture agent dans la matrice (déplacement)
+			for i := borneInfRow; i < borneSupRow; i++ {
+				for j := borneInfCol; j < borneSupCol; j++ {
+					ag.env.station[i][j] = string(ag.id)
+				}
+			}
+			ag.env.Unlock()
+
+			// Prise en compte de la vitesse de déplacement
+			time.Sleep(ag.vitesse * time.Millisecond)
+			fmt.Printf("J'ai bougé")
+			return true
 		}
 	}
 
-	ag.direction = ag.orientation //Se deplace soit vers la gauche soit vers la droite
-
-	// Enregistrement des valeurs précédentes de la matrice
-	for i := borneInfRow; i < borneSupRow; i++ {
-		for j := borneInfCol; j < borneSupCol; j++ {
-			ag.isOn[alg.Coord{i, j}] = ag.env.station[i][j]
-		}
-	}
-
-	//Ecriture agent dans la matrice (déplacement)
-	for i := borneInfRow; i < borneSupRow; i++ {
-		for j := borneInfCol; j < borneSupCol; j++ {
-			ag.env.station[i][j] = string(ag.id)
-		}
-	}
-	ag.env.Unlock()
-
-	// Prise en compte de la vitesse de déplacement
-	time.Sleep(ag.vitesse * time.Millisecond)
-	fmt.Printf("J'ai bougé")
-	return true
+	//si on peut aller nulle part, on se remet dans notre config initiale
+	ag.orientation = storeOrientation
+	fmt.Printf("Je me bouge pas")
+	return false
 }
 
 func (ag *Agent) isGoingToExitPath() bool {
