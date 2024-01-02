@@ -151,8 +151,11 @@ func (env *Environment) RemoveAgent(agt *Agent) {
 
 	for i := borneInfRow; i < borneSupRow; i++ {
 		for j := borneInfCol; j < borneSupCol; j++ {
-			env.station[i][j] = agt.isOn[alg.Coord{i, j}]
+			if len(env.station[i][j])>1{
+				env.station[i][j] = agt.isOn[alg.Coord{i, j}]
+			}
 			alg.RemoveCoord(alg.Coord{i, j}, agt.isOn)
+			
 		}
 	}
 }
