@@ -66,13 +66,17 @@ func (c *Controleur) Deliberate(ag *Agent) {
 		}
 		if matchedFraud && !ag.env.controlledAgents[AgentID(c.faceCase)] {
 			ag.decision = Expel // virer l'agent devant lui
+			return
 		} else if ag.position == ag.destination && (ag.isOn[ag.position] == "W" || ag.isOn[ag.position] == "S") { // si le controleur est arrivé à sa destination et qu'il est sur une sortie
 			//fmt.Println(ag.id, "disappear")
 			ag.decision = Disappear
+			return
 		} else if ag.stuck { // si le controleur est bloqué
 			ag.decision = Wait
+			return
 		} else {
 			ag.decision = Move
+			return
 		}
 	}
 }
@@ -103,7 +107,7 @@ func (c *Controleur) Act(ag *Agent) {
 		fmt.Print("L'agent ", agt_face_id, " a été expulsé \n")
 		ag.env.controlledAgents[agt_face_id] = true                                              // l'agent qui se trouve devant le controleur est controlé
 		ag.env.agentsChan[agt_face_id] <- *req.NewRequest(ag.env.agentsChan[ag.id], ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
-		time.Sleep(500 * time.Millisecond)
+		//time.Sleep(500 * time.Millisecond)
 	}
 	ag.request = nil
 }
