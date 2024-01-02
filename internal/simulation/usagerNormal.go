@@ -14,6 +14,7 @@ import (
 	req "metrosim/internal/request"
 	"sort"
 	"time"
+	//"sync"
 )
 
 type UsagerNormal struct {
@@ -122,7 +123,7 @@ func (un *UsagerNormal) Act(ag *Agent) {
 	ag.request = nil
 }
 
-func (un *UsagerNormal) SetUpAleaDestination(ag *Agent) {
+func (un *UsagerNormal) SetUpDestination(ag *Agent) {
 	//t := rand.Intn(10) +1
 	//time.Sleep(time.Duration(t) * time.Second) // "cool down"
 	//fmt.Println("[UsagerNormal, setUpDestination] setUpDestination")

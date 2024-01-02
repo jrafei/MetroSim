@@ -20,7 +20,7 @@ import (
 type Action int64
 
 const (
-	Noop       = iota //No opération, utiliser pour refuser un mouvement
+	Noop       = iota //No opération, utiliser pour refuser un mouvement 0
 	Wait              // Attente
 	Move              // Déplacement de l'agent
 	EnterMetro        //Entrer dans le métro
@@ -28,7 +28,7 @@ const (
 	YouHaveToMove //Utiliser par un usager impoli pour forcer un déplacement
 	Done
 	Disappear // Disparition  de l'agent dans la simulation
-	Expel     // virer l'agent
+	Expel     // virer l'agent //8
 	Stop      // arreter l'agent
 	ACK       // acquittement
 )
@@ -62,7 +62,7 @@ type Behavior interface {
 	Percept(*Agent)
 	Deliberate(*Agent)
 	Act(*Agent)
-	SetUpAleaDestination(ag *Agent)
+	//SetUpDestination(ag *Agent)
 }
 
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, politesse bool, behavior Behavior, departure, destination alg.Coord, width, height int) *Agent {
@@ -349,11 +349,11 @@ func (ag *Agent) listenForRequests() {
 	for {
 		if ag.request == nil {
 			req := <-ag.env.agentsChan[ag.id]
-			//fmt.Println("[listenForRequests] Request received by :", ag.id, req.Decision)
+			fmt.Printf("[listenForRequests] Request received by :%s , decision : %d \n", ag.id, req.Decision())
 			ag.request = &req
 		}
 
-		if ag.request.Decision() == Disappear || ag.request.Decision() == EnterMetro {
+		if ag.request != nil && (ag.request.Decision() == Disappear || ag.request.Decision() == EnterMetro) {
 			return
 		}
 	}
@@ -459,13 +459,13 @@ type Gate struct {
 	NbAgents float64
 }
 
-func (ag *Agent) findNearestExit() alg.Coord {
+func (ag *Agent) findNearestExit_v0() alg.Coord {
 	// Recherche de la sortie la plus proche
 	nearest := alg.Coord{0, 0}
 	min := 1000000
-	n := len(ag.env.station[0])
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	//n := len(ag.env.station[0])
+	for i := 0; i < 50; i++ {
+		for j := 0; j < 50; j++ {
 			if ag.env.station[i][j] == "S" || ag.env.station[i][j] == "W" {
 				dist := alg.Abs(ag.position[0]-i) + alg.Abs(ag.position[1]-j)
 				if dist < min {
@@ -477,6 +477,22 @@ func (ag *Agent) findNearestExit() alg.Coord {
 	}
 	return nearest
 }
+
+func(ag *Agent) findNearestExit() alg.Coord {
+	// Recherche de la sortie la plus proche
+	sorties := ag.env.exits
+	nearest := sorties[0]
+	min := 1000000
+	for _, sortie := range sorties {
+		dist := alg.Abs(ag.position[0]-sortie[0]) + alg.Abs(ag.position[1]-sortie[1])
+		if dist < min {
+			min = dist
+			nearest = sortie
+		}
+	}
+	return nearest
+}
+
 
 func findMetro(env *Environment, gateToFind *alg.Coord) *Metro {
 	for _, metro := range env.metros {
