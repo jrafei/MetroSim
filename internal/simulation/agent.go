@@ -234,10 +234,8 @@ func (ag *Agent) NextCell() string {
 	case 2: // vers le bas
 		if ag.position[0]+1 >= 0 && ag.position[0]+1 < len(ag.env.station[0]) {
 			return ag.env.station[ag.position[0]+1][ag.position[1]]
-			return ag.env.station[ag.position[0]+1][ag.position[1]]
 		}
 	default: //vers la gauche
-		if ag.position[1]-1 >= 0 && ag.position[1]-1 < len(ag.env.station[1]) {
 		if ag.position[1]-1 >= 0 && ag.position[1]-1 < len(ag.env.station[1]) {
 			return ag.env.station[ag.position[0]][ag.position[1]-1]
 		}
