@@ -379,8 +379,6 @@ func (agt *Agent) MyNextCellIsSafe() (bool, [4]int) {
 	} else if ag.orientation == 3 {
 		//Deplacement a gauche
 		ag.position = alg.Coord{ag.position[0], infCol - 1}
-	} else {
-
 	}
 
 	// Calcul des bornes de position de l'agent après mouvement

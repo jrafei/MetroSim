@@ -15,7 +15,7 @@ func main() {
 	go func() {
 		for {
 			time.Sleep(2 * time.Second)
-			fmt.Printf("Nombre de goroutines : %d\n", runtime.NumGoroutine())
+			//fmt.Printf("Nombre de goroutines : %d\n", runtime.NumGoroutine())
 			if runtime.NumGoroutine() > 1000 {
 
 				f, err := os.Create("goroutines.pprof")

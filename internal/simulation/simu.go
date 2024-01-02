@@ -135,7 +135,6 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 	simu.env = *NewEnvironment([]Agent{}, carte, []Metro{metro1, metro2}, simu.newAgentChan, agentCount)
 	//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
 
-
 	fmt.Println("agCount : ", agentCount)
 	// création des agents et des channels
 	for i := 0; i < agentCount; i++ {
@@ -146,15 +145,15 @@ func NewSimulation(agentCount int, maxStep int, maxDuration time.Duration) (simu
 
 		ag := &Agent{}
 
-		if i== 2 { //Type Agent
+		if i != 2 { //Type Agent
 			id := fmt.Sprintf("Norm%d", i)
 			//NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int)
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerNormal{}, simu.env.entries[rand.Intn(len(simu.env.entries))], alg.Coord{0, 9}, 1, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, false, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], alg.Coord{0, 9}, 1, 1)
 			//alg.Coord{49, 32} : entrée
-		} else { 
+		} else {
 			//id := fmt.Sprintf("Controleur%d", i)
 			id := fmt.Sprintf("Norm%d", i)
-			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerNormal{},simu.env.entries[rand.Intn(len(simu.env.entries))], alg.Coord{8, 5}, 1, 1)
+			ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], alg.Coord{8, 5}, 1, 1)
 			//ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &Controleur{}, Coord{18, 12}, Coord{18, 4}, 1, 1)
 		}
 
@@ -184,7 +183,7 @@ func (simu *Simulation) Run() {
 
 	var wg sync.WaitGroup
 	for _, agt := range simu.env.ags {
-		
+
 		wg.Add(1)
 		go func(agent Agent) {
 			defer wg.Done()
@@ -253,30 +252,30 @@ func (simu *Simulation) listenNewAgentChan() {
 	}
 }
 
-
 func (simu *Simulation) Print() {
 	for {
 		for i := 0; i < 20; i++ {
 			for j := 0; j < 50; j++ {
 				element := simu.env.station[i][j]
-				
+
 				if len(element) > 1 {
-					//fmt.Print(element[len(element)-1:] + " ") // Afficher le premier caractère si la longueur est supérieure à 1
-					fmt.Print(element[0:1] + " ")
-					} else {
-						fmt.Print(element + " ")
-					}
+					fmt.Print(element[len(element)-1:] + " ") // Afficher le premier caractère si la longueur est supérieure à 1
+					//fmt.Print(element[0:1] + " ")
+				} else {
+					fmt.Print(element + " ")
+				}
 			}
 			fmt.Println()
 		}
-		fmt.Println("\n \n \n")
+		for k := 0; k < 3; k++ {
+			fmt.Println("\n")
+		}
 		fmt.Println()
 		//fmt.Println("============================================================")
 		//time.Sleep(time.Second / 4) // 60 fps !
 		time.Sleep(200 * time.Millisecond) // 1 fps !
 	}
 }
-
 
 func (simu *Simulation) Log() {
 	// Not implemented
