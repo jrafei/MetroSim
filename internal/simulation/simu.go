@@ -128,6 +128,49 @@ func NewSimulation(conf req.Cfg) (simu *Simulation) {
 	// Simulation pas encore démarrée
 	simu.active = false
 
+	/*
+		metro1 := *NewMetro(0, 5*time.Second, 30, 0, NewWay(1, alg.Coord{9, 0}, alg.Coord{10, 39}, true, []alg.Coord{{8, 5}, {8, 34}}, &simu.env))
+		metro2 := *NewMetro(0, 5*time.Second, 30, 0, NewWay(2, alg.Coord{11, 0}, alg.Coord{12, 39}, false, []alg.Coord{{13, 5}, {13, 34}}, &simu.env))
+		simu.env = *NewEnvironment([]Agent{}, carte, []Metro{metro1, metro2}, simu.newAgentChan, agentCount)
+		//simu.env = *NewEnvironment([]Agent{}, playground, mapChan)
+
+		fmt.Println("agCount : ", agentCount)
+		// création des agents et des channels
+		for i := 0; i < agentCount; i++ {
+
+			syncChan := make(chan int)
+			//ag := NewAgent(id, &simu.env, syncChan, time.Duration(time.Second), 0, true, Coord{0, 8 + i%2}, Coord{0, 8 + i%2}, &UsagerLambda{}, Coord{0, 8 + i%2}, Coord{12 - 4*(i%2), 18 - 15*(i%2)})
+			//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{},  Coord{18, 4}, Coord{0, 8}, 2, 1)
+
+			ag := &Agent{}
+
+			if i != 2 { //Type Agent
+				id := fmt.Sprintf("Norm%d", i)
+				//NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, force int, politesse bool, behavior Behavior, departure, destination Coord, width, height int)
+				ag = NewAgent(id, &simu.env, syncChan, 200, 0, false, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], alg.Coord{0, 9}, 1, 1)
+				//alg.Coord{49, 32} : entrée
+			} else {
+				//id := fmt.Sprintf("Controleur%d", i)
+				id := fmt.Sprintf("Norm%d", i)
+				ag = NewAgent(id, &simu.env, syncChan, 200, 0, true, &UsagerLambda{}, simu.env.entries[rand.Intn(len(simu.env.entries))], alg.Coord{8, 5}, 1, 1)
+				//ag = NewAgent(id, &simu.env, syncChan, 1000, 0, true, &Controleur{}, Coord{18, 12}, Coord{18, 4}, 1, 1)
+			}
+
+			//ag := NewAgent(id, &simu.env, syncChan, 1000, 0, true, &UsagerLambda{}, Coord{19, 12}, Coord{0, 8}, 2, 1)
+
+			// ajout de l'agent à la simulation
+			simu.env.ags = append(simu.env.ags, *ag)
+
+			simu.env.agentsChan[ag.id] = make(chan req.Request, 5)
+
+			// ajout du channel de synchro
+			simu.syncChans.Store(ag.ID(), syncChan)
+
+		}
+
+
+
+	*/
 	return simu
 }
 
@@ -275,7 +318,7 @@ func (simu *Simulation) ActivateFlow() {
 				ag = NewAgent("MR"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, true, &MobiliteReduite{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1)
 			}
 		}
-		if ag!=nil{
+		if ag != nil {
 			ag.behavior.SetUpDestination(ag)
 			simu.env.AddAgent(*ag)
 		}
@@ -287,7 +330,6 @@ func (simu *Simulation) ActivateFlow() {
 		probability = rand.Float64()
 	}
 }
-
 
 func (simu *Simulation) IsRunning() bool {
 	// Détermine si la simulation est en cours

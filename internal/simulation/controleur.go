@@ -102,7 +102,7 @@ func (c *Controleur) Act(ag *Agent) {
 	case Disappear:
 		ag.env.RemoveAgent(ag)
 
-	case Expel: //Expel 
+	case Expel: //Expel
 		agt_face_id := AgentID(c.faceCase) //id de l'agent qui se trouve devant le controleur
 		fmt.Print("L'agent ", agt_face_id, " a été expulsé \n")
 		ag.env.controlledAgents[agt_face_id] = true                                              // l'agent qui se trouve devant le controleur est controlé
