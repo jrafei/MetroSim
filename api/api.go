@@ -37,6 +37,7 @@ func decodeConf(r *http.Request) (conf req.Cfg, err error) {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(r.Body)
 	err = json.Unmarshal(buf.Bytes(), &conf)
+	fmt.Println(err)
 	return
 }
 
@@ -46,6 +47,9 @@ func checkMethod(method string, r *http.Request) bool {
 
 func simHandler(action string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS,PUT")
+		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type")
 		switch action {
 		case "configure":
 
