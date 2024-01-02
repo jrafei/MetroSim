@@ -110,7 +110,7 @@ func (mr *MobiliteReduite) Act(ag *Agent) {
 /*
 * Fonction qui permet de définir la destination d'un agent à mobilité réduite
  */
-func (mr *MobiliteReduite) SetUpAleaDestination(ag *Agent) {
+func (mr *MobiliteReduite) SetUpDestination(ag *Agent) {
 	choix_voie := rand.Intn(len(ag.env.metros)) // choix de la voie de métro aléatoire
 	dest_porte := (mr.findNearestGates(ag, ag.env.metros[choix_voie].way.gates))
 	//fmt.Println("[MobiliteReduite, setUpDestination] dest_porte = ",dest_porte)

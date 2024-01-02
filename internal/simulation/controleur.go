@@ -86,7 +86,7 @@ func (c *Controleur) Act(ag *Agent) {
 	case Move:
 		if !c.isExpired {
 			//fmt.Printf("[Controleur, Act, non expiré] Le controleur %s est en mouvement \n", ag.id)
-			c.SetUpAleaDestination(ag)
+			c.SetUpDestination(ag)
 			//fmt.Printf("[Controleur, Act] destination s = %s : %d \n",ag.id,ag.destination)
 		} else {
 			//fmt.Printf("[Controleur, Act] Le controleur %s est expiré \n",ag.id)
@@ -112,7 +112,7 @@ func (c *Controleur) Act(ag *Agent) {
 	ag.request = nil
 }
 
-func (c *Controleur) SetUpAleaDestination(ag *Agent) {
+func (c *Controleur) SetUpDestination(ag *Agent) {
 	rand.Seed(time.Now().UnixNano())               // le générateur de nombres aléatoires
 	randomRow := rand.Intn(len(ag.env.station[0])) // Génère un entier aléatoire entre 0 et 49
 	randomCol := rand.Intn(len(ag.env.station[1])) // Génère un entier aléatoire entre 0 et 49

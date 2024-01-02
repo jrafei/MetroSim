@@ -36,8 +36,8 @@ const (
 type AgentID string
 
 type Agent struct {
-	id          AgentID
-	vitesse     time.Duration
+	id      AgentID
+	vitesse time.Duration
 	//force       int
 	politesse   bool
 	position    alg.Coord // Coordonnées de référence, width et height on compte width et height à partir de cette position
@@ -62,13 +62,13 @@ type Behavior interface {
 	Percept(*Agent)
 	Deliberate(*Agent)
 	Act(*Agent)
-	//SetUpDestination(ag *Agent)
+	SetUpDestination(ag *Agent)
 }
 
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, politesse bool, behavior Behavior, departure, destination alg.Coord, width, height int) *Agent {
 	isOn := make(map[alg.Coord]string)
 	direct := initDirection(departure, len(env.station[0]))
-	return &Agent{AgentID(id), vitesse,politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil, direct}
+	return &Agent{AgentID(id), vitesse, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil, direct}
 }
 
 func (ag *Agent) ID() AgentID {
@@ -309,10 +309,10 @@ func (ag *Agent) MoveAgent() bool {
 		}
 		ag.orientation = or
 		ag.direction = calculDirection(ag.position, alg.Coord{ag.path[0].Row(), ag.path[0].Col()})
-		//fmt.Println("[MoveAgent]Direction : ", ag.direction)
 		ag.position[0] = ag.path[0].Row()
 		ag.position[1] = ag.path[0].Col()
 		if len(ag.path) > 1 {
+			//fmt.Println("[MoveAgent]Path : ", ag.path[0])
 			ag.path = ag.path[1:]
 		} else {
 			ag.path = nil
@@ -351,11 +351,14 @@ func (ag *Agent) listenForRequests() {
 			req := <-ag.env.agentsChan[ag.id]
 			fmt.Printf("[listenForRequests] Request received by :%s , decision : %d \n", ag.id, req.Decision())
 			ag.request = &req
+			if ag.request.Decision() == Expel {
+				fmt.Println("[listenForRequests] Expel received by :", ag.id)
+			}
+			if ag.request != nil && (ag.request.Decision() == Disappear || ag.request.Decision() == EnterMetro) {
+				return
+			}
 		}
 
-		if ag.request != nil && (ag.request.Decision() == Disappear || ag.request.Decision() == EnterMetro) {
-			return
-		}
 	}
 }
 
@@ -478,7 +481,7 @@ func (ag *Agent) findNearestExit_v0() alg.Coord {
 	return nearest
 }
 
-func(ag *Agent) findNearestExit() alg.Coord {
+func (ag *Agent) findNearestExit() alg.Coord {
 	// Recherche de la sortie la plus proche
 	sorties := ag.env.exits
 	nearest := sorties[0]
@@ -492,7 +495,6 @@ func(ag *Agent) findNearestExit() alg.Coord {
 	}
 	return nearest
 }
-
 
 func findMetro(env *Environment, gateToFind *alg.Coord) *Metro {
 	for _, metro := range env.metros {

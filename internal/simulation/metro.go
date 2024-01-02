@@ -48,7 +48,7 @@ func (metro *Metro) Start() {
 			metro.printMetro()
 		}
 		if refTime.Add(metro.frequency).Before(time.Now()) {
-			//metro.dropUsers()
+			metro.dropUsers()
 			metro.openGates()
 			metro.pickUpUsers()
 			metro.closeGates()
@@ -129,7 +129,7 @@ func (metro *Metro) dropUsers() {
 		height := 1                                //+ rand.Intn(2)
 		metro.freeSpace = metro.freeSpace + width*height
 		nb = nb - width*height
-		id := fmt.Sprintf("Agent%d", metro.way.env.agentCount)
+		id := fmt.Sprintf("Normal%d", metro.way.env.agentCount)
 		//path := metro.way.pathsToExit[gate_nb]
 		// Attribution d'une sortie aléatoire en destination
 		ag := NewAgent(id, metro.way.env, make(chan int), 200, true, &UsagerLambda{}, metro.way.gates[gate_nb], metro.way.env.exits[rand.Intn(len(metro.way.env.exits))], width, height)
