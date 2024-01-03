@@ -67,6 +67,7 @@ type Behavior interface {
 
 func NewAgent(id string, env *Environment, syncChan chan int, vitesse time.Duration, politesse bool, behavior Behavior, departure, destination alg.Coord, width, height int) *Agent {
 	isOn := make(map[alg.Coord]string)
+	isOn[departure] = "E"
 	direct := initDirection(departure, len(env.station[0]))
 	return &Agent{AgentID(id), vitesse, politesse, departure, departure, destination, behavior, env, syncChan, Noop, isOn, false, width, height, 3, make([]alg.Node, 0), nil, direct}
 }
@@ -351,10 +352,9 @@ func (ag *Agent) listenForRequests() {
 			req := <-ag.env.agentsChan[ag.id]
 			fmt.Println("[listenForRequests] Request received by :", ag.id, req.Decision())
 			ag.request = &req
-		}
-
-		if ag.request.Decision() == Disappear || ag.request.Decision() == EnterMetro {
-			return
+			if ag.request.Decision() == Disappear || ag.request.Decision() == EnterMetro {
+				return
+			}
 		}
 	}
 }

@@ -110,6 +110,7 @@ func (c *Controleur) Act(ag *Agent) {
 		time.Sleep(500 * time.Millisecond)
 	}
 	ag.request = nil
+	c.req = nil
 }
 
 func (c *Controleur) SetUpAleaDestination(ag *Agent) {

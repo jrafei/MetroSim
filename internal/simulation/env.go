@@ -145,14 +145,18 @@ func calculDirection(depart alg.Coord, arrive alg.Coord) int {
 
 func (env *Environment) RemoveAgent(agt *Agent) {
 	// Supprime l'agent de la matrice
-
+	env.Lock()
+	defer env.Unlock()
 	// Calcul des bornes de position de l'agent
 	borneInfRow, borneSupRow, borneInfCol, borneSupCol := alg.CalculateBounds(agt.position, agt.width, agt.height, agt.orientation)
 
 	for i := borneInfRow; i < borneSupRow; i++ {
 		for j := borneInfCol; j < borneSupCol; j++ {
-			env.station[i][j] = agt.isOn[alg.Coord{i, j}]
+			if len(env.station[i][j]) > 1 {
+				env.station[i][j] = agt.isOn[alg.Coord{i, j}]
+			}
 			alg.RemoveCoord(alg.Coord{i, j}, agt.isOn)
+
 		}
 	}
 }
@@ -173,8 +177,6 @@ func (env *Environment) writeAgent(agt *Agent) {
 	}
 
 }
-
-
 
 func (env *Environment) getNbAgentsAround(pos alg.Coord) int {
 	//pos est la position de la porte
@@ -250,7 +252,6 @@ func (env *Environment) Station() [50][50]string {
 	return env.station
 }
 
-
 func (env *Environment) getNearGateFromGate(gate Gate) []alg.Coord {
 	/*
 	 * Renvoie les portes proches de la porte passée en paramètre
@@ -265,4 +266,3 @@ func (env *Environment) getNearGateFromGate(gate Gate) []alg.Coord {
 	nearGates = append(nearGates, gate.Position)
 	return nearGates
 }
-
