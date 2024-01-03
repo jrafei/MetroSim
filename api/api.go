@@ -46,6 +46,10 @@ func checkMethod(method string, r *http.Request) bool {
 
 func simHandler(action string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS,PUT")
+		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type")
+
 		switch action {
 		case "configure":
 
@@ -75,6 +79,10 @@ func simHandler(action string) http.HandlerFunc {
 
 func configuration(w http.ResponseWriter, r *http.Request) {
 	// vérification de la méthode de la requête
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS,PUT")
+	w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type")
+
 	if !checkMethod("POST", r) {
 		return
 	}
