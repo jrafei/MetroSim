@@ -300,7 +300,7 @@ func (ag *Agent) MoveAgent() bool {
 
 		}
 	}
-
+	fmt.Println("Agent impoli continue sa route")
 	// ================== Déplacement si aucun problème ou si blockingAgent se pousse =======================
 
 	safe, or := ag.IsMovementSafe()
