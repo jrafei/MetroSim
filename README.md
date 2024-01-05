@@ -47,10 +47,8 @@ http://127.0.0.1:12000/configure
 
 (voir fichier cfg_request.go pour le format attendu d'une configuration)
 
-Exemple de requête HTTP POST correcte : 
 
-
-![](https://gitlab.utc.fr/pillisju/metrosim/-/blob/main/request_image.png)
+![Exemple de requête HTTP POST correcte](https://gitlab.utc.fr/pillisju/metrosim/-/blob/main/request_image.png)
 
 ### Lancement de la simulation, et récupération de son état
 
