@@ -2,7 +2,9 @@ package algorithms
 
 import (
 	"container/heap"
+	"context"
 	"math/rand"
+	"time"
 )
 
 /*
@@ -59,10 +61,11 @@ func (pq *PriorityQueue) Pop() interface{} {
 	return item
 }
 
-type ZoneID int
-type Coord [2]int
+func FindPath(matrix [50][50]string, start, end Node, forbidenCell Node, orientation bool, timeout time.Duration) []Node {
+	// Création d'un context avec timeout, pour limiter le calcul
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 
-func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orientation bool) []Node {
 	pq := make(PriorityQueue, 0)
 	heap.Init(&pq)
 
@@ -71,15 +74,22 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orienta
 	parents := make(map[Node]Node)
 
 	closestPoint := start // Initialisation avec le point de départ
-	closestDistance := Heuristic(start.row, start.col, end)
+	closestDistance := Heuristic(matrix, start.row, start.col, end)
 
 	foundPath := false
 
 	for pq.Len() > 0 {
+		select {
+		case <-ctx.Done():
+			// Timeout reached, return an error or handle accordingly
+			return nil
+		default:
+			// Continue with the algorithm
+		}
 		current := heap.Pop(&pq).(*Node)
 
 		// Mise à jour du point le plus proche si le point actuel est plus proche
-		currentDistance := Heuristic(current.row, current.col, end)
+		currentDistance := Heuristic(matrix, current.row, current.col, end)
 		if currentDistance < closestDistance {
 			closestPoint = *current
 			closestDistance = currentDistance
@@ -119,11 +129,10 @@ func FindPath(matrix [20][20]string, start, end Node, forbidenCell Node, orienta
 	return nil // Aucun chemin trouvé
 }
 
-func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, orientation bool) []*Node {
-	//fmt.Println("okk")
+func getNeighbors(matrix [50][50]string, current, end Node, forbiddenCell Node, orientation bool) []*Node {
 	neighbors := make([]*Node, 0)
 
-	// Possible moves: up, down, left, right
+	// Déplacements possibles: up, down, left, right
 	possibleMoves := [][]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
 
 	for _, move := range possibleMoves {
@@ -131,14 +140,13 @@ func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, 
 		if orientation {
 			for or := 0; or < 4; or++ {
 				current.orientation = or
-				//fmt.Println(orientation)
-				//Check if the new position is valid, considering agent dimensions and rotation
+				//Vérifie que le déplacement soit valide
 				if isValidMove(matrix, current, forbiddenCell, newRow, newCol, orientation) {
 					neighbors = append(neighbors, &Node{
 						row:         newRow,
 						col:         newCol,
 						cost:        current.cost + 1,
-						heuristic:   Heuristic(newRow, newCol, end),
+						heuristic:   Heuristic(matrix, newRow, newCol, end),
 						width:       current.width,
 						height:      current.height,
 						orientation: current.orientation,
@@ -152,7 +160,7 @@ func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, 
 					row:         newRow,
 					col:         newCol,
 					cost:        current.cost + 1,
-					heuristic:   Heuristic(newRow, newCol, end),
+					heuristic:   Heuristic(matrix, newRow, newCol, end),
 					width:       current.width,
 					height:      current.height,
 					orientation: current.orientation,
@@ -165,21 +173,26 @@ func getNeighbors(matrix [20][20]string, current, end Node, forbiddenCell Node, 
 	return neighbors
 }
 
-func Heuristic(row, col int, end Node) int {
+func Heuristic(matrix [50][50]string, row, col int, end Node) int {
 	// Heuristique simple : distance de Manhattan
 	// On introduit de l'aléatoire pour ajouter de la diversité dans la construction des chemins
-	// On évite d'avoir tout le temps le même chemin pour un même point de départ et d'arrivé
-	return abs(row-end.row) + abs(col-end.col) + rand.Intn(3)
+	// On évite d'avoir tout le temps le même chemin pour un même point de départ et d'arrivée
+	//return abs(row-end.row) + abs(col-end.col) + rand.Intn(3)
+	malus := 0
+	if len(matrix[row][col]) > 1 {
+		malus += 10
+	}
+	return Abs(row-end.row) + Abs(col-end.col) + rand.Intn(10) + malus
 }
 
-func abs(x int) int {
+func Abs(x int) int {
 	if x < 0 {
 		return -x
 	}
 	return x
 }
 
-func isValidMove(matrix [20][20]string, current Node, forbiddenCell Node, newRow, newCol int, orientation bool) bool {
+func isValidMove(matrix [50][50]string, current Node, forbiddenCell Node, newRow, newCol int, orientation bool) bool {
 	// Check if the new position is within the bounds of the matrix
 	if newRow < 0 || newRow >= len(matrix) || newCol < 0 || newCol >= len(matrix[0]) {
 		return false
@@ -187,22 +200,23 @@ func isValidMove(matrix [20][20]string, current Node, forbiddenCell Node, newRow
 
 	// Check if the new position overlaps with forbidden cells or obstacles
 	if forbiddenCell.row == newRow && forbiddenCell.col == newCol {
-		return false
+		//return false
+		current.heuristic = current.heuristic + 100
 	}
 	// Check if the absolute coordinates overlap with obstacles in the matrix
-	if matrix[newRow][newCol] == "Q" || matrix[newRow][newCol] == "X" {
+	if matrix[newRow][newCol] == "Q" || matrix[newRow][newCol] == "X" || matrix[newRow][newCol] == "M" {
 		return false
 	}
 
 	// Check if the agent fits in the new position, considering its dimensions and rotation
 	if orientation {
-		lRowBound, uRowBound, lColBound, uColBound := calculateBounds(newRow, newCol, current.width, current.height, current.orientation)
+		lRowBound, uRowBound, lColBound, uColBound := CalculateBounds(Coord{newRow, newCol}, current.width, current.height, current.orientation)
 
 		for i := lRowBound; i < uRowBound; i++ {
 			for j := lColBound; j < uColBound; j++ {
 
 				// Calculate the absolute coordinates in the matrix
-				absRow, absCol := i, j
+				absRow, absCol := i, j 
 
 				// Check if the absolute coordinates are within the bounds of the matrix
 				if absRow < 0 || absRow >= len(matrix) || absCol < 0 || absCol >= len(matrix[0]) {
@@ -211,11 +225,12 @@ func isValidMove(matrix [20][20]string, current Node, forbiddenCell Node, newRow
 
 				// Check if the absolute coordinates overlap with forbidden cells or obstacles
 				if forbiddenCell.row == absRow && forbiddenCell.col == absCol {
-					return false
+					//return false
+					current.heuristic = current.heuristic + 100
 				}
 
 				// Check if the absolute coordinates overlap with obstacles in the matrix
-				if matrix[absRow][absCol] == "Q" || matrix[absRow][absCol] == "X" {
+				if matrix[absRow][absCol] == "Q" || matrix[absRow][absCol] == "X" || matrix[absRow][absCol] == "M" {
 					return false
 				}
 			}
@@ -242,35 +257,17 @@ func rotateCoordinates(i, j, orientation int) (rotatedI, rotatedJ int) {
 	return rotatedI, rotatedJ
 }
 
-func calculateBounds(row, col, width, height, orientation int) (infRow, supRow, infCol, supCol int) {
-	borneInfRow := 0
-	borneSupRow := 0
-	borneInfCol := 0
-	borneSupCol := 0
-
-	// Calcul des bornes de position de l'agent après mouvement
-	switch orientation {
-	case 0:
-		borneInfRow = row - width + 1
-		borneSupRow = row + 1
-		borneInfCol = col
-		borneSupCol = col + height
-	case 1:
-		borneInfRow = row
-		borneSupRow = row + height
-		borneInfCol = col
-		borneSupCol = col + width
-	case 2:
-		borneInfRow = row
-		borneSupRow = row + width
-		borneInfCol = col
-		borneSupCol = col + height
-	case 3:
-		borneInfRow = row
-		borneSupRow = row + height
-		borneInfCol = col - width + 1
-		borneSupCol = col + 1
-
+func FindNearestExit(exits *[]Coord, row, col int) (dest_row, dest_col int) {
+	// Recherche de la sortie la plus proche
+	min := 1000000
+	for _, exit := range *exits {
+		dist := Abs(row-exit[0]) + Abs(col-exit[1])
+		if dist < min {
+			min = dist
+			dest_row = exit[0]
+			dest_col = exit[1]
+		}
 	}
-	return borneInfRow, borneSupRow, borneInfCol, borneSupCol
+
+	return dest_row, dest_col
 }
