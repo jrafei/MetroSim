@@ -272,10 +272,10 @@ func (simu *Simulation) ActivateFlow() {
 
 		case probability < 1.0: // 10% de probabilité (cumulative 100%)
 			if simu.mob_reduite {
-				ag = NewAgent("MR"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, true, &MobiliteReduite{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1)
+				ag = NewAgent("H"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, true, &MobiliteReduite{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1)
 			}
 		}
-		if ag!=nil{
+		if ag != nil {
 			ag.behavior.SetUpDestination(ag)
 			simu.env.AddAgent(*ag)
 		}
@@ -287,7 +287,6 @@ func (simu *Simulation) ActivateFlow() {
 		probability = rand.Float64()
 	}
 }
-
 
 func (simu *Simulation) IsRunning() bool {
 	// Détermine si la simulation est en cours
