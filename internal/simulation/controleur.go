@@ -48,7 +48,8 @@ func (c *Controleur) Deliberate(ag *Agent) {
 	// Vérifier si la valeur de faceCase ne correspond pas au motif
 	matchedCont, err1 := regexp.MatchString(regexCont, c.faceCase)
 	matchedFraud, err := regexp.MatchString(regexFraudeur, c.faceCase)
-	//fmt.Println("faceCase : ", c.faceCase)
+	//
+	//.0fmt.Println("faceCase : ", c.faceCase)
 	//fmt.Println("matchedAgt : ", matchedAgt)
 
 	if err != nil {
@@ -102,9 +103,9 @@ func (c *Controleur) Act(ag *Agent) {
 	case Disappear:
 		ag.env.RemoveAgent(ag)
 
-	case Expel: //Expel 
+	case Expel: //Expel
 		agt_face_id := AgentID(c.faceCase) //id de l'agent qui se trouve devant le controleur
-		fmt.Print("L'agent ", agt_face_id, " a été expulsé \n")
+		//TODELETEfmt.Print("L'agent ", agt_face_id, " a été expulsé \n")
 		ag.env.controlledAgents[agt_face_id] = true                                              // l'agent qui se trouve devant le controleur est controlé
 		ag.env.agentsChan[agt_face_id] <- *req.NewRequest(ag.env.agentsChan[ag.id], ag.decision) // envoie la decision du controleur à l'agent qui se trouve devant lui
 		//time.Sleep(500 * time.Millisecond)

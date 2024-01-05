@@ -7,7 +7,6 @@ package simulation
 */
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
 	alg "metrosim/internal/algorithms"
@@ -58,11 +57,11 @@ func (un *UsagerNormal) Deliberate(ag *Agent) {
 			ag.decision = Move
 			return
 		case YouHaveToMove:
-			fmt.Println("[AgentNormal, Deliberate] J'essaye de bouger ", ag.id)
+			//TODELETEfmt.Println("[AgentNormal, Deliberate] J'essaye de bouger ", ag.id)
 			movement := ag.MoveAgent()
 			//fmt.Printf("Je suis agent %s Resultat du mouvement de la personne %t \n", ag.id, movement)
 			if movement {
-				fmt.Println("[AgentNormal, Deliberate] J'ai bougé ", ag.id)
+				//TODELETEfmt.Println("[AgentNormal, Deliberate] J'ai bougé ", ag.id)
 				ag.decision = Done
 			} else {
 				ag.decision = Noop
@@ -92,14 +91,14 @@ func (un *UsagerNormal) Act(ag *Agent) {
 		//fmt.Printf("[UsagerLambda, Act] agent %s est disparu \n",ag.id)
 		ag.env.RemoveAgent(ag)
 	case EnterMetro:
-		fmt.Printf("[UsagerNormal, Act] agent %s entre dans le Metro \n", ag.id)
+		//TODELETEfmt.Printf("[UsagerNormal, Act] agent %s entre dans le Metro \n", ag.id)
 		ag.env.RemoveAgent(ag)
 		//fmt.Printf("Demandeur d'entrer le metro : %s \n",un.req.Demandeur())
 		un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
 	case Expel:
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.findNearestExit()
-		fmt.Printf("[UsagerNormal, Act] destination de l'agent %s = %s \n", ag.id, ag.destination)
+		//TODELETEfmt.Printf("[UsagerNormal, Act] destination de l'agent %s = %s \n", ag.id, ag.destination)
 		ag.env.controlledAgents[ag.id] = true
 		ag.path = make([]alg.Node, 0)
 		ag.MoveAgent()
@@ -113,7 +112,7 @@ func (un *UsagerNormal) Act(ag *Agent) {
 		un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Done)
 	case TryToMove:
 		movement := ag.MoveAgent()
-		fmt.Printf("Je suis %s est-ce que j'ai bougé? %t \n", ag.id, movement)
+		//TODELETEfmt.Printf("Je suis %s est-ce que j'ai bougé? %t \n", ag.id, movement)
 		if movement {
 			un.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Done)
 		} else {
@@ -130,7 +129,7 @@ func (un *UsagerNormal) SetUpDestination(ag *Agent) {
 	choix_voie := rand.Intn(len(ag.env.metros)) // choix de la voie de métro aléatoire
 	dest_porte := (un.findBestGate(ag, ag.env.metros[choix_voie].way.gates))
 	ag.destination = dest_porte
-	fmt.Println("[UsagerNormal, setUpDestination] destination de l'agent ", ag.id, " = ", ag.destination, " son position = ", ag.position)
+	//TODELETEfmt.Println("[UsagerNormal, setUpDestination] destination de l'agent ", ag.id, " = ", ag.destination, " son position = ", ag.position)
 }
 
 func (un *UsagerNormal) findBestGate(ag *Agent, gates []alg.Coord) alg.Coord {
@@ -156,7 +155,7 @@ func (un *UsagerNormal) findBestGate(ag *Agent, gates []alg.Coord) alg.Coord {
 	//fmt.Println("[findBestGate] agent Position : ",ag.position)
 	//fmt.Println("[findBestGate] gates non normalisé : ",gatesDistances)
 	normalizedGates, _, _ := normalizeGates(gatesDistances)
-	fmt.Println("[findBestGate, %s] gates normalisé : ",ag.id ,normalizedGates)
+	//TODELETEfmt.Println("[findBestGate, %s] gates normalisé : ",ag.id ,normalizedGates)
 
 	bestGates := gates_with_lowest_score(normalizedGates)
 	bestGate := bestGates[0]

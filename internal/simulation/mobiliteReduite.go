@@ -5,7 +5,6 @@ package simulation
 */
 
 import (
-	"fmt"
 	"math/rand"
 	alg "metrosim/internal/algorithms"
 	req "metrosim/internal/request"
@@ -41,14 +40,14 @@ func (mr *MobiliteReduite) Deliberate(ag *Agent) {
 			ag.decision = Expel
 			return
 		case Disappear:
-			fmt.Println("[Deliberate]", ag.id, "Disappear cond 1 (requete)")
+			//TODELETEfmt.Println("[Deliberate]", ag.id, "Disappear cond 1 (requete)")
 			ag.decision = Disappear
 			return
 		case Wait:
 			ag.decision = Wait
 			return
 		case EnterMetro:
-			fmt.Println("[MobiliteReduite, Deliberate] EnterMetro")
+			//TODELETEfmt.Println("[MobiliteReduite, Deliberate] EnterMetro")
 			ag.decision = EnterMetro
 			return
 		case YouHaveToMove:
@@ -100,7 +99,7 @@ func (mr *MobiliteReduite) Act(ag *Agent) {
 		//mr.MoveMR(ag)
 		ag.MoveAgent()
 	case EnterMetro:
-		fmt.Printf("[MobiliteReduite, Act %s] EnterMetro \n", ag.id)
+		//TODELETEfmt.Printf("[MobiliteReduite, Act %s] EnterMetro \n", ag.id)
 		ag.env.RemoveAgent(ag)
 		mr.req.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
 	}
