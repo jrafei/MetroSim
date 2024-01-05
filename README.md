@@ -1,12 +1,17 @@
 MetroSim
 
-# README - Projet Simulateur de Quai de Métro en GO - MetroSim
+# README - Projet Simulateur de Quai de Métro en GO - MetroSim - BACKEND
 
 :warning: Problème de ralentissement de l'affichage présenté lors de la présentation a été résolu.
+
 
 ## Description du Projet
 
 Bienvenue dans le simulateur de quai de métro en GO ! Ce projet vise à reproduire le fonctionnement basique d'un quai de métro, avec des trains qui arrivent et partent à intervalles réguliers. La simulation a pour objectif d'identifier les points sensibles (ex : goulots d'étranglement) au sein d'un quai de métro.
+
+## FRONTEND
+
+Avant toute chose, voici l'URL du dépôt associé au FRONTEND : https://github.com/Skyzonaut/AI30-GUI
 
 ## Fonctionnalités
 
