@@ -50,7 +50,7 @@ http://127.0.0.1:12000/configure
 Exemple de requête HTTP POST correcte : 
 
 
-
+![](https://gitlab.utc.fr/pillisju/metrosim/-/blob/main/request_image.png)
 
 ### Lancement de la simulation, et récupération de son état
 
