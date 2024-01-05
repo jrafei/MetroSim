@@ -13,7 +13,9 @@ Bienvenue dans le simulateur de quai de métro en GO ! Ce projet vise à reprodu
 
 :warning: Avant toute chose, voici l'URL du dépôt associé au FRONTEND : https://github.com/Skyzonaut/AI30-GUI .
 
-Pour son utilisation, il faut d'abord lancer le BACKEND comme expliqué ci-dessous, puis suivre la procédure du FRONTEND (disponible sur le README du dépôt associé)
+Pour son utilisation, il faut d'abord lancer le BACKEND comme expliqué ci-dessous, puis suivre la procédure du FRONTEND (disponible sur le README du dépôt associé).
+
+Le FRONTEND et le BACKEND doivent donc, bien évidemment, être lancés en parallèle.
 
 ## Fonctionnalités
 
