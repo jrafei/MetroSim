@@ -223,15 +223,15 @@ func (simu *Simulation) Print() [][]string {
 			element := simu.env.station[i][j]
 			if len(element) > 1 {
 				result[i][j] = element[:1] // Stocker le premier caractère si la longueur est supérieure à 1
-				fmt.Print(result[i][j] + " ")
+				//fmt.Print(result[i][j] + " ")
 			} else {
 				result[i][j] = element
-				fmt.Print(result[i][j] + " ")
+				//fmt.Print(result[i][j] + " ")
 			}
 		}
-		fmt.Println()
+		//TODELETEfmt.Println()
 	}
-	fmt.Println()
+	//TODELETEfmt.Println()
 	time.Sleep(200 * time.Millisecond) // 1 fps !
 	return result
 }
@@ -246,7 +246,7 @@ func (simu *Simulation) ActivateFlow() {
 	for {
 		ag := &Agent{}
 		ag = nil
-		fmt.Println(probability)
+		//TODELETEfmt.Println(probability)
 		switch {
 		case probability < 0.1: // 10% de probabilité
 			ag = NewAgent("Normal"+fmt.Sprint(simu.env.agentCount), &simu.env, make(chan int), 200, true, &UsagerNormal{}, simu.env.entries[rand.Intn(len(simu.env.entries))], simu.env.gates[rand.Intn(len(simu.env.gates))], 1, 1)

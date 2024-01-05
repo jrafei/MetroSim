@@ -1,7 +1,6 @@
 package simulation
 
 import (
-	"fmt"
 	"math/rand"
 	alg "metrosim/internal/algorithms"
 	req "metrosim/internal/request"
@@ -22,7 +21,7 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 	*/
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
-		fmt.Printf("Requete recue par l'agent lambda %s : %d \n ", ag.id, ag.request.Decision())
+		//TODELETEfmt.Printf("Requete recue par l'agent lambda %s : %d \n ", ag.id, ag.request.Decision())
 		ul.requete = ag.request
 
 	default:
@@ -45,7 +44,7 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 			ag.decision = Disappear
 			return
 		case EnterMetro:
-			fmt.Println("[UsagerLambda, Deliberate] EnterMetro %s", ag.id)
+			//TODELETEfmt.Println("[UsagerLambda, Deliberate] EnterMetro %s", ag.id)
 			ag.decision = EnterMetro
 			return
 		case Wait:
@@ -90,12 +89,12 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 	case Expel:
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.findNearestExit()
-		fmt.Printf("[UsagerLambda, Act] position de l'agent %s =  (%d , %d) \n", ag.id, ag.position[0], ag.position[1])
-		fmt.Printf("[UsagerLambda, Act] destination de l'agent %s = (%d , %d) \n", ag.id, ag.destination[0], ag.destination[1])
+		//TODELETEfmt.Printf("[UsagerLambda, Act] position de l'agent %s =  (%d , %d) \n", ag.id, ag.position[0], ag.position[1])
+		//TODELETEfmt.Printf("[UsagerLambda, Act] destination de l'agent %s = (%d , %d) \n", ag.id, ag.destination[0], ag.destination[1])
 		ag.env.controlledAgents[ag.id] = true
 		ag.path = make([]alg.Node, 0)
 		ag.MoveAgent()
-		fmt.Printf("[UsagerLambda, Act] J'ai bougé %s , ma position = (%d , %d)\n", ag.id, ag.position[0], ag.position[1])
+		//TODELETEfmt.Printf("[UsagerLambda, Act] J'ai bougé %s , ma position = (%d , %d)\n", ag.id, ag.position[0], ag.position[1])
 	case TryToMove:
 		//fmt.Printf("Je suis %s est-ce que j'ai bougé? %t \n", ag.id, movement)
 		if ag.ShiftAgent() {

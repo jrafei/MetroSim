@@ -1,7 +1,6 @@
 package simulation
 
 import (
-	"fmt"
 	alg "metrosim/internal/algorithms"
 	req "metrosim/internal/request"
 	"sync"
@@ -49,7 +48,7 @@ func NewEnvironment(ags []Agent, carte [50][50]string, metros []Metro, newAgtCh 
 
 	gates := make([]alg.Coord, 0)
 	for _, metro := range metros {
-		fmt.Println(metro.way.gates)
+		//TODELETEfmt.Println(metro.way.gates)
 		for _, gate := range metro.way.gates {
 			gates = append(gates, gate)
 		}
@@ -151,11 +150,11 @@ func (env *Environment) RemoveAgent(agt *Agent) {
 
 	for i := borneInfRow; i < borneSupRow; i++ {
 		for j := borneInfCol; j < borneSupCol; j++ {
-			if len(env.station[i][j])>1{
+			if len(env.station[i][j]) > 1 {
 				env.station[i][j] = agt.isOn[alg.Coord{i, j}]
 			}
 			alg.RemoveCoord(alg.Coord{i, j}, agt.isOn)
-			
+
 		}
 	}
 }
@@ -176,8 +175,6 @@ func (env *Environment) writeAgent(agt *Agent) {
 	}
 
 }
-
-
 
 func (env *Environment) getNbAgentsAround(pos alg.Coord) int {
 	//pos est la position de la porte
@@ -253,7 +250,6 @@ func (env *Environment) Station() [50][50]string {
 	return env.station
 }
 
-
 func (env *Environment) getNearGateFromGate(gate Gate) []alg.Coord {
 	/*
 	 * Renvoie les portes proches de la porte passée en paramètre
@@ -268,4 +264,3 @@ func (env *Environment) getNearGateFromGate(gate Gate) []alg.Coord {
 	nearGates = append(nearGates, gate.Position)
 	return nearGates
 }
-

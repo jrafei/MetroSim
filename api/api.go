@@ -61,18 +61,19 @@ func simHandler(action string) http.HandlerFunc {
 			}
 
 		case "launch":
-			log.Println("[API] Launch request")
+			//TODELETElog.Println("[API] Launch request")
 			if simulation != nil {
-				log.Println("[API] running")
+				//TODELETElog.Println("[API] running")
 				if !simulation.IsRunning() {
-					log.Println("[API] running")
+					//TODELETElog.Println("[API] running")
 					go simulation.Run()
 				}
 				msg, _ := json.Marshal(simulation.Print())
+				//TODELETEfmt.Printf("%d\n", len(msg))
 				fmt.Fprintf(w, "%s", msg)
 			}
 		case "stop":
-			// TODO
+			// TODOD
 		}
 	}
 }

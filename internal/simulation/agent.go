@@ -5,9 +5,6 @@ package simulation
  */
 
 import (
-	"fmt"
-	"log"
-
 	//"fmt"
 
 	//"log"
@@ -77,7 +74,7 @@ func (ag *Agent) ID() AgentID {
 
 func (ag *Agent) Start() {
 
-	log.Printf("%s starting...\n", ag.id)
+	//TODELETElog.Printf("%s starting...\n", ag.id)
 	go ag.listenForRequests()
 
 	// si c'est un controlleur on lance le timer de durée de vie
@@ -313,7 +310,7 @@ func (ag *Agent) ShiftAgent() bool {
 
 			// Prise en compte de la vitesse de déplacement
 			time.Sleep(ag.vitesse * time.Millisecond)
-			fmt.Printf("J'ai bougé")
+			//TODELETEfmt.Printf("J'ai bougé")
 			return true
 		}
 	}
@@ -363,18 +360,18 @@ func (ag *Agent) MoveAgent() bool {
 				for !accept && i < 3 {
 					//Demande à l'agent qui bloque de se pousser (réitère trois fois s'il lui dit pas possible)
 					i += 1
-					fmt.Printf("[MoveAgent, %s] You have to move %s for the %d time \n", ag.id, blockingAgentID, i)
+					//TODELETEfmt.Printf("[MoveAgent, %s] You have to move %s for the %d time \n", ag.id, blockingAgentID, i)
 					reqToBlockingAgent = req.NewRequest(ag.env.agentsChan[ag.id], YouHaveToMove) //Création "Hello, je suis ag.id, move."
 					ag.env.agentsChan[blockingAgentID] <- *reqToBlockingAgent                    //Envoi requête
 					repFromBlockingAgent := <-ag.env.agentsChan[ag.id]                           //Attend la réponse
 
 					if repFromBlockingAgent.Decision() == Done { //BlockingAgent lui a répondu Done, il s'est donc poussé
-						fmt.Printf("okay i will move agent %s \n", ag.id)
+						//TODELETEfmt.Printf("okay i will move agent %s \n", ag.id)
 						accept = true
 					}
 				}
 				if !accept {
-					fmt.Printf("i can't move agent %s \n", ag.id)
+					//TODELETEfmt.Printf("i can't move agent %s \n", ag.id)
 					return false //il ne peut pas bouger, il s'arrête
 				}
 			}
@@ -430,10 +427,10 @@ func (ag *Agent) listenForRequests() {
 	for {
 		if ag.request == nil {
 			req := <-ag.env.agentsChan[ag.id]
-			fmt.Printf("[listenForRequests] Request received by :%s , decision : %d \n", ag.id, req.Decision())
+			//TODELETEfmt.Printf("[listenForRequests] Request received by :%s , decision : %d \n", ag.id, req.Decision())
 			ag.request = &req
 			if ag.request.Decision() == Expel {
-				fmt.Println("[listenForRequests] Expel received by :", ag.id)
+				//TODELETEfmt.Println("[listenForRequests] Expel received by :", ag.id)
 			}
 			if ag.request != nil && (ag.request.Decision() == Disappear || ag.request.Decision() == EnterMetro) {
 				return

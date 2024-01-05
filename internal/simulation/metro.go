@@ -2,7 +2,6 @@ package simulation
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	alg "metrosim/internal/algorithms"
 	req "metrosim/internal/request"
@@ -38,7 +37,7 @@ func NewMetro(freq time.Duration, stopT time.Duration, capacity, freeS int, way 
 
 func (metro *Metro) Start() {
 	// Début de la simulation du métro
-	log.Printf("Metro starting...\n")
+	//TODELETElog.Printf("Metro starting...\n")
 	refTime := time.Now()
 	//var step int
 	// affichage des portes au départ
@@ -86,12 +85,12 @@ func (metro *Metro) pickUpGate(gate *alg.Coord, endTime time.Time, force bool) {
 				agent := metro.findAgent(AgentID(gate_cell))
 				if agent != nil && (((!force && agent.width*agent.height <= metro.freeSpace) && alg.EqualCoord(&agent.destination, gate)) || force) {
 
-					fmt.Println("agent entering metro : ", agent.id, "at gate ", gate)
+					//TODELETEfmt.Println("agent entering metro : ", agent.id, "at gate ", gate)
 					metro.way.env.agentsChan[agent.id] <- *req.NewRequest(metro.comChannel, EnterMetro)
 					select {
 					case <-metro.comChannel:
 						metro.freeSpace = metro.freeSpace - agent.width*agent.height
-						fmt.Println("agent entered metro : ", agent.id, "at gate ", gate)
+						//TODELETEfmt.Println("agent entered metro : ", agent.id, "at gate ", gate)
 					case <-time.After(2 * time.Second):
 						// Si l'agent prend trop de temps à répondre, on le supprime "manuellement"
 						if metro.findAgent(agent.id) != nil {
