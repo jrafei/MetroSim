@@ -22,9 +22,9 @@ func (ul *UsagerLambda) Percept(ag *Agent) {
 	*/
 	switch {
 	case ag.request != nil: //verifier si l'agent est communiqué par un autre agent, par exemple un controleur lui a demandé de s'arreter
-		fmt.Printf("Requete recue par l'agent lambda %s : %d \n ",ag.id, ag.request.Decision())
+		fmt.Printf("Requete recue par l'agent lambda %s : %d \n ", ag.id, ag.request.Decision())
 		ul.requete = ag.request
-		
+
 	default:
 		ag.stuck = ag.isStuck()
 		if ag.stuck {
@@ -38,7 +38,7 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 
 	if ul.requete != nil {
 		switch ul.requete.Decision() {
-		case Expel: 
+		case Expel:
 			ag.decision = Expel
 			return
 		case Disappear:
@@ -53,6 +53,9 @@ func (ul *UsagerLambda) Deliberate(ag *Agent) {
 			return
 		case Move:
 			ag.decision = Move
+			return
+		case YouHaveToMove:
+			ag.decision = TryToMove
 			return
 		default:
 			ag.decision = Move
@@ -84,27 +87,26 @@ func (ul *UsagerLambda) Act(ag *Agent) {
 		ag.env.RemoveAgent(ag)
 		//fmt.Printf("Demandeur d'entrer le metro : %s \n",ul.requete.Demandeur())
 		ul.requete.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], ACK)
-	case Expel :
+	case Expel:
 		//fmt.Println("[AgentLambda, Act] Expel")
 		ag.destination = ag.findNearestExit()
-		fmt.Printf("[UsagerLambda, Act] position de l'agent %s =  (%d , %d) \n",ag.id,ag.position[0],ag.position[1])
+		fmt.Printf("[UsagerLambda, Act] position de l'agent %s =  (%d , %d) \n", ag.id, ag.position[0], ag.position[1])
 		fmt.Printf("[UsagerLambda, Act] destination de l'agent %s = (%d , %d) \n", ag.id, ag.destination[0], ag.destination[1])
 		ag.env.controlledAgents[ag.id] = true
 		ag.path = make([]alg.Node, 0)
 		ag.MoveAgent()
-		fmt.Printf("[UsagerLambda, Act] J'ai bougé %s , ma position = (%d , %d)\n", ag.id, ag.position[0],ag.position[1])
-
-	case Noop:
-		//Cas ou un usager impoli demande a un usager de bouger et il refuse
-		ul.requete.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)
-		// nothing to do
-	case Done:
-		//Cas ou un usager impoli demande a un usager de bouger et il le fait
-		ul.requete.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Done)
+		fmt.Printf("[UsagerLambda, Act] J'ai bougé %s , ma position = (%d , %d)\n", ag.id, ag.position[0], ag.position[1])
+	case TryToMove:
+		//fmt.Printf("Je suis %s est-ce que j'ai bougé? %t \n", ag.id, movement)
+		if ag.ShiftAgent() {
+			ul.requete.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Done)
+		} else {
+			ul.requete.Demandeur() <- *req.NewRequest(ag.env.agentsChan[ag.id], Noop)
+		}
 	}
 
 	//ag.request = nil // la requete est traitée
-	if ag.request!= nil && ag.decision ==ag.request.Decision(){
+	if ag.request != nil && ag.decision == ag.request.Decision() {
 		ag.request = nil
 		ul.requete = nil
 	} // la requete est traitée

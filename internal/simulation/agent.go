@@ -243,6 +243,87 @@ func (ag *Agent) NextCell() string {
 	return "X"
 }
 
+func (agt *Agent) MyNextCellIsSafe() bool {
+
+	// Simulation du déplacement
+	ag := *agt
+	switch ag.direction {
+	case 0: //haut
+		ag.position = alg.Coord{ag.position[0] - 1, ag.position[1]}
+	case 1: //droite
+		ag.position = alg.Coord{ag.position[0], ag.position[1] + 1}
+	case 2: //gauche
+		ag.position = alg.Coord{ag.position[0] + 1, ag.position[1]}
+	case 3: //bas
+		ag.position = alg.Coord{ag.position[0], ag.position[1] - 1}
+	}
+
+	if !(ag.position[1] < 0 || ag.position[0] < 0 || ag.position[0] > len(agt.env.station[0]) || ag.position[1] > len(agt.env.station[1])) {
+		i := ag.position[0]
+		j := ag.position[1]
+		if agt.env.station[i][j] != "B" && agt.env.station[i][j] != "_" && agt.env.station[i][j] != "W" && agt.env.station[i][j] != "S" {
+			// Si on n'est pas sur une case atteignable, en dehors de la zone qu'occupe l'agent avant déplacement, on est bloqué
+			//fmt.Println("[IsMovementSafe]case inaccessible :",agt.id)
+			return false
+		} else {
+			return true
+		}
+	}
+	return false
+}
+
+func (ag *Agent) ShiftAgent() bool {
+	//fmt.Printf("ShiftAgent")
+	storeDirection := ag.direction //enregistrer l'orientation initiale de l'agent
+
+	for i := 0; i < 4; i++ {
+		ag.direction = (storeDirection + i) % 4
+		safe := ag.MyNextCellIsSafe()
+		if safe { //  Deplacement possible safe=true
+
+			switch ag.direction {
+			case 0: //haut
+				ag.position = alg.Coord{ag.position[0] - 1, ag.position[1]}
+			case 1: //droite
+				ag.position = alg.Coord{ag.position[0], ag.position[1] + 1}
+			case 2:
+				ag.position = alg.Coord{ag.position[0] + 1, ag.position[1]}
+			case 3:
+				ag.position = alg.Coord{ag.position[0], ag.position[1] - 1}
+			}
+
+			//Début du déplacement
+			ag.env.Lock()
+			x := ag.position[0]
+			y := ag.position[1]
+
+			if len(ag.isOn) > 0 {
+				// Suppression de l'agent
+				ag.env.station[x][y] = ag.isOn[alg.Coord{x, y}]
+				alg.RemoveCoord(alg.Coord{x, y}, ag.isOn)
+			}
+
+			// Enregistrement des valeurs précédentes de la matrice
+			ag.isOn[alg.Coord{x, y}] = ag.env.station[x][y]
+
+			//Ecriture agent dans la matrice (déplacement)
+			ag.env.station[x][y] = string(ag.id)
+			ag.env.Unlock()
+			//Fin du déplacement
+
+			// Prise en compte de la vitesse de déplacement
+			time.Sleep(ag.vitesse * time.Millisecond)
+			fmt.Printf("J'ai bougé")
+			return true
+		}
+	}
+
+	//si on peut aller nulle part, on se remet dans notre config initiale
+	ag.direction = storeDirection
+	//fmt.Printf("Je me bouge pas")
+	return false
+}
+
 func (ag *Agent) MoveAgent() bool {
 	//fmt.Printf("[MoveAgent, %s ] direction = %d \n",ag.id, ag.direction)
 	// ================== Tentative de calcul du chemin =======================
