@@ -69,5 +69,10 @@ Le projet fonctionne globalement, mais il peut y avoir des bugs non identifiés.
 La configuration de la fréquence des trains et de leur temps d'arrêt n'est pas actuellement prise en charge (possible mais non fonctionnel, comportement anormal des metros). Ces paramètres sont fixés à des valeurs prédéfinies pour le moment (5 secondes).
 
 
-## Auteurs
+## Contributeurs
+
+- Yousra Hassan
+- Jana Rafei 
+- Yohan Folliot
+- Julien Pillis
 
